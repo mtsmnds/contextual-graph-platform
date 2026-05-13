@@ -12,30 +12,36 @@ npm run lint       # ESLint (flat config) on .
 
 ## Tech stack
 
-- **Vite 8** + **React 19** — JSX (`.jsx`), **no TypeScript**
+- **Vite 8** + **React 19** — **TypeScript** (`.tsx`/`.ts`)
 - **npm** (package-lock.json present)
 - **ESLint 10** flat config (`eslint.config.js`) with `eslint-plugin-react-hooks` + `eslint-plugin-react-refresh`
 - **Native CSS nesting** (no preprocessor)
+- **Zustand 5** — global state (`useGraphStore`)
 
-## Dependencies
+## Key dependencies
 
-- `@xyflow/react` (React Flow) — graph/flow diagrams
-- `@phosphor-icons/react` — icon library
+| Package | Purpose |
+|---------|---------|
+| `@xyflow/react` | React Flow — node/edge graph canvas |
+| `@phosphor-icons/react` | Phosphor icon library |
+| `zustand` | Lightweight global state |
 
 ## Architecture
 
 | Path | Purpose |
 |------|---------|
-| `src/main.jsx` | App entrypoint, mounts `<App />` into `#root` |
-| `src/App.jsx` | Main (and only) page component |
+| `src/main.tsx` | App entrypoint, mounts `<App />` into `#root` |
+| `src/App.tsx` | Main (and only) page component — renders `<ReactFlow>` canvas |
 | `src/index.css` | Global reset & layout styles, dark mode via `prefers-color-scheme` |
-| `src/App.css` | Component-level styles |
+| `src/types/graph.ts` | TypeScript types: `NodeKind`, `EdgeKind`, `EdgeBehavior`, `AppNode`, `AppEdge` |
+| `src/store/useGraphStore.ts` | Zustand store: nodes, edges, documents + mutation actions |
 | `src/assets/` | Static images (hero.png, react.svg, vite.svg) |
 | `public/` | Static files served at `/` |
 
 ## Notes
 
 - No test framework is configured.
-- No type checking step exists; the `lint` script is the only verification.
+- **`eslint.config.js` only covers `.js`/`.jsx`** — TypeScript files are NOT linted. Run `npx tsc --noEmit` for type checking instead.
 - CSS uses `@media` queries nested inside selectors (native CSS nesting — no preprocessor needed).
-- Standard Vite HMR: edits to `src/App.jsx` reflect instantly.
+- Standard Vite HMR: edits to `src/App.tsx` reflect instantly.
+- Store is pre-seeded with sample data (one phase + two task nodes with a dependency edge).
