@@ -1,0 +1,26 @@
+# Project: react-roadmap
+
+## Source of truth for agent behavior
+
+- Read and follow `AGENTS.md` at repo root before implementing changes.
+- Use `dev-docs/requirements.md` for feature intent and acceptance criteria.
+- Use `dev-docs/architecture.md` for system contracts and design constraints.
+- Use `dev-docs/roadmap.md` for active priorities.
+- Use `dev-docs/changelog.md` + `dev-docs/archive/` for historical decisions.
+- After completed changes, load the `dev-docs` skill to update documentation.
+
+## Hard guardrails
+
+- Treat `dist/` as generated; never patch it manually.
+- Always run `npx tsc --noEmit` before marking a TypeScript change as done.
+
+## Documentation coupling rules
+
+- Feature changes → reference/update `requirements.md`.
+- System/pipeline/contract changes → update `architecture.md` + `changelog.md` + ADR.
+- Significant completed work → capture in `changelog.md`.
+
+## Validation baseline
+
+- `npx tsc --noEmit`
+- `npm run build`
