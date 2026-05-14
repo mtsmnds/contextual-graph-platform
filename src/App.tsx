@@ -7,6 +7,12 @@ import { resolveContainer } from "./engine/queries";
 import ReadingViewport from "./renderers/ReadingViewport";
 import type { Entity, Relation } from "./types/graph";
 
+declare global {
+  interface Window {
+    showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
+  }
+}
+
 function assignLayout(
   entities: Entity[],
   relations: Relation[],
@@ -93,7 +99,7 @@ function CanvasView() {
   );
 
   return (
-    <div style={{ width: "100%", height: "100vh" }}>
+    <div style={{ width: "100%", height: "100%" }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -104,14 +110,96 @@ function CanvasView() {
   );
 }
 
-function App() {
-  const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId);
+function FolderPicker({ onOpen }: { onOpen: () => Promise<void> }) {
+  const isSupported = typeof window.showDirectoryPicker === "function";
 
-  if (focusedEntityId) {
-    return <ReadingViewport />;
+  if (!isSupported) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center max-w-md px-6">
+          <p className="text-muted-foreground mb-2">
+            Your browser does not support the File System Access API.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Please use Chrome or Edge to open a project folder.
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  return <CanvasView />;
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <button
+        className="px-6 py-3 rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors text-sm font-medium"
+        onClick={onOpen}
+      >
+        Open a project folder
+      </button>
+    </div>
+  );
+}
+
+const saveStatusLabel: Record<string, string> = {
+  saved: "Saved",
+  unsaved: "Unsaved changes",
+  saving: "Saving…",
+  error: "Save error",
+};
+
+const saveStatusColor: Record<string, string> = {
+  saved: "bg-green-500",
+  unsaved: "bg-yellow-500",
+  saving: "bg-blue-500",
+  error: "bg-red-500",
+};
+
+function AppHeader() {
+  const folderName = useGraphStore((s) => s.folderName);
+  const saveStatus = useGraphStore((s) => s.saveStatus);
+  const openFolder = useGraphStore((s) => s.openFolder);
+
+  return (
+    <header className="flex items-center justify-between border-b shrink-0 px-4 py-1.5">
+      <div className="flex items-center gap-2">
+        <button
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium flex items-center gap-1.5"
+          onClick={openFolder}
+          title="Switch folder"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          {folderName}
+        </button>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${saveStatusColor[saveStatus] ?? "bg-gray-500"}`} />
+        <span className="text-[10px] text-muted-foreground">
+          {saveStatusLabel[saveStatus] ?? ""}
+        </span>
+      </div>
+    </header>
+  );
+}
+
+function App() {
+  const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId);
+  const directoryHandle = useGraphStore((s) => s.directoryHandle);
+  const openFolder = useGraphStore((s) => s.openFolder);
+
+  if (!directoryHandle) {
+    return <FolderPicker onOpen={openFolder} />;
+  }
+
+  return (
+    <div className="flex flex-col h-screen">
+      <AppHeader />
+      <div className="flex-1 overflow-hidden">
+        {focusedEntityId ? <ReadingViewport /> : <CanvasView />}
+      </div>
+    </div>
+  );
 }
 
 export default App;

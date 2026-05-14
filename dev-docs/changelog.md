@@ -58,6 +58,19 @@ Use this to recover context after breaks.
 
 ## 2026-05-14
 
+### File System Persistence — PRD0009
+- **What:** Replaced localStorage with the File System Access API. The user picks a folder at startup — the app reads/writes `graph.json` inside it. No seed data, no localStorage, no hidden state. App shows a folder picker gate on launch, renders folder name + save status in a header bar. Removed `hamlet.json` bundle import (cut JS bundle from 968 KB to 425 KB).
+- **Reason:** localStorage is opaque to users and agents, has no permanence across machines, and contradicts the product goal of making data transparent and portable. The user's graph should be a file they can see, edit, version, and share.
+- **Files changed:**
+  - `src/store/useGraphStore.ts`: Rewritten — removed `seedEntities`, `seedRelations`, `hamletData` import, `loadInitialState()`, `persistToDisk()`, `exportGraph()`, `importGraph()`, localStorage auto-save. Added `directoryHandle`, `folderName`, `saveStatus`, `openFolder()` action, FS API auto-save subscription.
+  - `src/App.tsx`: Added `FolderPicker` gate (unsupported browser message + open folder button), `AppHeader` (folder name + save status dot), canvas height fix (`100vh` → `100%`).
+- **Impact:** App no longer works without a user-picked folder. Data is a plain JSON file the user owns. 425 KB JS bundle (was 968 KB with bundled hamlet.json). Clear localStorage before using.
+- **Archive:** `archive/2026-05-14-prd0009-file-system-persistence.md`
+
+---
+
+## 2026-05-14
+
 ### Pure Domain Loader — PRD0008
 - **What:** Stripped all runtime merging, source detection, and content matching from `loadInitialState()`. It is now a straight three-step cascade: try localStorage → try hamlet.json → fall back to seed data → return as-is. No post-processing. Each data source is self-contained (all relation targets exist within the same source).
 - **Reason:** The loader was making assumptions about the data (checking for `seg_18`/`seg_1614` to guess the source, merging annotation entities from one source into another). This was the same class of bug that caused the content-matching failure — the domain model should be unquestionable. What's in the file is what you get.

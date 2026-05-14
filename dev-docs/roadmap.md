@@ -29,7 +29,7 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 
 ### M1 — Domain Engine (Entity/Relation schema ✅, Query engine ✅, Seed content ✅)
 - ~~Entity/Relation schema (decoupled from React Flow)~~ ✅
-- Persistence layer (localStorage → SQLite)
+- ~~Persistence layer (localStorage → SQLite)~~ ✅ (Replaced by PRD0009: File System Access API)
 - ~~Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext)~~ ✅
 - ~~Seed content for validation~~ ✅
 
@@ -61,13 +61,15 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-13 — Work entity + full-play scrolling: `hamlet--william-shakespeare` as root container, recursive flattening, canvas shows work node, all 1,349 entities scrollable in one view
 - 2026-05-13 — Contextual expansion (PRD0007): inline annotation cards, relation indicators, seed data enrichment
 - 2026-05-14 — Pure Domain Loader (PRD0008): stripped all runtime merging/detection from `loadInitialState()` — each data source is self-contained
+- 2026-05-14 — File System Persistence (PRD0009): user picks a folder, app reads/writes `graph.json` directly, no seed data, no localStorage
 
 ## Now (Current Sprint)
-- **File System Persistence (PRD0009)** — user's graph data lives as `graph.json` in a folder they choose. No seed data, no localStorage, no hidden state.
+- **Annotation creation (highlight + note)** — users need to populate their graph with annotations
+- Sample data import workflow — giving users a way to load existing content (e.g., hamlet) into their folder
 
 ## Next (Near-Term)
-- Annotation creation (highlight + note)
 - Multi-column reading workspace
+- "Talmud mode" toggle — show all annotations at once
 
 ## Later (Backlog)
 - "Talmud mode" toggle — show all annotations at once, each aligned with its source segment

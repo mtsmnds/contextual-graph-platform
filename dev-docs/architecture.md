@@ -96,8 +96,9 @@ type ViewState = {
 - `view: ViewState` — UI-only state, separate from domain.
 - Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `removeRelation`.
 - View actions: `focusEntity(id, anchorId?)`, `expandPanel`, `closePanel`.
-- Persistence: `exportGraph` (JSON download), `importGraph` (replace state).
-- Auto-save: debounced (300ms) localStorage write on every entity/relation change. Hydration on startup.
+- Persistence: File System Access API — user picks a folder, app reads/writes `graph.json` inside it.
+- Auto-save: debounced (300ms) write to `graph.json` on every entity/relation change. No hidden storage.
+- Actions: `openFolder()` opens folder picker, reads or creates `graph.json`.
 
 ### Query Engine (`src/engine/queries.ts`)
 Pure functions over store state — no hooks, no components:
@@ -130,7 +131,7 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 
 ### Output / State
 - `dist/` — production build.
-- Store persisted to localStorage via debounced auto-save. Hydrates from bundled `src/data/hamlet.json` on first run.
+- Store reads/writes `graph.json` in the user's chosen folder via the File System Access API. No bundled seed data.
 
 ## Module Map
 
@@ -144,7 +145,7 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
 | `src/components/ui/` | shadcn/ui components (Button) |
 | `src/lib/utils.ts` | cn() utility for Tailwind class merging |
-| `src/data/hamlet.json` | Bundled Hamlet snapshot (first-run seed data) |
+| `src/data/hamlet.json` | Hamlet snapshot (reference only, no longer bundled) |
 | `src/index.css` | Global styles, Tailwind theme, shadcn CSS variables, dark mode |
 | `scripts/import-gutenberg.ts` | Gutenberg HTML → JSON converter |
 | `dist/` | Build output (gitignored) |

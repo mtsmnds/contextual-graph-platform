@@ -7,141 +7,24 @@ import type {
   ViewState,
   GraphSnapshot,
 } from "../types/graph";
-import hamletData from "../data/hamlet.json";
 
-const seedEntities: Entity[] = [
-  {
-    id: "hamlet_1",
-    kind: "segment",
-    title: "Who's there?",
-    content:
-      "Bernardo: Who's there?\nFrancisco: Nay, answer me. Stand and unfold yourself.",
-    metadata: { source: "hamlet", act: 1, scene: 1 },
-  },
-  {
-    id: "hamlet_2",
-    kind: "segment",
-    title: "To be, or not to be",
-    content:
-      "To be, or not to be, that is the question: Whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles.",
-    metadata: { source: "hamlet", act: 3, scene: 1 },
-  },
-  {
-    id: "hamlet_3",
-    kind: "segment",
-    title: "Alas, poor Yorick",
-    content:
-      "Alas, poor Yorick! I knew him, Horatio: a fellow of infinite jest, of most excellent fancy.",
-    metadata: { source: "hamlet", act: 5, scene: 1 },
-  },
-  {
-    id: "note_1",
-    kind: "annotation",
-    title: "Identity theme",
-    content:
-      "The play opens with a question of identity — fitting for a story about uncertainty and deception.",
-    metadata: {},
-  },
-  {
-    id: "note_2",
-    kind: "annotation",
-    title: "Famous soliloquy",
-    content:
-      "This is the most famous passage. Note the existential framing — not just suicide but the human condition.",
-    metadata: {},
-  },
-  {
-    id: "act_1",
-    kind: "container",
-    title: "Act I",
-    content: "The setup: ghost appears, Claudius marries Gertrude.",
-    metadata: { source: "hamlet", type: "act" },
-  },
-  {
-    id: "note_3",
-    kind: "annotation",
-    title: "Opening tension",
-    content:
-      "The play begins with a challenge — 'Who's there?' — establishing uncertainty as the central theme.",
-    metadata: {},
-  },
-  {
-    id: "note_4",
-    kind: "annotation",
-    title: "Supernatural element",
-    content:
-      "The ghost appears immediately, grounding the political drama in the supernatural.",
-    metadata: {},
-  },
-  {
-    id: "ref_1",
-    kind: "segment",
-    title: "Montaigne reference",
-    content:
-      "Shakespeare's soliloquy echoes Montaigne's Apology for Raymond Sebond, which questions whether man is 'nobler' than beasts.",
-    metadata: {},
-  },
-];
-
-const seedRelations: Relation[] = [
-  { id: "r_1", source: "act_1", target: "hamlet_1", type: "contains", metadata: {} },
-  { id: "r_2", source: "act_1", target: "hamlet_2", type: "contains", metadata: {} },
-  { id: "r_3", source: "act_1", target: "hamlet_3", type: "contains", metadata: {} },
-  { id: "r_4", source: "hamlet_1", target: "hamlet_2", type: "next", metadata: {} },
-  { id: "r_5", source: "hamlet_2", target: "hamlet_3", type: "next", metadata: {} },
-  { id: "r_6", source: "hamlet_2", target: "note_2", type: "annotates", metadata: {} },
-  { id: "r_7", source: "hamlet_1", target: "note_1", type: "annotates", metadata: {} },
-  { id: "r_8", source: "hamlet_1", target: "note_3", type: "annotates", metadata: {} },
-  { id: "r_9", source: "hamlet_1", target: "note_4", type: "annotates", metadata: {} },
-  { id: "r_10", source: "hamlet_2", target: "ref_1", type: "references", metadata: {} },
-];
-
-const PERSIST_KEY = "react-roadmap-graph";
-const DEBOUNCE_MS = 300;
-let saveTimer: ReturnType<typeof setTimeout> | null = null;
-
-function loadInitialState(): { entities: Entity[]; relations: Relation[] } {
-  let base: { entities: Entity[]; relations: Relation[] } | null = null;
-
-  try {
-    const raw = localStorage.getItem(PERSIST_KEY);
-    if (raw) {
-      const parsed: GraphSnapshot = JSON.parse(raw);
-      if (parsed.version === 1 && Array.isArray(parsed.entities)) {
-        base = { entities: parsed.entities, relations: parsed.relations ?? [] };
-      }
-    }
-  } catch { /* ignore */ }
-
-  if (!base) {
-    try {
-      const hamlet = hamletData as GraphSnapshot;
-      if (hamlet?.entities?.length) {
-        base = { entities: hamlet.entities, relations: hamlet.relations };
-      }
-    } catch { /* ignore */ }
+declare global {
+  interface Window {
+    showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
   }
-
-  if (!base) {
-    base = { entities: seedEntities, relations: seedRelations };
-  }
-
-  return base;
 }
 
-function persistToDisk(entities: Entity[], relations: Relation[]) {
-  const snapshot: GraphSnapshot = {
-    version: 1,
-    entities,
-    relations,
-  };
-  localStorage.setItem(PERSIST_KEY, JSON.stringify(snapshot));
-}
+type SaveStatus = "saved" | "unsaved" | "saving" | "error";
+
+const FILE_NAME = "graph.json";
 
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
   view: ViewState;
+  directoryHandle: FileSystemDirectoryHandle | null;
+  folderName: string | null;
+  saveStatus: SaveStatus;
 
   addEntity: (kind: EntityKind, data?: Partial<Entity>) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
@@ -153,21 +36,21 @@ interface GraphStore {
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
 
-  exportGraph: () => void;
-  importGraph: (data: { entities: Entity[]; relations: Relation[] }) => void;
+  openFolder: () => Promise<void>;
 }
 
-const initialState = loadInitialState();
-
-export const useGraphStore = create<GraphStore>((set, get) => ({
-  entities: initialState.entities,
-  relations: initialState.relations,
+export const useGraphStore = create<GraphStore>((set) => ({
+  entities: [],
+  relations: [],
   view: {
     focusedEntityId: null,
     anchorEntityId: null,
     visibleEntityIds: [],
     expandedPanels: [],
   },
+  directoryHandle: null,
+  folderName: null,
+  saveStatus: "saved",
 
   addEntity: (kind, data = {}) => {
     const id = `${kind}_${Date.now()}`;
@@ -243,28 +126,79 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     }));
   },
 
-  exportGraph: () => {
-    const { entities, relations } = get();
-    const snapshot: GraphSnapshot = { version: 1, entities, relations };
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `graph-export-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  },
+  openFolder: async () => {
+    if (!window.showDirectoryPicker) return;
+    try {
+      const handle = await window.showDirectoryPicker();
+      const folderName = handle.name;
 
-  importGraph: (data) => {
-    set({ entities: data.entities, relations: data.relations });
+      let entities: Entity[] = [];
+      let relations: Relation[] = [];
+
+      try {
+        const fileHandle = await handle.getFileHandle(FILE_NAME);
+        const file = await fileHandle.getFile();
+        const text = await file.text();
+        const data: GraphSnapshot = JSON.parse(text);
+        if (data.version === 1) {
+          entities = data.entities ?? [];
+          relations = data.relations ?? [];
+        }
+      } catch {
+        const fileHandle = await handle.getFileHandle(FILE_NAME, { create: true });
+        const writable = await fileHandle.createWritable();
+        const snapshot: GraphSnapshot = { version: 1, entities: [], relations: [] };
+        await writable.write(JSON.stringify(snapshot, null, 2));
+        await writable.close();
+      }
+
+      set({
+        entities,
+        relations,
+        directoryHandle: handle,
+        folderName,
+        saveStatus: "saved",
+        view: {
+          focusedEntityId: null,
+          anchorEntityId: null,
+          visibleEntityIds: [],
+          expandedPanels: [],
+        },
+      });
+    } catch (err) {
+      if ((err as DOMException)?.name === "AbortError") return;
+      console.error("Failed to open folder:", err);
+    }
   },
 }));
 
-// Auto-save: debounced persist on every domain state change
+// Auto-save: debounced write to graph.json on every domain state change
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
 useGraphStore.subscribe((state, prevState) => {
   if (state.entities === prevState.entities && state.relations === prevState.relations) return;
+  if (!state.directoryHandle) return;
+
   if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    persistToDisk(state.entities, state.relations);
-  }, DEBOUNCE_MS);
+
+  const store = useGraphStore;
+
+  store.setState({ saveStatus: "unsaved" });
+
+  saveTimer = setTimeout(async () => {
+    const { directoryHandle, entities, relations } = store.getState();
+    if (!directoryHandle) return;
+
+    try {
+      store.setState({ saveStatus: "saving" });
+      const fileHandle = await directoryHandle.getFileHandle(FILE_NAME, { create: true });
+      const writable = await fileHandle.createWritable();
+      const snapshot: GraphSnapshot = { version: 1, entities, relations };
+      await writable.write(JSON.stringify(snapshot, null, 2));
+      await writable.close();
+      store.setState({ saveStatus: "saved" });
+    } catch {
+      store.setState({ saveStatus: "error" });
+    }
+  }, 300);
 });
