@@ -13,6 +13,24 @@ Use this to recover context after breaks.
 
 ## 2026-05-13
 
+### Domain engine refactor — PRD0002
+- **What:** Replaced the React-Flow-coupled AppNode/AppEdge types with a pure Entity/Relation domain model. Rewrote the store to hold separate domain state and view state. Created the query engine. Added a canvas adapter bridge to keep React Flow rendering alive during the transition.
+- **Reason:** The old architecture treated React Flow nodes as domain entities, mixing viewport state (coordinates, dragging, selection) with the semantic model. The new model decouples state from rendering, enabling the reading workspace (M2) without fighting canvas internals.
+- **Files changed:**
+  - `src/types/graph.ts`: Rewrote — Entity/Relation/ViewState types, removed AppNode/AppEdge/NodeKind/EdgeKind/EdgeBehavior
+  - `src/store/useGraphStore.ts`: Rewrote — entities/relations/view slices, no React Flow imports
+  - `src/engine/queries.ts`: Created — getEntity, getRelations, getSequentialContext, getLinkedContext
+  - `src/App.tsx`: Updated — canvas adapter bridge transforms domain entities to React Flow nodes
+  - `src/App.css`: Deleted (unused Vite template residuals)
+  - `dev-docs/requirements.md`: Updated — reflects new type ontology
+  - `dev-docs/architecture.md`: Already updated in prior commit
+- **Impact:** Domain model is now framework-agnostic. Store is simpler and testable. React Flow canvas still renders the same seed data. Foundation for reading workspace laid.
+- **ADR:** `archive/2026-05-13-domain-engine-refactor.md`
+
+---
+
+## 2026-05-13
+
 ### Architectural pivot: decouple domain model from React Flow
 - **What:** Adopted the architecture review recommendation to restructure the system as Entity Graph → Projection Layer → Renderer. React Flow demoted from core runtime to optional spatial renderer (Phase 4+). Roadmap reordered to validate contextual reading before graph visualization.
 - **Reason:** The original plan coupled domain state to canvas coordinates and React Flow internals, which would make reading workspace UX brittle. Decoupling lets us validate the core interaction (contextual reading) without fighting canvas complexity.

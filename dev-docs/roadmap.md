@@ -27,11 +27,11 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 
 ## Milestones
 
-### M1 — Domain Engine
-- Entity/Relation schema (decoupled from React Flow)
+### M1 — Domain Engine (Entity/Relation schema ✅, Query engine ✅, Seed content ✅)
+- ~~Entity/Relation schema (decoupled from React Flow)~~ ✅
 - Persistence layer (localStorage → SQLite)
-- Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext)
-- Seed content for validation
+- ~~Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext)~~ ✅
+- ~~Seed content for validation~~ ✅
 
 ### M2 — Reading Workspace
 - Focused entity viewport with contextual radius
@@ -51,16 +51,14 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 ---
 
 ## Recently Completed (Rolling)
-- 2026-05-13 — Typed data layer + Zustand store + React Flow canvas (tightly-coupled; to be refactored)
+- 2026-05-13 — Typed data layer + Zustand store + React Flow canvas (tightly-coupled; refactored in PRD0002)
+- 2026-05-13 — Domain engine refactor (PRD0002): Entity/Relation schema, query engine, fresh seed data. See `archive/2026-05-13-domain-engine-refactor.md`
 
 ## Now (Current Sprint)
-- **Refactor domain model to decouple from React Flow** — Entity/Relation schema independent of view state. `status` and `EdgeBehavior` removed from domain types (product-specific / interaction-layer concepts). Content lives directly on entities. See `dev-docs/prd0001-contextual-graph-platform/contextual_graph_platform_architecture_review.md` for full rationale.
+- **Persistence layer (PRD0003)** — localStorage save/load of entities and relations. Auto-save on mutation, load on startup.
 
 ## Next (Near-Term)
-- Persistence layer (localStorage)
-- Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext)
-- Seed content (hardcoded excerpts + annotations)
-- Reading viewport with focused entity display
+- Reading viewport with focused entity display and sequential traversal
 
 ## Later (Backlog)
 - Annotation creation (highlight + note)

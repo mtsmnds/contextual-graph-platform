@@ -1,49 +1,44 @@
-import type { Node, Edge } from "@xyflow/react";
+type EntityKind =
+  | "segment"
+  | "container"
+  | "annotation"
+  | "concept"
+  | "summary";
 
-type NodeKind = "phase" | "task" | "work" | "segment" | "annotation";
+type Entity = {
+  id: string;
+  kind: EntityKind;
+  title?: string;
+  content?: string;
+  metadata: Record<string, unknown>;
+};
 
-type EdgeKind =
-  | "dependency"
+type RelationType =
   | "contains"
+  | "next"
   | "references"
-  | "translation_of"
-  | "commentary_on"
-  | "thematic_echo"
-  | "parallels";
+  | "annotates"
+  | "summarizes"
+  | "related_to";
 
-type EdgeBehavior =
-  | "draw-arrow"
-  | "expand-lateral"
-  | "sync-scroll"
-  | "highlight-cross"
-  | "open-preview";
+type Relation = {
+  id: string;
+  source: string;
+  target: string;
+  type: RelationType;
+  metadata: Record<string, unknown>;
+};
 
-type NodeStatus = "pending" | "in-progress" | "done" | "active";
-
-interface NodeData {
-  label: string;
-  status: NodeStatus;
-  specRef?: string;
-  [key: string]: unknown;
-}
-
-interface EdgeData {
-  kind: EdgeKind;
-  behavior: EdgeBehavior;
-  label?: string;
-  [key: string]: unknown;
-}
-
-type AppNode = Node<NodeData, NodeKind>;
-type AppEdge = Edge<EdgeData>;
+type ViewState = {
+  focusedEntityId: string | null;
+  visibleEntityIds: string[];
+  expandedPanels: string[];
+};
 
 export type {
-  NodeKind,
-  EdgeKind,
-  EdgeBehavior,
-  NodeStatus,
-  NodeData,
-  EdgeData,
-  AppNode,
-  AppEdge,
+  EntityKind,
+  Entity,
+  RelationType,
+  Relation,
+  ViewState,
 };

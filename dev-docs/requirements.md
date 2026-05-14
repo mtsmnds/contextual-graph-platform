@@ -4,12 +4,12 @@
 This document defines why this project exists, who it serves, and what capabilities are required.
 
 ## Scope
-- In scope: A unified node-and-edge graph system that powers a visual project roadmap and a relational reading workspace. Core includes typed graph schema, Zustand state management, and React Flow canvas rendering.
+- In scope: A relation-native content engine with typed entities and relations, multiple projection layers, and interchangeable renderers. Core includes Entity/Relation schema, Zustand state management with separate domain/view state, query engine, and pluggable renderers (reading viewport, outline, graph visualization).
 - Out of scope: Authentication, real-time collaboration, server-side storage, mobile native builds.
 
 ## Product Goals
-- Provide a single typed data layer flexible enough to express both project phases/tasks and reading segments/annotations.
-- Enable visual manipulation (drag, connect, select) of graph elements via React Flow.
+- Provide a single typed data layer (Entity/Relation) flexible enough to express both reading workspaces and project roadmaps.
+- Separate domain state from view state so renderers are interchangeable.
 - Keep state management lightweight and predictable via Zustand.
 
 ## Target Audience
@@ -19,20 +19,22 @@ This document defines why this project exists, who it serves, and what capabilit
 
 ## Functional Requirements
 
-### Graph Data Layer
-- As a developer, I can define typed nodes (phase, task, work, segment, annotation) with structured metadata so that the graph carries semantic meaning.
-- As a developer, I can define typed edges (dependency, contains, references, etc.) with a UI behavior hint so that interactions are predictable.
-- As a developer, I can store, retrieve, and mutate documents keyed by docId so that rich text content lives alongside the graph.
+### Domain Data Layer
+- As a developer, I can define typed entities (segment, container, annotation, concept, summary) with native content and extensible metadata.
+- As a developer, I can define typed relations (contains, next, references, annotates, summarizes, related_to) between entities.
+- As a developer, I can query entities and relations through a query engine (getEntity, getRelations, getSequentialContext, getLinkedContext).
 
 ### State Management
-- As a developer, I can add, delete, and update nodes/edges through primitive store actions so that UI components have a clear contract.
-- As a developer, I can wire React Flow's onNodesChange/onEdgesChange directly to the store so that drag, select, and delete work out of the box.
+- As a developer, I can add, update, and delete entities and relations through primitive store actions.
+- As a developer, I can control view state (focused entity, expanded panels) separately from domain state.
 
-### Canvas Rendering
-- As a user, I can see a React Flow canvas with nodes and edges rendered so that the graph is visually inspectable.
+### Rendering
+- As a user, I can see entities and relations rendered on a React Flow canvas as a transitional visualization.
+- Future: As a user, I can read content in a focused reading viewport with contextual side panels.
 
 ### Non-Functional Requirements
 - TypeScript strict mode enabled — no `any` in graph types.
+- Domain types import nothing from rendering libraries (React Flow agnostic).
 - No test framework required (not yet configured).
 
 ## Traceability
