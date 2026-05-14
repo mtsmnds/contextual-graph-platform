@@ -54,3 +54,84 @@ export function getLinkedContext(
     })
     .filter((x): x is { entity: Entity; relation: Relation } => x !== null);
 }
+
+export function getContainerChildren(
+  state: GraphState,
+  containerId: string,
+): Entity[] {
+  const childIds = state.relations
+    .filter((r) => r.source === containerId && r.type === "contains")
+    .map((r) => r.target);
+
+  const children = childIds
+    .map((id) => getEntity(state, id))
+    .filter((e): e is Entity => e !== undefined);
+
+  const childSet = new Set(childIds);
+  const nextMap = new Map<string, string>();
+  for (const r of state.relations) {
+    if (r.type === "next" && childSet.has(r.source) && childSet.has(r.target)) {
+      nextMap.set(r.source, r.target);
+    }
+  }
+
+  if (childIds.length === 0) return children;
+
+  // Find the head of the chain (entity that no other child points to via next)
+  const targets = new Set(nextMap.values());
+  const head = childIds.find((id) => !targets.has(id)) ?? childIds[0];
+
+  const ordered: Entity[] = [];
+  let current = head;
+  const seen = new Set<string>();
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    const entity = getEntity(state, current);
+    if (entity) ordered.push(entity);
+    current = nextMap.get(current) ?? "";
+  }
+
+  // Append any remaining children not in the chain
+  for (const child of children) {
+    if (!seen.has(child.id)) ordered.push(child);
+  }
+
+  return ordered;
+}
+
+export function resolveContainer(
+  state: GraphState,
+  entityId: string,
+): string {
+  const entity = getEntity(state, entityId);
+  if (!entity) return entityId;
+  if (entity.kind === "container") return entityId;
+
+  const parentRel = state.relations.find(
+    (r) => r.target === entityId && r.type === "contains",
+  );
+  if (!parentRel) return entityId;
+
+  return resolveContainer(state, parentRel.source);
+}
+
+export function getContainerBreadcrumb(
+  state: GraphState,
+  containerId: string,
+): { id: string; title: string }[] {
+  const crumbs: { id: string; title: string }[] = [];
+  let current = containerId;
+
+  for (let i = 0; i < 10; i++) {
+    const entity = getEntity(state, current);
+    if (!entity) break;
+    crumbs.unshift({ id: current, title: entity.title ?? current });
+    const parentRel = state.relations.find(
+      (r) => r.target === current && r.type === "contains",
+    );
+    if (!parentRel) break;
+    current = parentRel.source;
+  }
+
+  return crumbs;
+}

@@ -52,18 +52,20 @@ const seedEntities: Entity[] = [
   {
     id: "act_1",
     kind: "container",
-    title: "Act 1",
+    title: "Act I",
     content: "The setup: ghost appears, Claudius marries Gertrude.",
-    metadata: { source: "hamlet" },
+    metadata: { source: "hamlet", type: "act" },
   },
 ];
 
 const seedRelations: Relation[] = [
   { id: "r_1", source: "act_1", target: "hamlet_1", type: "contains", metadata: {} },
-  { id: "r_2", source: "hamlet_1", target: "hamlet_2", type: "next", metadata: {} },
-  { id: "r_3", source: "hamlet_2", target: "hamlet_3", type: "next", metadata: {} },
-  { id: "r_4", source: "hamlet_2", target: "note_2", type: "annotates", metadata: {} },
-  { id: "r_5", source: "hamlet_1", target: "note_1", type: "annotates", metadata: {} },
+  { id: "r_2", source: "act_1", target: "hamlet_2", type: "contains", metadata: {} },
+  { id: "r_3", source: "act_1", target: "hamlet_3", type: "contains", metadata: {} },
+  { id: "r_4", source: "hamlet_1", target: "hamlet_2", type: "next", metadata: {} },
+  { id: "r_5", source: "hamlet_2", target: "hamlet_3", type: "next", metadata: {} },
+  { id: "r_6", source: "hamlet_2", target: "note_2", type: "annotates", metadata: {} },
+  { id: "r_7", source: "hamlet_1", target: "note_1", type: "annotates", metadata: {} },
 ];
 
 const PERSIST_KEY = "react-roadmap-graph";

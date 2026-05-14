@@ -26,6 +26,22 @@ Use this to recover context after breaks.
 
 ## 2026-05-13
 
+### Continuous scroll viewport — PRD0005
+- **What:** Replaced the single-segment reading viewport with a container-aware scrollable view. Containers now render all child segments stacked vertically — acts as large headings, scenes as medium headings, character speeches with labels, stage directions in italic. Breadcrumb navigation shows the container path. Canvas clicks resolve to the parent container so users enter the reading viewport at the work level, not the segment level. Added `getContainerChildren`, `resolveContainer`, and `getContainerBreadcrumb` to the query engine.
+- **Reason:** The segment-by-segment prev/next model destroyed reading flow for long-form text. The UX vision requires continuous vertical scrolling as the primary reading axis, with segments as the content *of* a work, not separate pages.
+- **Files changed:**
+  - `src/renderers/ReadingViewport.tsx`: Rewrote — SegmentCard variants for act/scene/character/stage-direction/annotation, breadcrumb header, prev/next within container children
+  - `src/engine/queries.ts`: Added `getContainerChildren` (ordered child chain resolution), `resolveContainer` (walk up contains to find parent), `getContainerBreadcrumb` (path traversal)
+  - `src/App.tsx`: Updated — canvas click resolves to parent container via `resolveContainer`
+  - `src/store/useGraphStore.ts`: Updated seed data — added `contains` relations for all hamlet segments under act_1, added `type: "act"` metadata
+  - `dev-docs/roadmap.md`: Updated milestones and sprint order
+  - `dev-docs/plans/prd0005-hamlet-import.md` → `prd0006-hamlet-import.md`: Renumbered
+- **Impact:** Reading viewport now works like a book — scroll through the full text. Container resolution means clicking any node on the canvas opens its work context. Foundation laid for side-panel expansion and multi-column reading.
+
+---
+
+## 2026-05-13
+
 ### Reading viewport + shadcn/ui — PRD0004
 - **What:** Built the first real renderer — a focused reading viewport that displays entity content with prev/next navigation. Added Tailwind v4 and shadcn/ui (Base UI) as the component foundation. Canvas now supports click-to-focus mode switching.
 - **Reason:** The canvas adapter bridge was temporary — the product validates on a clean reading experience. shadcn/ui provides high-quality accessible components without obscuring custom styles, laying a scalable design foundation.

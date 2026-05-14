@@ -1,7 +1,7 @@
-# PRD0005 — Full Text Import (Hamlet)
+# PRD0006 — Full Text Import (Hamlet)
 
 ## Status
-Draft — implement after PRD0004 (reading viewport)
+Draft — implement after PRD0005 (continuous scroll viewport)
 
 ## Problem
 

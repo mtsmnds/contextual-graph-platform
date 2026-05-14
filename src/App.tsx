@@ -1,7 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
+import type React from "react";
 import { ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useGraphStore } from "./store/useGraphStore";
+import { resolveContainer } from "./engine/queries";
 import ReadingViewport from "./renderers/ReadingViewport";
 import type { Entity, Relation } from "./types/graph";
 
@@ -73,6 +75,8 @@ function CanvasView() {
   const relations = useGraphStore((s) => s.relations);
   const focusEntity = useGraphStore((s) => s.focusEntity);
 
+  const state = { entities, relations };
+
   const { nodes, edges } = useMemo(() => {
     const positions = assignLayout(entities, relations);
     return {
@@ -81,12 +85,20 @@ function CanvasView() {
     };
   }, [entities, relations]);
 
+  const onNodeClick = useCallback(
+    (_event: React.MouseEvent, node: { id: string }) => {
+      const containerId = resolveContainer(state, node.id);
+      focusEntity(containerId);
+    },
+    [state, focusEntity],
+  );
+
   return (
     <div style={{ width: "100%", height: "100vh" }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodeClick={(_, node) => focusEntity(node.id)}
+        onNodeClick={onNodeClick}
         fitView
       />
     </div>
