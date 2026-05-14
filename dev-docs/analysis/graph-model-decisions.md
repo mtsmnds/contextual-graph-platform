@@ -27,73 +27,48 @@ The work's ID is `hamlet`, not the full title slugified.
 
 ---
 
-## 3. Title page entity (seg_1)
+## 3. Containers never have content
 
-Current (from hamlet.json):
-```json
-{
-  "id": "seg_1",
-  "kind": "segment",
-  "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK",
-  "content": "by William Shakespeare",
-  "metadata": { "type": "title-page" }
-}
-```
+Every container that originally had inline content was restructured: the content was moved to a single child segment. The container is structural only (title + metadata).
 
-Should be:
-```json
-{
-  "id": "seg_1",  // will be renamed in hamlet restructuring PRD
-  "kind": "segment",
-  "content": "<h1>THE TRAGEDY OF HAMLET, PRINCE OF DENMARK</h1>\n<p>by William Shakespeare</p>",
-  "metadata": { "type": "title-page" }
-}
-```
+**Applies to:**
+- `hamlet_title-page` — child: `hamlet_title-page_content` (HTML `<h1>` + `<p>`)
+- `hamlet_about-the-ebook` — child: `hamlet_about-the-ebook_content`
+- `hamlet_dramatis-personae` — child: `hamlet_dramatis-personae_content`
+- `scene_*` — each has child: `scene_*_content`
+- `hamlet_end-matter_transcribers-notes` — child: `hamlet_end-matter_transcribers-notes_content`
+- `hamlet_end-matter_license` — child: `hamlet_end-matter_license_content`
 
-Changes:
-- **No `title` field** — the title page is content, not a heading. Rendering is driven by `metadata.type: "title-page"`
-- **Rich HTML content** — content preserves semantic HTML tags (`<h1>`, `<p>`). The renderer handles HTML, not raw text
-- **Full title in content** — "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK" moves from `title` to content as `<h1>`
+**Child segment ID convention:** `[container-id]_content`
 
-**Decision:** Segments with `metadata.type` (structural segments like title-page, stage-direction, end-matter) don't need a `title`. Their rendering is driven by `metadata.type`. Content can contain HTML.
+**Decision:** Containers are structural labels only — they have `title` and `metadata` but never `content`. Content lives in child segments.
 
 ---
 
-## 4. Character speeches
+## 4. Character speeches — no title, clean content
 
-Current pattern:
+Before:
 ```json
 {
   "id": "seg_18",
-  "kind": "segment",
-  "title": "BARNARDO",
-  "content": "BARNARDO.\nWho's there?",
+  "title": "BARNARDO",                    // duplicates metadata.character
+  "content": "BARNARDO.\nWho's there?",   // prefix duplicates character
   "metadata": { "character": "BARNARDO" }
 }
 ```
 
-Issues:
-- `title` duplicates `metadata.character` — they always contain the same value
-- `content` starts with `"BARNARDO.\n"` — the character name is duplicated again inside the content
-
-Should be:
+After (applied to all 1132 speeches):
 ```json
 {
-  "id": "hamlet_act-01_scene-01_seg-0001",
-  "kind": "segment",
+  "id": "seg_18",
   "content": "Who's there?",
   "metadata": { "character": "BARNARDO" }
 }
 ```
 
-Changes:
-- **No `title` field** — the speaker label comes from `metadata.character`
-- **Clean content** — no character prefix in the content text. The renderer prepends the character label
-- **New ID following the scheme**
+**1132 segments transformed** — `title` removed, `CHARACTER.\n` prefix stripped from `content`. Zero data loss (every prefix was verified present before stripping, case-insensitive matching for joint speakers like `CORNELIUS AND VOLTEMAND` → `CORNELIUS and VOLTEMAND.\n`).
 
-> Note: This also means `content` contains ONLY the spoken text for character speeches. Stage directions and narrative segments keep their full text. The renderer handles the distinction via `metadata.character` presence vs `metadata.type`.
-
-**Decision:** Character speeches omit `title` and keep content clean (no character prefix). `metadata.character` is the single source for the speaker label.
+**Decision:** Segments never have a `title` field.
 
 ---
 
@@ -108,36 +83,49 @@ Changes:
 }
 ```
 
-This pattern is correct as-is. The renderer uses `metadata.type: "stage-direction"` to apply italic styling.
+This pattern is correct as-is. The renderer uses `metadata.type: "stage-direction"` to apply italic styling. No `title`.
 
 **Decision:** Stage directions keep `metadata.type: "stage-direction"`, no `title`. Content is the raw direction text.
 
 ---
 
-## 6. Dramatis Personæ
+## 6. Scene containers — content moved to child segments
 
-Currently:
+Scenes are containers with a heading (`title`) and location description. Following the container rule, the location description was moved to a child segment:
+
 ```json
 {
-  "id": "dramatis_5",
+  "id": "scene_14",
   "kind": "container",
-  "title": "Dramatis Personæ",
-  "content": "HAMLET, Prince of Denmark\n...",
-  "metadata": { "type": "dramatis-personae" }
+  "title": "SCENE I. Elsinore. A platform before the Castle.",
+  "metadata": { "type": "scene" }
+  // content moved to scene_14_content
 }
 ```
 
-This is a container with content — unusual. Containers are supposed to be structural (no content of their own). Options:
-- Demote to `kind: "segment"` with `metadata.type: "dramatis-personae"`
-- Keep as container but move the list to child segments
-
-Either way, it should be a direct child of `hamlet` (not an orphan).
-
-**Decision:** TBD — will be resolved in the hamlet restructuring PRD.
+**20 scenes transformed** — each has a `_content` child segment now.
 
 ---
 
-## 7. Annotation/reference containers
+## 7. End-matter pattern
+
+A dedicated `hamlet_end-matter` container holds Transcriber's Notes and License:
+
+```
+hamlet_end-matter (container, type: end-matter)
+├── hamlet_end-matter_transcribers-notes (container)
+│   └── hamlet_end-matter_transcribers-notes_content (segment)
+└── hamlet_end-matter_license (container)
+    └── hamlet_end-matter_license_content (segment)
+```
+
+The `next` chain: `hamlet_act-v → hamlet_end-matter → transcribers-notes → license`
+
+**Decision:** Dedicated end-matter container. All structural content follows the container → child segment pattern.
+
+---
+
+## 8. Annotation/reference containers
 
 Annotations don't live under the work's act/scene hierarchy. They have their own root-level containers:
 - `hamlet-notes` → contains annotation entities
@@ -153,24 +141,22 @@ These containers sit alongside `hamlet` at the root level. Relations (`annotates
 
 ---
 
-## 8. Segment ID stability
+## 9. Segment ID stability
 
 IDs are derived from the entity's position at creation time and never recalculated:
 - Renaming "Act I" to "Act One" does not change child IDs
 - Reordering segments does not renumber counters
 - Editing an annotation's title does not change its ID
 
-This means IDs can become "stale" relative to current titles. The trade-off is accepted to avoid breaking relations.
-
 **Decision:** IDs are immutable. Title changes don't propagate.
 
 ---
 
-## 9. HTML in content
+## 10. HTML in content
 
 The `content` field can contain HTML for rich formatting:
 - Title page: `<h1>`, `<p>`
-- Verse text: `<i>` for stage directions within speeches
+- Verse text: `<i>` for stage directions within speeches (future)
 - Prose: plain text or `<p>` (future)
 
 The renderer should handle both plain text and HTML. Detection: if content contains `<`, treat as HTML; otherwise, plain text.
@@ -179,29 +165,81 @@ The renderer should handle both plain text and HTML. Detection: if content conta
 
 ---
 
-## 10. Relations for structure
+## 11. Relations for structure
 
-The containment hierarchy uses `contains` relations. Examples from graph.json:
-- `hamlet` → `seg_1` (title page)
-- `hamlet` → `dramatis_5` (dramatis personae)
-- `hamlet` → `act_11` (Act I)
-- `act_11` → `scene_14` (Scene I)
-- `scene_14` → `seg_16` (stage direction)
-- `scene_14` → `seg_18` (Barnardo speech)
+The containment hierarchy uses `contains` relations:
+- `hamlet` → `hamlet_title-page`
+- `hamlet` → `hamlet_about-the-ebook`
+- `hamlet` → `hamlet_dramatis-personae`
+- `hamlet` → `hamlet_act-i` → `scene_14` → `seg_16`, `seg_18`, ...
+- `hamlet` → `hamlet_end-matter` → `hamlet_end-matter_transcribers-notes`, `hamlet_end-matter_license`
 
-Segments have multiple `next` relations linking them in reading order.
+The `next` chain links containers in reading order. Segments within a scene are ordered by `next` relations between them.
 
-**Decision:** The `contains` chain encodes the full hierarchy. The ID scheme mirrors it: `parent_child`. Relations remain the authoritative source of structure — IDs are a human-readable reflection, not the source of truth.
+**Decision:** The `contains` chain encodes the full hierarchy. `next` encodes reading order. Relations are the authoritative source of structure — IDs are a human-readable reflection.
 
 ---
 
-## 11. Hamlet keeps old IDs for now
+## 12. Deleting entities requires relation repair
 
-The `hello2/graph.json` file keeps `seg_1`, `seg_18`, `act_11`, `scene_14`, etc. for now.
-- A separate PRD will restructure the hamlet data with new IDs, corrected containment, and clean data
-- That PRD will go through the file item by item with user input
+When `seg_8` (a stray stage-direction) was deleted, three relations were removed:
+- `hamlet → seg_8` (contains)
+- `dramatis_5 → seg_8` (next)
+- `seg_8 → act_11` (next)
 
-**Decision:** Postpone hamlet migration. The ID scheme (PRD0010) applies to new entities created through the app.
+The gap was repaired with a new `next`: `dramatis_5 → act_11`.
+
+**Decision:** Entity deletion must cascade to all relations referencing it, and the `next` chain must be repaired. This is a manual process for now (future: app-level delete with relation repair).
+
+---
+
+## 13. Renaming propagates through relations
+
+When entities were renamed (e.g., `act_11` → `hamlet_act-i`, `dramatis_5` → `hamlet_dramatis-personae`), all occurrences across ALL relations' `source` and `target` fields were updated. **38 relation references** were updated for 6 renamed entities.
+
+**Decision:** Entity rename is a bulk find-and-replace across the entire graph. Must update every relation that references the old ID.
+
+---
+
+## 14. `metadata.type` drives rendering
+
+The renderer determines display based on `metadata.type` (or `metadata.character`), not `kind` or `title`:
+
+| `metadata.type` | Display |
+|---|---|
+| `work` | Root heading |
+| `act` | Large section heading |
+| `scene` | Scene heading |
+| `stage-direction` | Italic text |
+| `title-page` | Rich HTML (h1, p) |
+| `front-matter` | Block text |
+| `dramatis-personae` | Character list |
+| `end-matter` | Footer content |
+
+When `metadata.character` is present (any `type`), the renderer shows the character label above the content.
+
+**Decision:** `metadata.type` is the single source for rendering behavior. `kind` (`container` vs `segment`) is a structural concern only.
+
+---
+
+## 15. Applied restructurings (hello2/graph.json log)
+
+| Old ID | New ID | Kind | Change |
+|---|---|---|---|
+| `hamlet--william-shakespeare` | `hamlet` | container | Renamed |
+| `seg_1` | `hamlet_title-page` | container | Renamed + content → child segment |
+| `seg_3` | `hamlet_about-the-ebook` | container | Renamed + content → child segment |
+| `dramatis_5` | `hamlet_dramatis-personae` | container | Renamed + content → child segment |
+| `act_11` | `hamlet_act-i` | container | Renamed |
+| `act_869` | `hamlet_act-ii` | container | Renamed |
+| `act_1541` | `hamlet_act-iii` | container | Renamed |
+| `act_2442` | `hamlet_act-iv` | container | Renamed |
+| `act_3124` | `hamlet_act-v` | container | Renamed |
+| `seg_4012` | `hamlet_end-matter_transcribers-notes` | container | Moved under end-matter + content → child |
+| `seg_4015` | `hamlet_end-matter_license` | container | Moved under end-matter + content → child |
+| — | `hamlet_end-matter` | container | Created (end-matter wrapper) |
+| `seg_8` | (deleted) | — | Stray artifact, removed with relation repair |
+| `seg_*` (x1132) | (same) | segment | Title removed, CHARACTER.\n prefix stripped |
 
 ---
 
@@ -209,8 +247,9 @@ The `hello2/graph.json` file keeps `seg_1`, `seg_18`, `act_11`, `scene_14`, etc.
 
 | # | Question | Status |
 |---|----------|--------|
-| A | Should containers ever have `content`? Dramatis Personæ does. | TBD — hamlet PRD |
-| B | What's the correct character prefix format in rendered text? (e.g., "BARNARDO.\n" or a styled label) | TBD — renderer PRD |
-| C | How does the import script determine segment boundaries for speeches? | TBD — hamlet PRD |
+| A | Should containers ever have `content`? | **RESOLVED**: No. Content lives in child segments. |
+| B | What's the correct character prefix format in rendered text? | TBD — renderer PRD |
+| C | How does the import script determine segment boundaries for speeches? | TBD — hamlet import PRD |
 | D | Should `author` be a dedicated field or a relation? | TBD — model PRD |
-| E | What entity `kind` should characters have? (segment for speeches, container for character profiles) | TBD |
+| E | What entity `kind` should characters have? | TBD |
+| F | How are character speech labels rendered (uppercase, styled, etc.)? | TBD — renderer PRD |
