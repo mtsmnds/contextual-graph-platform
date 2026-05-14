@@ -1,5 +1,7 @@
 # PRD0007 — Contextual Expansion (Inline Annotations)
 
+> **Completion note:** Fully implemented. Annotation cards appear in the right sidebar when clicking relation indicators. Seed data enriched with 5 annotations + 1 reference. Later fixed by PRD0008 (pure domain loader — removed fragile content-matching) and embedding annotations directly in hamlet.json.
+
 ## Status
 Completed — inline annotation cards, ChatCircleText/Link indicators in right gutter, toggle via expandedPanels, enriched seed data
 

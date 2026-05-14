@@ -32,32 +32,34 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 
 ## Milestones
 
-### M1 — Domain Engine (Entity/Relation schema ✅, Query engine ✅, Seed content ✅)
+### M1 — Domain Engine ✅
 - ~~Entity/Relation schema (decoupled from React Flow)~~ ✅
-- ~~Persistence layer (localStorage → SQLite)~~ ✅ (Replaced by PRD0009: File System Access API)
-- ~~Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext)~~ ✅
+- ~~Persistence layer~~ ✅ (PRD0009: File System Access API)
+- ~~Query engine~~ ✅
 - ~~Seed content for validation~~ ✅
-- ~~Entity ID scheme + model rules~~ ✅ (PRD0010)
+- ~~Entity ID scheme + model rules~~ ✅ (PRD0010-1)
+- ~~Entity viewport with sequential traversal~~ ✅ (PRD0004)
+- ~~Continuous scroll with container flattening~~ ✅ (PRD0005)
+- ~~Full text import + work entity~~ ✅ (PRD0006)
+- ~~Side-panel contextual expansion~~ ✅ (PRD0007)
 
 ### M2 — Reading Workspace
-- Focused entity viewport with sequential traversal (PRD0004)
-- Continuous scroll viewport with recursive container flattening (PRD0005)
-- Full text import + work entity (PRD0006)
-- Side-panel contextual expansion (PRD0007)
-- **Node component design** — the building block for all renderers
-- **Context columns v1** — horizontal navigation through related context
-- Annotation creation (highlight + note)
-- Multi-column reading workspace
+- **Home page + page view as default** — current sprint. Root containers listed on launch. Page view is the primary navigation surface. Canvas accessible via mode switcher.
+- **Tree sidebar** — collapsible `contains` hierarchy for quick structural navigation.
+- **Node component design** — segment and container node types with action icons in border area. Building block for all renderers.
+- **Context columns v1** — horizontal navigation through related context (work → author → reference). Start with 3 columns.
+- **TipTap integration** — rich text rendering, editing model exploration, HTML content support. Evaluate `metadata.type` rules.
+- **Annotation creation** — depends on TipTap. Selection → annotation entity + `annotates` relation.
+- **Multi-column reading workspace** — column reordering, horizontal sync.
 
-### M3 — Projection Layer
-- Multiple navigation modes: page view, tree sidebar, graph viz
+### M3 — Navigation & Projection Layer
+- Mode switcher (page / tree / graph) — each URL-addressable
 - Renderer abstraction
 - Dev tools panel (node JSON inspector)
 
 ### M4 — Graph Visualization
-- React Flow re-introduced as optional spatial renderer
-- Layout algorithms, filtering, node grouping
-- Only after domain model, projections, and reading UX are stable
+- React Flow improvements: layout algorithms, filtering, node grouping, search
+- Self-hosting roadmap — the roadmap expressed as entities and relations in the graph
 
 ---
 
@@ -73,18 +75,16 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — Pure Domain Loader (PRD0008): stripped all runtime merging/detection from `loadInitialState()` — each data source is self-contained
 - 2026-05-14 — File System Persistence (PRD0009): user picks a folder, app reads/writes `graph.json` directly, no seed data, no localStorage
 - 2026-05-14 — Handle Persistence & URL Navigation (PRD0011): feature-flagged IndexedDB handle persistence (skip folder picker on reload), URL-based view state sync (reloads restore focused entity)
+- 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
 
-## Now (Current Sprint)
-- **Entity ID scheme + model rules (PRD0010)** — implement `src/engine/ids.ts` with `generateEntityId`, `slugify`, collision logic. Wire into `addEntity`. Enforce: segments no `title`, containers no `content`.
+## Now (Current Sprint) — M2 Phase 1
+- **Home page** — on launch (no folder, no focused entity), show a page listing root-level containers instead of the canvas
+- **Page view becomes the default** — the reading viewport is reframed as the primary navigation surface. Containers render their title and children. Linked entities navigate to their page.
+- **Canvas mode-switcher** — canvas is still accessible via a switcher in the header, but no longer the default
 
-## Next — Rethink first page & navigation
+## Next — Navigation modes (Phases 2–4)
 
 The canvas is no longer the default first page. The app is about choosing how you navigate your graph. Three modes, each URL-addressable (`?view=page`, `?view=tree`, `?view=graph`).
-
-### Phase 1 — Page view as primary (immediate next)
-- **Home page** — on launch (no folder, no focused entity), show a page listing root-level containers instead of the canvas
-- **Page view becomes the default** — the reading viewport is reframed as the primary navigation surface. Containers render their title and children. Linked entities (author, reference, annotation) navigate to their page.
-- **Canvas mode-switcher** — canvas is still accessible, but no longer the default. A switcher in the header lets the user pick page / tree / graph.
 
 ### Phase 2 — Tree sidebar
 - **Collapsible tree sidebar** showing the `contains` hierarchy (root containers → children → segments)
@@ -114,9 +114,5 @@ The canvas is no longer the default first page. The app is about choosing how yo
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.
 - Speculative ideas: one bullet, move on.
-- Canvas improvements wait until the page and tree navigation modes are solid.**
-
-## Anti-Overengineering Guardrail
-- Don't implement `Later` items unless promoted to `Now`.
-- Speculative ideas: one bullet, move on.
+- Canvas improvements wait until the page and tree navigation modes are solid.
 - React Flow stays dormant until Phase 4 — resist the urge to build graph UI early.

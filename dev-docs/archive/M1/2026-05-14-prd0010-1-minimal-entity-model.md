@@ -1,7 +1,6 @@
 # PRD0010-1 — Minimal Entity Model Implementation
 
-## Status
-Implementation-ready
+> **Completion note:** Implemented. Created `src/engine/ids.ts` (slugify, generateEntityId, collision handling). Wired into store: `addEntity` auto-generates IDs, enforces no-title-on-segments and no-content-on-containers. `updateEntity` propagrades ID changes through relations. Added HTML content support in the reading viewport via `ContentHtml` component.
 
 ## Scope
 

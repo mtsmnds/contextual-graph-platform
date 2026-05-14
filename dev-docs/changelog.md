@@ -58,6 +58,20 @@ Use this to recover context after breaks.
 
 ## 2026-05-14
 
+### Minimal Entity Model — PRD0010-1
+- **What:** Implemented the core entity model rules and ID scheme. Created `src/engine/ids.ts` with `slugify`, `generateEntityId`, and collision handling. Wired into store: `addEntity` auto-generates semantic IDs (e.g. `parent_seg-0001`), enforces no-title-on-segments and no-content-on-containers. `updateEntity` propagrates ID changes through all relations. Added HTML content rendering in the reading viewport.
+- **Reason:** The entity model rules were validated against the 1,359-entity Hamlet restructuring. The ID scheme makes graph.json self-documenting — an ID like `hamlet_act-01_scene-01_seg-0001` tells you the entity's place in the graph. The model rules prevent data inconsistencies at creation time.
+- **Files changed:**
+  - `src/engine/ids.ts`: Created — slugify, generateEntityId, generateUniqueId
+  - `src/store/useGraphStore.ts`: Updated addEntity (ID generation, model enforcement), updateEntity (rename propagation), deleteEntity (cascade)
+  - `src/renderers/ReadingViewport.tsx`: Added ContentHtml component for HTML content rendering
+- **Impact:** New entities automatically get semantic IDs. Segments and containers are structurally consistent. HTML content renders correctly (title page `<h1>`, etc.). M1 milestone complete.
+- **Archive:** `archive/2026-05-14-prd0010-1-minimal-entity-model.md`
+
+---
+
+## 2026-05-14
+
 ### Fix: skip auto-save on initial disk load, flip PERSIST_HANDLE default to true
 - **What:** Two fixes: (1) the auto-save subscription now checks `_hydrated` flag and skips writes during initial store population from disk — prevents Vite HMR loop when `graph.json` is inside the project root; (2) `PERSIST_HANDLE` default flipped to `true` (opt-out via `VITE_PERSIST_HANDLE=false`).
 - **Reason:** Opening a folder inside the Vite project root caused the initial auto-save write-back to trigger a full page reload, creating an infinite loop. Handle persistence was opt-in but the user expects it to just work.
