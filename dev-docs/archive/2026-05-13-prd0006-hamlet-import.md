@@ -1,3 +1,7 @@
+> **Completion note:** Gutenberg HTML parser generates 1,349 entities / 2,669 relations for the full Hamlet play. Snapshot bundled as first-run seed data.
+
+---
+
 # PRD0006 — Full Text Import (Hamlet)
 
 ## Status

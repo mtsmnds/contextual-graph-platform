@@ -58,6 +58,7 @@ export function getLinkedContext(
 export function getContainerChildren(
   state: GraphState,
   containerId: string,
+  depth = Infinity,
 ): Entity[] {
   const childIds = state.relations
     .filter((r) => r.source === containerId && r.type === "contains")
@@ -67,6 +68,8 @@ export function getContainerChildren(
     .map((id) => getEntity(state, id))
     .filter((e): e is Entity => e !== undefined);
 
+  if (childIds.length === 0) return children;
+
   const childSet = new Set(childIds);
   const nextMap = new Map<string, string>();
   for (const r of state.relations) {
@@ -74,8 +77,6 @@ export function getContainerChildren(
       nextMap.set(r.source, r.target);
     }
   }
-
-  if (childIds.length === 0) return children;
 
   // Find the head of the chain (entity that no other child points to via next)
   const targets = new Set(nextMap.values());
@@ -96,22 +97,31 @@ export function getContainerChildren(
     if (!seen.has(child.id)) ordered.push(child);
   }
 
-  return ordered;
+  // Flatten recursively: sub-containers expand to their content, segments stay
+  if (depth <= 0) return ordered;
+
+  const flattened: Entity[] = [];
+  for (const child of ordered) {
+    if (child.kind === "container" && depth > 0) {
+      flattened.push(child);
+      flattened.push(
+        ...getContainerChildren(state, child.id, depth - 1),
+      );
+    } else {
+      flattened.push(child);
+    }
+  }
+  return flattened;
 }
 
 export function resolveContainer(
   state: GraphState,
   entityId: string,
 ): string {
-  const entity = getEntity(state, entityId);
-  if (!entity) return entityId;
-  if (entity.kind === "container") return entityId;
-
   const parentRel = state.relations.find(
     (r) => r.target === entityId && r.type === "contains",
   );
   if (!parentRel) return entityId;
-
   return resolveContainer(state, parentRel.source);
 }
 

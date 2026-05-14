@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import { parse, type HTMLElement } from "node-html-parser";
 
 interface Entity {
@@ -45,8 +45,6 @@ function isBlank(text: string): boolean {
 
 function extractCharName(text: string): [string, string] {
   const trimmed = text.trim();
-  // Character names: all-caps words, optionally joined by "and" (e.g. "ROSENCRANTZ AND GUILDENSTERN")
-  // This rejects prose like "Give him the cup."
   const match = trimmed.match(
     /^([A-Z][A-Z\s,&]*[A-Z](?:\s+and\s+[A-Z][A-Z\s,&]*[A-Z])?)\s*\.\s*(.*)/
   );
@@ -58,6 +56,145 @@ function extractCharName(text: string): [string, string] {
   return ["", trimmed];
 }
 
+function getTextOf(el: HTMLElement): string {
+  return cleanText(el.text);
+}
+
+function processDramaParagraph(
+  el: HTMLElement,
+  sceneId: string | null,
+  lastId: string | null,
+): string | null {
+  const html = el.innerHTML;
+  const parts = html.split(/<br\s*\/?>/i).map((s) =>
+    cleanText(s.replace(/<[^>]+>/g, ""))
+  ).filter((s) => !isBlank(s));
+  if (parts.length === 0) return lastId;
+
+  let character = "";
+  let dialogueStart = 0;
+
+  const [charName, firstLine] = extractCharName(parts[0]);
+  if (charName) {
+    character = charName.toUpperCase();
+    dialogueStart = firstLine ? 1 : 0;
+    parts[0] = firstLine || parts[0];
+  }
+
+  const dialogueParts = dialogueStart > 0 ? parts.slice(dialogueStart) : parts;
+  const dialogue = dialogueParts.filter((p) => !isBlank(p)).join("\n");
+  if (isBlank(dialogue)) return lastId;
+
+  if (character && dialogue) {
+    const segId = addEntity({
+      id: nextId("seg"),
+      kind: "segment",
+      title: character,
+      content: dialogue,
+      metadata: { character, source: "hamlet" },
+    });
+    if (sceneId) addRelation({ id: nextId("rel"), source: sceneId, target: segId, type: "contains", metadata: {} });
+    if (lastId) addRelation({ id: nextId("rel"), source: lastId, target: segId, type: "next", metadata: {} });
+    return segId;
+  }
+
+  if (lastId) {
+    const last = entities.find((e) => e.id === lastId);
+    if (last && last.content) last.content += "\n\n" + dialogue;
+  }
+  return lastId;
+}
+
+function processStageDirection(
+  text: string,
+  parentId: string | null,
+  lastId: string | null,
+): string | null {
+  const cleaned = cleanText(text);
+  if (isBlank(cleaned)) return lastId;
+
+  const segId = addEntity({
+    id: nextId("seg"),
+    kind: "segment",
+    content: cleaned,
+    metadata: { type: "stage-direction", source: "hamlet" },
+  });
+  if (parentId) addRelation({ id: nextId("rel"), source: parentId, target: segId, type: "contains", metadata: {} });
+  if (lastId) addRelation({ id: nextId("rel"), source: lastId, target: segId, type: "next", metadata: {} });
+  return segId;
+}
+
+function parseActChapter(
+  chapter: HTMLElement,
+  workId: string,
+  lastSegmentId: string | null,
+): string | null {
+  const h2 = chapter.querySelector("h2");
+  if (!h2) return lastSegmentId;
+
+  const h2Text = getTextOf(h2);
+  const actMatch = h2Text.match(/ACT\s+([A-Z]+)/i);
+  if (!actMatch) return lastSegmentId;
+
+  const actTitle = `Act ${actMatch[1]}`;
+  const actId = addEntity({
+    id: nextId("act"),
+    kind: "container",
+    title: actTitle,
+    metadata: { type: "act", source: "hamlet" },
+  });
+  addRelation({ id: nextId("rel"), source: workId, target: actId, type: "contains", metadata: {} });
+
+  if (lastSegmentId) {
+    addRelation({ id: nextId("rel"), source: lastSegmentId, target: actId, type: "next", metadata: {} });
+  }
+  let lastId: string | null = null;
+  let currentSceneId: string | null = null;
+
+  const children = chapter.childNodes;
+  for (const child of children) {
+    if (child.nodeType !== 1) continue;
+    const el = child as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+
+    if (tag === "h2") continue;
+
+    if (tag === "h3") {
+      const sceneText = getTextOf(el);
+      if (!sceneText.startsWith("SCENE")) continue;
+
+      const locationMatch = sceneText.match(/SCENE\s+[A-Z]+\.\s*(.*)/i);
+      currentSceneId = addEntity({
+        id: nextId("scene"),
+        kind: "container",
+        title: sceneText,
+        content: locationMatch ? locationMatch[1] || undefined : undefined,
+        metadata: { type: "scene", source: "hamlet" },
+      });
+      addRelation({ id: nextId("rel"), source: actId, target: currentSceneId, type: "contains", metadata: {} });
+
+      if (lastId) {
+        addRelation({ id: nextId("rel"), source: lastId, target: currentSceneId, type: "next", metadata: {} });
+      }
+      lastId = null;
+      continue;
+    }
+
+    if (tag === "p") {
+      const cls = el.getAttribute("class") ?? "";
+      if (cls === "scenedesc") {
+        lastId = processStageDirection(getTextOf(el), currentSceneId, lastId);
+      } else if (cls === "drama") {
+        lastId = processDramaParagraph(el, currentSceneId, lastId);
+      } else if (cls === "right") {
+        lastId = processStageDirection(getTextOf(el), currentSceneId, lastId);
+      }
+    }
+  }
+
+  return actId;
+}
+
 function html(): void {
   const filePath = process.argv[2];
   if (!filePath) {
@@ -65,208 +202,198 @@ function html(): void {
     process.exit(1);
   }
 
-  const html = readFileSync(filePath, "utf-8");
-  const doc = parse(html);
+  const raw = readFileSync(filePath, "utf-8");
+  const doc = parse(raw);
 
-  // Find all chapter divs that contain act headings
-  const chapters = doc.querySelectorAll("div.chapter");
+  // --- Extract title and author ---
+  const titleEl = doc.querySelector("h1");
+  const authorEl = doc.querySelector("h2.no-break");
+  const workTitle = titleEl ? getTextOf(titleEl as HTMLElement) : "Hamlet";
+  const authorText = authorEl ? getTextOf(authorEl as HTMLElement) : "";
 
-  let currentActId: string | null = null;
-  let currentSceneId: string | null = null;
-  let lastSegmentId: string | null = null;
+  // --- Create work entity (label only — no content on containers) ---
+  const workId = addEntity({
+    id: `hamlet--william-shakespeare`,
+    kind: "container",
+    title: workTitle,
+    metadata: { type: "work", author: "William Shakespeare" },
+  });
 
-  for (const chapter of chapters) {
-    const h2 = chapter.querySelector("h2");
-    if (!h2) continue;
+  // --- Title page as first child segment ---
+  const titlePageId = addEntity({
+    id: nextId("seg"),
+    kind: "segment",
+    title: workTitle,
+    content: authorText || undefined,
+    metadata: { type: "title-page", source: "hamlet" },
+  });
+  addRelation({ id: nextId("rel"), source: workId, target: titlePageId, type: "contains", metadata: {} });
+  let lastSegmentId: string | null = titlePageId;
 
-    const h2Text = h2.text.trim();
-    if (!h2Text.startsWith("ACT") && !h2Text.includes("ACT")) continue;
+  // --- Find content boundaries ---
+  const body = doc.querySelector("body")!;
+  const allChildren = body.childNodes.filter((n) => n.nodeType === 1) as HTMLElement[];
 
-    // This is an act chapter
-    const actMatch = h2Text.match(/ACT\s+([A-Z]+)/i);
-    const actTitle = actMatch ? `Act ${actMatch[1]}` : h2Text;
-    currentActId = addEntity({
-      id: nextId("act"),
-      kind: "container",
-      title: actTitle,
-      metadata: { type: "act", source: "hamlet" },
-    });
+  let pgHeaderEl: HTMLElement | null = null;
+  let pgFooterEl: HTMLElement | null = null;
+  let startIdx = 0;
+  let endIdx = allChildren.length;
 
-    // Process children of this chapter
-    const children = chapter.childNodes;
-    for (const child of children) {
-      if (child.nodeType !== 1) continue;
-      const el = child as HTMLElement;
-      const tag = el.tagName.toLowerCase();
+  for (let i = 0; i < allChildren.length; i++) {
+    const el = allChildren[i];
+    if (el.tagName.toLowerCase() === "section" && el.getAttribute("id") === "pg-header") {
+      pgHeaderEl = el;
+      startIdx = i + 1;
+    }
+    if (el.tagName.toLowerCase() === "section" && el.getAttribute("id") === "pg-footer") {
+      pgFooterEl = el;
+      endIdx = i;
+    }
+  }
 
-      if (tag === "h3") {
-        // Scene heading
-        const sceneText = cleanText(el.text);
-        if (!sceneText.startsWith("SCENE")) continue;
+  // --- PG header boilerplate ---
+  if (pgHeaderEl) {
+    // Remove the heading element, keep the rest
+    const headingEl = pgHeaderEl.querySelector("h2");
+    const headerDivs = pgHeaderEl.querySelectorAll("div");
+    const parts: string[] = [];
+    for (const div of headerDivs) {
+      const text = cleanText(div.text);
+      if (text && text.length > 5) parts.push(text);
+    }
+    if (parts.length > 0) {
+      const headerId = addEntity({
+        id: nextId("seg"),
+        kind: "segment",
+        title: "About the eBook",
+        content: parts.join("\n\n"),
+        metadata: { type: "front-matter", source: "hamlet" },
+      });
+      addRelation({ id: nextId("rel"), source: workId, target: headerId, type: "contains", metadata: {} });
+      lastSegmentId = headerId;
+    }
+  }
 
-        const locationMatch = sceneText.match(/SCENE\s+[A-Z]+\.\s*(.*)/i);
-        const sceneTitleParts = locationMatch
-          ? [sceneText, locationMatch[1]]
-          : [sceneText, ""];
+  for (let i = startIdx; i < endIdx; i++) {
+    const el = allChildren[i];
+    const tag = el.tagName.toLowerCase();
+    const cls = el.getAttribute("class") ?? "";
+    const elId = el.getAttribute("id") ?? "";
 
-        currentSceneId = addEntity({
-          id: nextId("scene"),
-          kind: "container",
-          title: sceneTitleParts[0],
-          content: sceneTitleParts[1] || undefined,
-          metadata: { type: "scene", source: "hamlet" },
-        });
+    if (tag === "hr" || tag === "h1") continue;
 
-        if (currentActId) {
-          addRelation({
-            id: nextId("rel"),
-            source: currentActId,
-            target: currentSceneId,
-            type: "contains",
-            metadata: {},
+    if (tag === "h2" && cls === "no-break") continue; // author line
+
+    if (tag === "div" && cls === "chapter") {
+      const h2 = el.querySelector("h2");
+      if (h2) {
+        const h2Text = getTextOf(h2);
+
+        // Dramatis Personae (chapter with Contents heading)
+        if (h2Text === "Contents") {
+          // Get the Dramatis Personæ section and the scene line
+          const dramaSection = el.querySelector("h3");
+          const dramaTitle = dramaSection ? getTextOf(dramaSection as HTMLElement) : "Dramatis Personæ";
+          const dramaPara = el.querySelector("p.drama");
+          const sceneLine = el.querySelectorAll("h3");
+
+          const dpContent: string[] = [];
+          if (dramaPara) {
+            const lines = dramaPara.text.split("\n").map(s => cleanText(s)).filter(s => s);
+            dpContent.push(...lines);
+          }
+
+          const dpId = addEntity({
+            id: nextId("dramatis"),
+            kind: "container",
+            title: dramaTitle,
+            content: dpContent.join("\n") || undefined,
+            metadata: { type: "dramatis-personae", source: "hamlet" },
           });
+          addRelation({ id: nextId("rel"), source: workId, target: dpId, type: "contains", metadata: {} });
+          if (lastSegmentId) addRelation({ id: nextId("rel"), source: lastSegmentId, target: dpId, type: "next", metadata: {} });
+          lastSegmentId = dpId;
+
+          // Get the "SCENE. Elsinore." line after dramatis personae
+          if (sceneLine.length >= 2) {
+            const sceneDesc = getTextOf(sceneLine[sceneLine.length - 1] as HTMLElement);
+            if (sceneDesc && sceneDesc !== dramaTitle && sceneDesc.startsWith("SCENE")) {
+              const segId = addEntity({
+                id: nextId("seg"),
+                kind: "segment",
+                content: sceneDesc,
+                metadata: { type: "stage-direction", source: "hamlet" },
+              });
+              addRelation({ id: nextId("rel"), source: workId, target: segId, type: "contains", metadata: {} });
+              if (lastSegmentId) addRelation({ id: nextId("rel"), source: lastSegmentId, target: segId, type: "next", metadata: {} });
+              lastSegmentId = segId;
+            }
+          }
+          continue;
         }
-        lastSegmentId = null;
+
+        // Act chapter
+        if (h2Text.startsWith("ACT") || h2Text.includes("ACT")) {
+          lastSegmentId = parseActChapter(el, workId, lastSegmentId);
+          continue;
+        }
       }
 
-      if (tag === "p") {
-        const cls = el.getAttribute("class") ?? "";
+      // Other chapter div content
+      const chapterText = cleanText(el.text);
+      if (!isBlank(chapterText) && chapterText.length > 20) {
+        const segId = addEntity({
+          id: nextId("seg"),
+          kind: "segment",
+          content: chapterText,
+          metadata: { source: "hamlet" },
+        });
+        addRelation({ id: nextId("rel"), source: workId, target: segId, type: "contains", metadata: {} });
+        if (lastSegmentId) addRelation({ id: nextId("rel"), source: lastSegmentId, target: segId, type: "next", metadata: {} });
+        lastSegmentId = segId;
+      }
+    }
 
-        if (cls === "scenedesc") {
-          // Stage direction (entrance, exit, etc.)
-          const text = cleanText(el.text);
-          if (isBlank(text)) continue;
-
-          const segId = addEntity({
-            id: nextId("seg"),
-            kind: "segment",
-            content: text
-              .replace(/^Enter\s+/i, "")
-              .replace(/^Re-enter\s+/i, "Enter "),
-            metadata: { type: "stage-direction", source: "hamlet" },
-          });
-
-          if (currentSceneId) {
-            addRelation({
-              id: nextId("rel"),
-              source: currentSceneId,
-              target: segId,
-              type: "contains",
-              metadata: {},
-            });
-          }
-          if (lastSegmentId) {
-            addRelation({
-              id: nextId("rel"),
-              source: lastSegmentId,
-              target: segId,
-              type: "next",
-              metadata: {},
-            });
-          }
-          lastSegmentId = segId;
-        } else if (cls === "drama") {
-          // Character speech
-          const html = el.innerHTML;
-          const parts = html.split(/<br\s*\/?>/i).map((s) =>
-            cleanText(s.replace(/<[^>]+>/g, ""))
-          ).filter((s) => !isBlank(s));
-
-          if (parts.length === 0) continue;
-
-          let character = "";
-          let dialogueStart = 0;
-
-          const [charName, firstLine] = extractCharName(parts[0]);
-          if (charName) {
-            character = charName.toUpperCase();
-            dialogueStart = firstLine ? 1 : 0;
-            parts[0] = firstLine || parts[0];
-          }
-
-          const dialogueParts = dialogueStart > 0 ? parts.slice(dialogueStart) : parts;
-          const dialogue = dialogueParts.filter((p) => !isBlank(p)).join("\n");
-
-          if (isBlank(dialogue)) continue;
-
-          if (character && dialogue) {
-            // New speech with character attribution
-            const segId = addEntity({
-              id: nextId("seg"),
-              kind: "segment",
-              title: character,
-              content: dialogue,
-              metadata: { character, source: "hamlet" },
-            });
-
-            if (currentSceneId) {
-              addRelation({
-                id: nextId("rel"),
-                source: currentSceneId,
-                target: segId,
-                type: "contains",
-                metadata: {},
-              });
-            }
-            if (lastSegmentId) {
-              addRelation({
-                id: nextId("rel"),
-                source: lastSegmentId,
-                target: segId,
-                type: "next",
-                metadata: {},
-              });
-            }
-            lastSegmentId = segId;
-          } else if (lastSegmentId) {
-            // Continuation — merge into last segment
-            const last = entities.find((e) => e.id === lastSegmentId);
-            if (last && last.content) {
-              last.content += "\n\n" + dialogue;
-            }
-          }
-        } else if (cls === "right") {
-          // Exit / action notes (e.g., [Exit.])
-          const text = cleanText(el.text);
-          if (isBlank(text)) continue;
-
-          const segId = addEntity({
-            id: nextId("seg"),
-            kind: "segment",
-            content: text,
-            metadata: { type: "stage-direction", source: "hamlet" },
-          });
-
-          if (currentSceneId) {
-            addRelation({
-              id: nextId("rel"),
-              source: currentSceneId,
-              target: segId,
-              type: "contains",
-              metadata: {},
-            });
-          }
-          if (lastSegmentId) {
-            addRelation({
-              id: nextId("rel"),
-              source: lastSegmentId,
-              target: segId,
-              type: "next",
-              metadata: {},
-            });
-          }
-          lastSegmentId = segId;
-        }
+    // Transcriber's Notes div
+    if (tag === "div" && el.getAttribute("style")?.includes("margin-top: 5%")) {
+      const notesText = cleanText(el.text);
+      if (!isBlank(notesText) && notesText.length > 20) {
+        const segId = addEntity({
+          id: nextId("seg"),
+          kind: "segment",
+          title: "Transcriber's Notes",
+          content: notesText,
+          metadata: { type: "end-matter", source: "hamlet" },
+        });
+        addRelation({ id: nextId("rel"), source: workId, target: segId, type: "contains", metadata: {} });
+        if (lastSegmentId) addRelation({ id: nextId("rel"), source: lastSegmentId, target: segId, type: "next", metadata: {} });
+        lastSegmentId = segId;
       }
     }
   }
 
-  const output = {
-    version: 1,
-    entities,
-    relations,
-  };
+  // --- PG footer boilerplate ---
+  if (pgFooterEl) {
+    const footerDivs = pgFooterEl.querySelectorAll("div");
+    const parts: string[] = [];
+    for (const div of footerDivs) {
+      const text = cleanText(div.text);
+      if (text && text.length > 5) parts.push(text);
+    }
+    if (parts.length > 0) {
+      const footerId = addEntity({
+        id: nextId("seg"),
+        kind: "segment",
+        title: "License",
+        content: parts.join("\n\n"),
+        metadata: { type: "end-matter", source: "hamlet" },
+      });
+      addRelation({ id: nextId("rel"), source: workId, target: footerId, type: "contains", metadata: {} });
+      if (lastSegmentId) addRelation({ id: nextId("rel"), source: lastSegmentId, target: footerId, type: "next", metadata: {} });
+    }
+  }
 
+  const output = { version: 1, entities, relations };
   console.log(JSON.stringify(output, null, 2));
   console.error(`Generated ${entities.length} entities and ${relations.length} relations.`);
 }

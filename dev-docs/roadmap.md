@@ -34,11 +34,12 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - ~~Seed content for validation~~ ✅
 
 ### M2 — Reading Workspace
-- Focused entity viewport with sequential traversal (PRD0004) — segment-level
-- Continuous scroll viewport: containers render children as scrollable text (PRD0005)
-- Full text import at scale (PRD0006)
-- Side-panel contextual expansion
+- Focused entity viewport with sequential traversal (PRD0004)
+- Continuous scroll viewport with recursive container flattening (PRD0005)
+- Full text import + work entity (PRD0006)
+- Side-panel contextual expansion (current sprint)
 - Annotation creation (highlight + note)
+- Multi-column reading workspace
 
 ### M3 — Projection Layer
 - Multiple graph interpretations: reading, outline, thematic, notes
@@ -57,14 +58,16 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-13 — Reading viewport (PRD0004): focused entity display, prev/next navigation, mode-switch rendering, shadcn/ui + Tailwind foundation
 - 2026-05-13 — Continuous scroll viewport (PRD0005): container-aware rendering, segment variants, breadcrumb nav, canvas-to-container resolution
 - 2026-05-13 — Full text import (PRD0006): Gutenberg parser, 1342 entities / 2634 relations, first-run seed data
+- 2026-05-13 — Work entity + full-play scrolling: `hamlet--william-shakespeare` as root container, recursive flattening, canvas shows work node, all 1,349 entities scrollable in one view
 
 ## Now (Current Sprint)
-- **Side-panel contextual expansion** — click a `references` or `annotates` relation → opens a column to the right with linked content. Reading position preserved.
+- **Side-panel contextual expansion** — when reading, clicking a relation indicator (`annotates`, `references`) opens a column to the right with the linked content. Reading position preserved. This is the horizontal axis of the vision document.
 
-## Later (Backlog)
-- Side-panel contextual expansion
+## Next (Near-Term)
 - Annotation creation (highlight + note)
 - Multi-column reading workspace
+
+## Later (Backlog)
 - Projection layer abstractions
 - React Flow graph visualization (Phase 4+)
 - Tauri packaging

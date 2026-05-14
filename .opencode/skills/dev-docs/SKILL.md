@@ -18,8 +18,8 @@ This skill manages a structured documentation suite: `dev-docs/` folder at proje
 | `dev-docs/architecture.md` | System design, contracts, build flow |
 | `dev-docs/roadmap.md` | Active priorities (Now/Next/Later) |
 | `dev-docs/changelog.md` | Completed significant changes with rationale |
-| `dev-docs/archive/` | ADR files + executed plans |
-| `dev-docs/plans/` | Design blueprints for future features |
+| `dev-docs/archive/` | ADR files + **completed PRDs** (plans promoted here after execution) |
+| `dev-docs/plans/` | **Future/present plans only** — vision docs, design blueprints for work not yet started or in progress. Once a plan is executed, it moves to `archive/`. |
 
 Available templates for Mode: init live in the `templates/` directory sibling to this file.
 
@@ -151,15 +151,17 @@ ADR format (copy from `archive/TEMPLATE.md`):
 
 Link the ADR from the corresponding `changelog.md` entry using a relative path: `archive/YYYY-MM-DD-short-title.md`.
 
-#### 5. Plan → ADR promotion
+#### 5. Plan → ADR promotion (required for completed plans)
 
-If the completed work had a prior plan in `dev-docs/plans/`:
+Once a plan in `dev-docs/plans/` is fully executed, it MUST be moved to `archive/`. This keeps `plans/` as a signal of future/present direction only.
 
-1. Move the plan file from `plans/` to `archive/`.
-2. Prepend an ADR section to the top of the plan file (ADR as front matter, original plan below as appendix/context).
-3. The ADR describes what was *actually* done; if it diverged from the plan, note what changed and why.
-4. Update `roadmap.md` — mark the topic as completed or move to changelog planning.
-5. Add a `changelog.md` entry referencing the combined ADR+plan document.
+1. Move the plan file from `plans/` to `archive/YYYY-MM-DD-short-title.md`.
+2. Prepend a completion note. Use a **full ADR** (Context/Decision/Alternatives/Consequences) for architecture-changing decisions (schema changes, renderer contracts, build pipeline). Use a **short completion note** (`> **Completion note:** ...`) for straightforward feature work.
+3. Update `roadmap.md` — move the item from Now/Next to Recently Completed.
+4. Add a `changelog.md` entry referencing the archive path: `- **Archive:** archive/YYYY-MM-DD-short-title.md`
+5. Remove the plan from `plans/` directory.
+
+> **Rule of thumb:** `plans/` = future intent or active work. `archive/` = what we already did. If a file is in `plans/`, the next agent should assume it's still relevant. If it's in `archive/`, it's history.
 
 #### 6. Report
 

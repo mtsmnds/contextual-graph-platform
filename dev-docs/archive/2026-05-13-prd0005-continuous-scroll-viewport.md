@@ -1,3 +1,7 @@
+> **Completion note:** Replaced segment-by-segment navigation with continuous-scroll viewport. Containers render all descendants recursively. Canvas clicks resolve to the root work.
+
+---
+
 # PRD0005 — Continuous Scroll Viewport
 
 ## Status

@@ -1,3 +1,7 @@
+> **Completion note:** Adopted shadcn/ui (Base UI) + Tailwind v4 as the component foundation. Built the first real renderer (focused entity display with prev/next nav). The canvas adapter bridge was superseded by the reading viewport as the primary renderer.
+
+---
+
 # PRD0004 — Reading Viewport
 
 ## Status

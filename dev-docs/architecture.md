@@ -40,7 +40,10 @@ Entrypoint: `npm run build` → `vite build`
 ### Domain Model (`src/types/graph.ts`)
 
 #### Entity
-The atomic semantic object. Content is native — no separate `docId` indirection.
+The atomic semantic object. Two roles:
+
+- **Containers** (`kind: "container"`) — structural labels. They have `title` (section heading) but no `content`. Body text comes from child segments. Examples: work ("Hamlet"), act ("Act I"), scene ("SCENE I...").
+- **Segments** (`kind: "segment"`) — content carriers. They have both `title` and `content` with the actual text. Examples: title page, speech, stage direction, annotation.
 
 ```ts
 type EntityKind = "segment" | "container" | "annotation" | "concept" | "summary"
@@ -48,9 +51,9 @@ type EntityKind = "segment" | "container" | "annotation" | "concept" | "summary"
 type Entity = {
   id: string
   kind: EntityKind
-  title?: string
-  content?: string        // rich text, native to entity
-  metadata: Record<string, unknown>   // product-specific fields (e.g. status, priority)
+  title?: string         // container heading or segment label
+  content?: string       // body text (segments only; containers don't have content)
+  metadata: Record<string, unknown>   // type-specific data (e.g. character name, work type)
 }
 ```
 
@@ -69,15 +72,21 @@ type Relation = {
 }
 ```
 
+Key relation patterns:
+- `contains` — hierarchy (work → act → scene → segments)
+- `next` — document order chain within a container
+- `annotates` — annotation linked to a segment
+- `references` — cross-work reference
+
 #### View State
 Separate from domain state entirely.
 
 ```ts
 type ViewState = {
-  focusedEntityId?: string
+  focusedEntityId: string | null   // the root container in view (resolved to work)
+  anchorEntityId: string | null    // the original entity clicked (for breadcrumb)
   visibleEntityIds: string[]
-  expandedPanels: PanelState[]
-  layout?: LayoutState
+  expandedPanels: string[]
 }
 ```
 
@@ -86,27 +95,64 @@ type ViewState = {
 - `relations: Relation[]` — typed edges.
 - `view: ViewState` — UI-only state, separate from domain.
 - Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `removeRelation`.
-- View actions: `focusEntity`, `expandPanel`, `promotePanel`.
+- View actions: `focusEntity(id, anchorId?)`, `expandPanel`, `closePanel`.
+- Persistence: `exportGraph` (JSON download), `importGraph` (replace state).
+- Auto-save: debounced (300ms) localStorage write on every entity/relation change. Hydration on startup.
+
+### Query Engine (`src/engine/queries.ts`)
+Pure functions over store state — no hooks, no components:
+
+```ts
+getEntity(state, id): Entity | undefined
+getRelations(state, entityId): Relation[]
+getSequentialContext(state, entityId): { prev?: Entity; next?: Entity } | null
+getLinkedContext(state, entityId): { entity: Entity; relation: Relation }[]
+
+getContainerChildren(state, containerId, depth?): Entity[]
+  // Recursive: returns all descendant segments flattened.
+  // Sub-containers (acts, scenes) are kept as visual dividers;
+  // their children (speeches, stage directions) follow inline.
+
+resolveContainer(state, entityId): string
+  // Walks up `contains` relations to the root (work-level container).
+
+getContainerBreadcrumb(state, containerId): { id: string; title: string }[]
+  // Path from root to the given entity (e.g. "Hamlet / Act I / Scene I").
+```
+
+### Reading Viewport
+The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary renderer.
+
+- **Scope**: When the user clicks any entity on the canvas, `resolveContainer` finds the root work. `getContainerChildren` flattens all descendants into a single scrollable list. The root entity (work) renders first as SegmentCard, then all children in order.
+- **Navigation**: Free scrolling is the primary interaction. The breadcrumb shows position in the hierarchy. Clicking a breadcrumb item refocuses the root with that item as anchor (same view, scrolled position).
+- **SegmentCard variants**: Act, scene, title-page, front-matter, stage-direction, character speech, end-matter, dramatis-personae — each renders with appropriate typography and spacing.
+- **Canvas bridge**: A temporary adapter in `App.tsx` transforms Entity/Relation data into React Flow nodes/edges for the overview canvas.
 
 ### Output / State
 - `dist/` — production build.
-- Store persisted to localStorage initially; SQLite (via Tauri) later.
+- Store persisted to localStorage via debounced auto-save. Hydrates from bundled `src/data/hamlet.json` on first run.
 
 ## Module Map
 
 | Path | Role |
 |------|------|
 | `src/main.tsx` | App entrypoint |
-| `src/App.tsx` | Root component — routes to active renderer |
-| `src/types/graph.ts` | Entity/Relation type definitions |
-| `src/store/useGraphStore.ts` | Zustand store (domain + view state) |
-| `src/engine/` | Query engine: getEntity, getRelations, getSequentialContext, getLinkedContext |
-| `src/renderers/` | Renderer implementations: reading, outline, graph (future) |
-| `src/index.css` | Global styles, dark mode |
+| `src/App.tsx` | Root component — routes between canvas and reading viewport |
+| `src/types/graph.ts` | Entity/Relation/ViewState type definitions |
+| `src/store/useGraphStore.ts` | Zustand store (domain + view state + persistence) |
+| `src/engine/` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
+| `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
+| `src/components/ui/` | shadcn/ui components (Button) |
+| `src/lib/utils.ts` | cn() utility for Tailwind class merging |
+| `src/data/hamlet.json` | Bundled Hamlet snapshot (first-run seed data) |
+| `src/index.css` | Global styles, Tailwind theme, shadcn CSS variables, dark mode |
+| `scripts/import-gutenberg.ts` | Gutenberg HTML → JSON converter |
+| `dist/` | Build output (gitignored) |
 
 ## Change Impact
 - Schema change → update `src/types/graph.ts` + `dev-docs/architecture.md` + `dev-docs/changelog.md` + ADR.
 - Store action change → update `src/store/useGraphStore.ts` + `dev-docs/architecture.md`.
+- Query engine addition → update `src/engine/` + `dev-docs/architecture.md`.
 - Pipeline change → update this doc + `dev-docs/changelog.md` + ADR.
 
 ## Verification

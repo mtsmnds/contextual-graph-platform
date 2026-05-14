@@ -116,7 +116,7 @@ interface GraphStore {
   addRelation: (source: string, target: string, type: RelationType) => string;
   removeRelation: (id: string) => void;
 
-  focusEntity: (id: string | null) => void;
+  focusEntity: (id: string | null, anchorId?: string | null) => void;
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
 
@@ -131,6 +131,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   relations: initialState.relations,
   view: {
     focusedEntityId: null,
+    anchorEntityId: null,
     visibleEntityIds: [],
     expandedPanels: [],
   },
@@ -178,8 +179,14 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     }));
   },
 
-  focusEntity: (id) => {
-    set((state) => ({ view: { ...state.view, focusedEntityId: id } }));
+  focusEntity: (id, anchorId = null) => {
+    set((state) => ({
+      view: {
+        ...state.view,
+        focusedEntityId: id,
+        anchorEntityId: anchorId ?? id,
+      },
+    }));
   },
 
   expandPanel: (entityId) => {

@@ -75,8 +75,6 @@ function CanvasView() {
   const relations = useGraphStore((s) => s.relations);
   const focusEntity = useGraphStore((s) => s.focusEntity);
 
-  const state = { entities, relations };
-
   const { nodes, edges } = useMemo(() => {
     const positions = assignLayout(entities, relations);
     return {
@@ -87,10 +85,11 @@ function CanvasView() {
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: { id: string }) => {
+      const state = { entities: useGraphStore.getState().entities, relations: useGraphStore.getState().relations };
       const containerId = resolveContainer(state, node.id);
-      focusEntity(containerId);
+      focusEntity(containerId, node.id);
     },
-    [state, focusEntity],
+    [focusEntity],
   );
 
   return (

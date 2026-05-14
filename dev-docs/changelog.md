@@ -20,7 +20,7 @@ Use this to recover context after breaks.
   - `src/types/graph.ts`: Added `GraphSnapshot` type
   - `src/store/useGraphStore.ts`: Added `loadInitialState()` hydration, debounced auto-save subscription, `exportGraph` (JSON download), `importGraph` (replace state)
 - **Impact:** State persists automatically. Manual export/import enables backups and sharing. Foundation for future SQLite storage (PRD0003 out of scope: no schema migrations, no settings UI).
-- **Archive:** `archive/2026-05-13-persistence-layer.md`
+- **Archive:** `archive/2026-05-13-prd0003-persistence-layer.md`
 
 ---
 
@@ -37,6 +37,7 @@ Use this to recover context after breaks.
   - `dev-docs/roadmap.md`: Updated milestones and sprint order
   - `dev-docs/plans/prd0005-hamlet-import.md` → `prd0006-hamlet-import.md`: Renumbered
 - **Impact:** Reading viewport now works like a book — scroll through the full text. Container resolution means clicking any node on the canvas opens its work context. Foundation laid for side-panel expansion and multi-column reading.
+- **Archive:** `archive/2026-05-13-prd0005-continuous-scroll-viewport.md`
 
 ---
 
@@ -51,6 +52,19 @@ Use this to recover context after breaks.
   - `src/store/useGraphStore.ts`: Updated — first run loads full Hamlet from bundled snapshot
   - `package.json`: Added `import:hamlet` script
 - **Impact:** Demo-ready — clicking "Act I" on the canvas shows the full play as a scrollable text. Next step: side-panel contextual expansion for annotations and references.
+- **Archive:** `archive/2026-05-13-prd0006-hamlet-import.md`
+
+---
+
+## 2026-05-13
+
+### Work entity + full-play scrolling
+- **What:** Added `hamlet--william-shakespeare` work entity that contains the entire play — Dramatis Personæ, all 5 acts, Transcriber's Notes — as one scrollable view. `resolveContainer` walks to the root work, so clicking any node shows the full play with that section in context. Canvas shows the work node alongside its children.
+- **Files changed:**
+  - `scripts/import-gutenberg.ts`: Added work entity creation, Dramatis Personæ parsing, Transcriber's Notes capture, full content boundary iteration
+  - `src/data/hamlet.json`: Regenerated (1346 entities, 2664 relations, 8 work children)
+  - `src/renderers/ReadingViewport.tsx`: Added SegmentCard variant for `type: "work"` (title heading)
+- **Impact:** Scroll the entire play top-to-bottom from the title page through all acts to the notes. Clear localStorage (DevTools > Application) to reload fresh data.
 
 ---
 
@@ -70,7 +84,8 @@ Use this to recover context after breaks.
   - `src/components/ui/button.tsx`: Created by shadcn init
   - `src/lib/utils.ts`: Created by shadcn init (cn utility)
   - `dev-docs/visual-design.md`: Created — design principles and conventions
-- **Impact:** First real renderer replaces the temporary canvas bridge. Prev/Next navigation works via query engine. Component foundation clean and scalable.
+- **Impact:** First real renderer replaces the temporary canvas bridge. Component foundation clean and scalable.
+- **Archive:** `archive/2026-05-13-prd0004-reading-viewport.md`
 
 ---
 
@@ -88,7 +103,7 @@ Use this to recover context after breaks.
   - `dev-docs/requirements.md`: Updated — reflects new type ontology
   - `dev-docs/architecture.md`: Already updated in prior commit
 - **Impact:** Domain model is now framework-agnostic. Store is simpler and testable. React Flow canvas still renders the same seed data. Foundation for reading workspace laid.
-- **ADR:** `archive/2026-05-13-domain-engine-refactor.md`
+- **ADR:** `archive/2026-05-13-prd0002-domain-engine-refactor.md`
 
 ---
 

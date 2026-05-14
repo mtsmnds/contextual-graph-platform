@@ -31,6 +31,7 @@ type Relation = {
 
 type ViewState = {
   focusedEntityId: string | null;
+  anchorEntityId: string | null;
   visibleEntityIds: string[];
   expandedPanels: string[];
 };
