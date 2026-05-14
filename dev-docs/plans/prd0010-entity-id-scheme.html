@@ -6,247 +6,35 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 780px; margin: 40px auto; padding: 0 24px; color: #1a1a2e; line-height: 1.6; }
   h1 { font-size: 1.6rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }
   h2 { font-size: 1.2rem; margin-top: 32px; color: #333; }
-  h3 { font-size: 1rem; margin-top: 24px; }
-  .status { display: inline-block; background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+  .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .note strong { color: #856404; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
   th, td { text-align: left; padding: 6px 10px; border: 1px solid #ddd; }
   th { background: #f5f5f5; font-weight: 600; }
   code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: 0.85rem; }
-  .schema { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin: 16px 0; }
-  .schema code { display: block; white-space: pre; background: none; font-size: 0.9rem; }
-  .rule { background: #fff8e1; border-left: 4px solid #f57c00; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
-  .rule strong { color: #e65100; }
-  .tag { display: inline-block; background: #e0e0e0; padding: 1px 8px; border-radius: 3px; font-size: 0.75rem; margin-right: 4px; }
-  .tag.container { background: #bbdefb; }
-  .tag.segment { background: #c8e6c9; }
-  .tag.annotation { background: #ffe0b2; }
-  .tag.root { background: #d1c4e9; }
-  .callout { background: #e8f5e9; border: 1px solid #a5d6a7; padding: 12px 16px; border-radius: 8px; margin: 16px 0; font-size: 0.9rem; }
-  .warning { background: #ffebee; border-left: 4px solid #e53935; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
-  .warning strong { color: #c62828; }
-  .qa { background: #f3e5f5; border-left: 4px solid #9c27b0; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
-  .qa strong { color: #7b1fa2; }
-  hr { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
-  .insight { background: #e3f2fd; border: 1px solid #90caf9; padding: 12px 16px; border-radius: 8px; margin: 16px 0; font-size: 0.9rem; }
-  .insight strong { color: #1565c0; }
 </style>
 </head>
 <body>
 
-<h1>PRD0010 — Entity ID Scheme &amp; Model Rules</h1>
-<span class="status">Final — validated against hello2/graph.json</span>
+<h1>PRD0010 — Entity Model (Postponed Items)</h1>
 
-<p>This PRD merges the ID scheme design with the entity model rules discovered during the hello2/graph.json restructuring. The analysis log is at <code>dev-docs/analysis/graph-model-decisions.md</code>.</p>
-
-<h2>Problem</h2>
-<p>
-Current IDs are opaque integer prefixes: <code>seg_18</code>, <code>act_11</code>, <code>note_1</code>. With PRD0009, users own their data as plain JSON. An ID like <code>seg_18</code> tells them nothing about what it refers to.
-</p>
-
-<h2>Part 1 — Entity Model Rules</h2>
-<p>Validated by restructuring 1359 entities in <code>hello2/graph.json</code> (Hamlet, Acts I–V, all scenes and speeches).</p>
-
-<div class="rule">
-<strong>Rule 1: Segments never have a <code>title</code> field.</strong>
-<p>What was previously stored in <code>title</code> belongs elsewhere:</p>
-<ul>
-  <li>Character speeches → <code>metadata.character</code> (work-dependent field name)</li>
-  <li>Structural segments (stage directions, title page, etc.) → <code>metadata.type</code> drives rendering</li>
-  <li>Annotations → <code>title</code> is the card heading (annotations are the exception — they use <code>title</code> as a label)</li>
-</ul>
-<p>Applied: 1132 character speech segments stripped of <code>title</code> and <code>CHARACTER.\n</code> content prefix. Zero data loss — every prefix was verified present before stripping.</p>
+<div class="note">
+<strong>Active implementation moved to PRD0010-1.</strong>
+This document retains the postponed items not yet implemented.
+See <code>dev-docs/plans/prd0010-1-minimal-entity-model.md</code> for current sprint work.
 </div>
 
-<div class="rule">
-<strong>Rule 2: Containers never have <code>content</code>.</strong>
-<p>Containers are structural labels only. Their <code>title</code> provides the heading; <code>metadata</code> provides rendering hints. Any inline content belongs in a child segment.</p>
-<p>Applied: 20 scenes + 3 containers (title-page, about-the-ebook, dramatis-personae) had content moved to child segments. The child segment follows the standard counter scheme: <code>seg-0001</code>.</p>
-</div>
-
-<div class="rule">
-<strong>Rule 3: Entity deletion cascades to relations.</strong>
-<p>Removing an entity requires removing all relations referencing it and repairing the <code>next</code> chain. This is manual for now; future app-level delete will handle this automatically.</p>
-</div>
-
-<div class="rule">
-<strong>Rule 4: Entity rename propagates through all relations.</strong>
-<p>Renaming an entity requires updating every <code>source</code>/<code>target</code> in the relations array. Bulk find-and-replace. 38 relation references were updated for 6 renamed entities in the hamlet restructure.</p>
-</div>
-
-<div class="rule">
-<strong>Rule 5: <code>metadata.type</code> drives rendering.</strong>
-<p>The renderer determines display from <code>metadata.type</code>, not <code>kind</code> or <code>title</code>. <code>kind</code> (<code>container</code> vs <code>segment</code>) is a structural concern only. The <code>metadata.type</code> system is extensible — new types can be created freely, with the caveat that each new type adds renderer overhead. Evaluate with TipTap integration.</p>
-</div>
-
-<div class="rule">
-<strong>Rule 6: <code>content</code> supports HTML.</strong>
-<p>The <code>content</code> field can contain HTML for rich formatting. The renderer handles both plain text and rich content (detection: if content contains <code>&lt;</code>, treat as HTML). This is important to add to the roadmap paired with TipTap implementation.</p>
-</div>
-
-<h2>Part 2 — ID Scheme</h2>
-
-<h3>Design Constraint: ID Stability</h3>
-
-<div class="warning">
-<strong>Critical tension:</strong> If IDs are derived from titles and containment, renaming a container changes every descendant ID. That breaks all <code>source</code>/<code>target</code> references in relations.
-</div>
-
-<p><strong>Rule: IDs are assigned once and never recalculated.</strong> The title/position slug is used at creation time to generate the ID. Renaming a node does not propagate to its children's IDs. Reordering segments does not renumber them. The ID is a snapshot of identity at creation time, not a live path.</p>
-
-<p>This means:</p>
-<ul>
-  <li>A segment created as <code>hamlet_act-i_scene-i_seg-0001</code> keeps that ID even if you rename the scene to "Scene 1 (Revised)"</li>
-  <li>A typo in a container title at creation time is permanent in the ID (edit the <code>title</code> field, the ID stays)</li>
-  <li>If you really need to change an ID, you edit <code>graph.json</code> directly and update all relations manually (future: app-level "rename entity" with automatic relation updates)</li>
-</ul>
-
-<h3>ID Format</h3>
-
-<div class="schema">
-<code><strong>Root container</strong> (no parent):
-  [slug]
-  <em>Collision: append -1, -2, etc.</em>
-
-<strong>Sub-container</strong> (act, scene, section, chapter):
-  [parent-id]_[slug]
-  <em>If the parent uses positional counters (e.g. "Section 1", "Section 2"), use 2-digit padding: _sec-01, _sec-02</em>
-
-<strong>Segment</strong> (content-bearing, including container content children):
-  [parent-id]_seg-[4-digit counter]
-  <em>0001–9999 per parent container</em>
-
-<strong>Annotation</strong> or <strong>Reference</strong>:
-  [own-container-id]_ann-[slug]
-  or
-  [own-container-id]_ref-[slug]
-  <em>Not nested under the work — they live in their own containers like hamlet-notes, hamlet-references</em>
-</code>
-</div>
-
-<p><strong>Important clarification:</strong> Child segments that hold a container's content (scene descriptions, dramatis-personae list, title-page content, etc.) use the standard <code>seg-[counter]</code> format, not a <code>_content</code> suffix. The <code>_content</code> pattern was a temporary convention in the restructuring — the ID scheme always uses <code>seg-0001</code>.</p>
-
-<h3>Slug rules</h3>
-<ol>
-  <li>Lowercase the title</li>
-  <li>Replace whitespace runs with <code>-</code></li>
-  <li>Strip punctuation (<code>',.!?":;()[]{}—…,</code>)</li>
-  <li>Convert accented letters to ASCII (<code>áéíóúçãõâêîôûñ</code> → <code>aeiouc aoaeioun</code>)</li>
-  <li>Collapse multiple <code>-</code> into one</li>
-  <li>Trim leading/trailing <code>-</code></li>
-</ol>
-
-<table>
-  <tr><th>Title</th><th>Slug</th></tr>
-  <tr><td><code>Who's there?</code></td><td><code>whos-there</code></td></tr>
-  <tr><td><code>To be, or not to be</code></td><td><code>to-be-or-not-to-be</code></td></tr>
-  <tr><td><code>SCÈNE I. Elsinore.</code></td><td><code>scene-i-elsinore</code></td></tr>
-  <tr><td><code>Identidade & Identificação</code></td><td><code>identidade-identificacao</code></td></tr>
-</table>
-
-<h3>Counter Scheme</h3>
-
-<table>
-  <tr><th>Entity type</th><th>Counter</th><th>Padding</th><th>Range</th><th>Example</th></tr>
-  <tr><td>Root container</td><td>none (use slug)</td><td>—</td><td>unique by name + <code>-N</code> fallback</td><td><code>hamlet</code>, <code>my-project</code>, <code>hamlet-1</code></td></tr>
-  <tr><td>Sub-container (named)</td><td>none (use slug)</td><td>—</td><td>—</td><td><code>hamlet_dramatis-personae</code></td></tr>
-  <tr><td>Sub-container (numbered)</td><td>positional</td><td>2 digits</td><td>01–99</td><td><code>hamlet_act-01</code>, <code>chapter-12</code></td></tr>
-  <tr><td>Segment (including container content children)</td><td>sequential within parent</td><td>4 digits</td><td>0001–9999</td><td><code>hamlet_act-01_scene-01_seg-0001</code></td></tr>
-</table>
-
-<h3>Zero-padding pushback</h3>
-
-<p>Without padding: <code>seg-1</code>, <code>seg-2</code>, …, <code>seg-10</code>, <code>seg-11</code>.</p>
-<p>The problem is <strong>sort order</strong>:</p>
-<ul>
-  <li>Alphabetical sort: <code>seg-1</code>, <code>seg-10</code>, <code>seg-100</code>, <code>seg-11</code>, <code>seg-2</code>, <code>seg-20</code> — wrong</li>
-  <li>Natural sort: requires special handling in every tool (editors, git diff, scripting)</li>
-  <li>JSON arrays are ordered, but manual edits in a text editor reorder by alphabet</li>
-</ul>
-<p>Zero-padded <code>seg-0001</code> → <code>seg-9999</code> sorts correctly alphabetically <em>and</em> numerically. The cost: slightly longer IDs and a hard cap at 9999 per parent (more than enough for any single container).</p>
-
-<div class="callout">
-<strong>Recommendation:</strong> Keep padding. It solves a real (sorting) problem at negligible cost. 4 digits for segments, 2 digits for numbered sub-containers. Root containers don't pad (unique by name with collision suffixes).
-</div>
-
-<h3>Examples</h3>
-
-<table>
-  <tr><th>Old ID</th><th>Type</th><th>New ID</th></tr>
-  <tr><td><code>hamlet--william-shakespeare</code></td><td><span class="tag root">root container</span></td><td><code>hamlet</code></td></tr>
-  <tr><td><code>act_11</code></td><td><span class="tag container">numbered sub-container</span></td><td><code>hamlet_act-01</code></td></tr>
-  <tr><td><code>scene_14</code></td><td><span class="tag container">numbered sub-container</span></td><td><code>hamlet_act-01_scene-01</code></td></tr>
-  <tr><td><code>dramatis_5</code></td><td><span class="tag container">named sub-container</span></td><td><code>hamlet_dramatis-personae</code></td></tr>
-  <tr><td><code>seg_18</code> (Barnardo's "Who's there?")</td><td><span class="tag segment">segment</span></td><td><code>hamlet_act-01_scene-01_seg-0001</code></td></tr>
-  <tr><td><code>seg_1614</code> (Hamlet's soliloquy)</td><td><span class="tag segment">segment</span></td><td><code>hamlet_act-03_scene-01_seg-0001</code></td></tr>
-  <tr><td><i>scene content child</i></td><td><span class="tag segment">segment</span></td><td><code>hamlet_act-01_scene-01_seg-0001</code> <i>(same format — counter is per-parent)</i></td></tr>
-  <tr><td><code>note_1</code> → (lives in <code>hamlet-notes</code>)</td><td><span class="tag annotation">annotation</span></td><td><code>hamlet-notes_ann-identity-theme</code></td></tr>
-</table>
-
-<h3>Notes on specific examples</h3>
+<h2>Postponed</h2>
 
 <ul>
-  <li><strong>Root container:</strong> <code>hamlet--william-shakespeare</code> → <code>hamlet</code>. The full title "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK" is the <code>title</code> field.</li>
-  <li><strong>Author reference:</strong> <code>metadata.author: "william-shakespeare"</code> is a pointer to a future entity. Author IDs follow the same slug convention.</li>
-  <li><strong>Dramatis Personæ</strong> is a named sub-container of <code>hamlet</code>: <code>hamlet_dramatis-personae</code>. No act/scene path.</li>
-  <li><strong>Scene location</strong> (was <code>scene_14.content</code>) is now a child segment: <code>hamlet_act-01_scene-01_seg-0001</code>. The container has no <code>content</code>.</li>
-  <li><strong>Annotations/References</strong> live in their own root containers (e.g., <code>hamlet-notes</code>, <code>hamlet-references</code>), not under the work's hierarchy.</li>
+  <li><strong>Rule 5: <code>metadata.type</code> drives rendering</strong> — The renderer determines display from <code>metadata.type</code>, not <code>kind</code> or <code>title</code>. <code>kind</code> (<code>container</code> vs <code>segment</code>) is a structural concern only. This will be evaluated and implemented alongside TipTap integration.</li>
+  <li><strong>Hamlet data migration</strong> — Renaming hello2/graph.json entities to the new ID scheme (<code>seg_18</code> → <code>hamlet_act-01_scene-01_seg-0001</code>). The old IDs persist for now.</li>
+  <li><strong>Container content children naming</strong> — Renaming <code>_content</code> child segments to use <code>seg-0001</code> format.</li>
 </ul>
 
-<h2>Edge Cases</h2>
+<h2>Reference: Full scheme design</h2>
 
-<table>
-  <tr><th>Case</th><th>Rule</th><th>Example</th></tr>
-  <tr><td>Duplicate title in same parent</td><td>Append <code>-1</code>, <code>-2</code> to the slug</td><td><code>hamlet_scene-i</code> and <code>hamlet_scene-i-1</code></td></tr>
-  <tr><td>Title is empty</td><td>Use kind + counter: <code>segment-0001</code></td><td><code>hamlet_segment-0001</code></td></tr>
-  <tr><td>Title is purely punctuation</td><td>Same as empty</td><td><code>hamlet_segment-0002</code></td></tr>
-  <tr><td>EM dash in title</td><td>Stripped by punctuation rule</td><td>"To be—or not to be" → <code>to-beor-not-to-be</code> (collapsing <code>--</code> → <code>-</code> → <code>to-be-or-not-to-be</code>)</td></tr>
-  <tr><td>Segment counter overflow (10000+)</td><td>Unlikely per parent. If it happens, increment padding or use non-padded fallback.</td><td>Deferred.</td></tr>
-  <tr><td>Deleting an entity</td><td>Must remove all relations referencing it + repair the <code>next</code> chain</td><td>Manual for now.</td></tr>
-  <tr><td>Renaming an entity</td><td>Bulk find-and-replace across all relation <code>source</code>/<code>target</code> fields</td><td>Manual for now.</td></tr>
-</table>
-
-<h2>Scope</h2>
-
-<p><strong>In scope:</strong> The ID scheme design, slug rules, counter scheme, entity model rules (no title on segments, no content on containers, metadata.type rendering), ID generation utility function, and the <code>addEntity</code> store wiring. Applies to all new entities created through the app.</p>
-
-<p><strong>Out of scope:</strong> Migrating hello2/graph.json to the new ID scheme (postponed — the old IDs persist for now). TipTap integration (paired with HTML content rendering — added to roadmap).</p>
-
-<h2>File Changes</h2>
-
-<table>
-  <tr><th>File</th><th>Action</th></tr>
-  <tr><td><code>src/engine/ids.ts</code></td><td>Create — ID generation utility: <code>generateEntityId(parent, entity)</code>, <code>slugify(title)</code>, duplicate collision logic, counter tracking per parent</td></tr>
-  <tr><td><code>src/store/useGraphStore.ts</code></td><td>Wire <code>generateEntityId</code> into <code>addEntity</code> action; enforce no-title/no-content rules for segments/containers</td></tr>
-  <tr><td><code>src/types/graph.ts</code></td><td>No changes needed (Entity type already has <code>id: string</code>)</td></tr>
-  <tr><td><code>dev-docs/roadmap.md</code></td><td>Add HTML content rendering + TipTap evaluation to roadmap</td></tr>
-</table>
-
-<h2>Q&A</h2>
-
-<div class="qa">
-<strong>Q: What happens if I rename "Act I" to "Act One" — do child IDs change?</strong>
-<p><strong>A: No.</strong> IDs are created once and never recalculated. Children keep their <code>act-01</code> prefix. The <code>title</code> field is updated separately. IDs can become "stale" relative to titles — acceptable given the alternative (breaking all relations).</p>
-</div>
-
-<div class="qa">
-<strong>Q: What if I reorder segments — do counters renumber?</strong>
-<p><strong>A: No.</strong> Reordering doesn't change IDs. Counters reflect position at creation/import time. The <code>next</code> relations encode order. The counter is an identifier, not a sequence number.</p>
-</div>
-
-<div class="qa">
-<strong>Q: Why not use UUIDs for stability?</strong>
-<p><strong>A: Human-readability in the JSON file.</strong> A hash like <code>a3f2c8e1</code> is stable but opaque. A semantic ID like <code>hamlet_act-01_scene-01_seg-0001</code> tells you the entity's place without cross-referencing.</p>
-</div>
-
-<div class="qa">
-<strong>Q: Can the user change an entity's ID?</strong>
-<p><strong>A: Not through the UI in v1.</strong> They can edit <code>graph.json</code> directly. Future: app-level "rename entity" that updates the ID and all relations referencing it.</p>
-</div>
-
-<div class="qa">
-<strong>Q: The <code>_content</code> child segments in hello2/graph.json don't follow the <code>seg-0001</code> scheme — is that inconsistent?</strong>
-<p><strong>A: Yes, that was a temporary convention.</strong> The hello2/graph.json file was restructured before the ID scheme was finalized. The child segments should eventually use <code>seg-0001</code> in their IDs. The <code>_content</code> suffix works as a transitional identifier but is not the intended pattern.</p>
-</div>
+<p>The complete ID scheme design (slug rules, counter scheme, zero-padding rationale, edge cases) is documented in <code>dev-docs/plans/prd0010-1-minimal-entity-model.md</code> which was derived from this document. The scheme itself is implemented; only the above items are postponed.</p>
 
 </body>
 </html>

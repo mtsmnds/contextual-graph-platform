@@ -10,7 +10,7 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored: ["**/hello2/graph.json"],
+      ignored: ["**/hello2/graph.json", "dev-docs/**"],
     },
   },
 })

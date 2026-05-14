@@ -42,9 +42,7 @@ function AnnotationCard({
       <p className="text-sm font-medium text-foreground mt-2">
         {context.entity.title}
       </p>
-      <p className="text-xs text-muted-foreground leading-relaxed mt-1">
-        {context.entity.content}
-      </p>
+      <ContentHtml className="text-xs text-muted-foreground leading-relaxed mt-1" content={context.entity.content ?? ""} />
     </div>
   );
 }
@@ -90,6 +88,14 @@ function RelationSidebar() {
       )}
     </aside>
   );
+}
+
+function ContentHtml({ content, className }: { content: string; className?: string }) {
+  const isHtml = content.includes("<");
+  if (isHtml) {
+    return <div className={className} dangerouslySetInnerHTML={{ __html: content }} />;
+  }
+  return <div className={className} style={{ whiteSpace: "pre-wrap" }}>{content}</div>;
 }
 
 function SegmentCard({ entity }: { entity: Entity }) {
@@ -140,7 +146,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
       <div className="pt-8 pb-4">
         <h3 className="text-lg font-medium text-foreground">{entity.title}</h3>
         {entity.content && (
-          <p className="text-sm text-muted-foreground mt-1">{entity.content}</p>
+          <ContentHtml className="text-sm text-muted-foreground mt-1" content={entity.content} />
         )}
       </div>
     );
@@ -150,7 +156,11 @@ function SegmentCard({ entity }: { entity: Entity }) {
     return (
       <div className="py-2">
         <p className="italic text-muted-foreground text-sm leading-relaxed">
-          {entity.content}
+          {entity.content?.includes("<") ? (
+            <span dangerouslySetInnerHTML={{ __html: entity.content }} />
+          ) : (
+            entity.content
+          )}
         </p>
       </div>
     );
@@ -164,7 +174,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {entity.metadata.character as string}
             </span>
-            <p className="mt-0.5 leading-relaxed text-foreground">{entity.content}</p>
+            <ContentHtml className="mt-0.5 leading-relaxed text-foreground" content={entity.content ?? ""} />
           </div>
         ) : (
           <div className="py-2">
@@ -172,7 +182,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
               <p className="font-medium text-sm text-foreground">{entity.title}</p>
             )}
             {entity.content && (
-              <p className="leading-relaxed text-foreground">{entity.content}</p>
+              <ContentHtml className="leading-relaxed text-foreground" content={entity.content} />
             )}
           </div>
         )}
@@ -257,9 +267,7 @@ function ReadingViewport() {
               ))
             ) : (
               rootEntity?.content && (
-                <div className="whitespace-pre-wrap leading-relaxed text-foreground pt-4">
-                  {rootEntity.content}
-                </div>
+                <ContentHtml className="leading-relaxed text-foreground pt-4" content={rootEntity.content} />
               )
             )}
           </div>

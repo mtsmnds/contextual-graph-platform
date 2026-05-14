@@ -28,11 +28,22 @@ This document defines why this project exists, who it serves, and what capabilit
 - As a user, clicking any entity on the canvas opens a continuous-scroll reading viewport showing the root container (work) with all descendants flattened recursively.
 - As a user, I can scroll freely through the entire work — from title page through all sections to end matter.
 - As a user, the breadcrumb shows my position in the hierarchy. Clicking any crumb refocuses the root context with that section as anchor.
-- Future: As a user, clicking a relation (references, annotates) opens a side panel to the right with linked content, preserving the reading position.
+- As a user, clicking a relation (references, annotates) opens a new column to the right with linked content, preserving the reading position in the previous column.
+- As a user, I can navigate horizontally through related context: work → author → author's other works → reference → annotation, each in its own column.
+- As a user, I can reorder columns. Content scrolls in sync horizontally across columns.
+- As a user, I can collapse containers (acts, scenes) like accordions within the reading viewport.
+
+### Node Component
+- As a developer, I have a single Node component that can render both segments and containers with appropriate action icons in the border area.
+- As a developer, segments show actions: comment/note/reference/mention/link, create next segment, view metadata.
+- As a developer, containers show the same actions plus collapsible accordion behavior and table of contents referencing.
+- As a user, I can toggle a dev tools panel that shows the focused node's full JSON data (kind, title, content, metadata, relations).
 
 ### Canvas
 - As a user, I can see all entities rendered as nodes with edges. Work, act, scene, and segment nodes are all visible.
 - As a user, clicking any node opens the reading viewport showing the full work in context.
+- As a user, I can filter the canvas by entity kind, relation type, or container membership.
+- As a user, I can view the roadmap itself as a graph (future: self-hosting roadmap).
 
 ### State Management
 - As a developer, I can add, update, and delete entities and relations through primitive store actions.

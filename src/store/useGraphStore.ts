@@ -9,6 +9,7 @@ import type {
 } from "../types/graph";
 import { FEATURES } from "../config";
 import { saveHandle, loadHandle } from "../persistence";
+import { generateUniqueId } from "../engine/ids";
 
 declare global {
   interface Window {
@@ -35,7 +36,7 @@ interface GraphStore {
   folderName: string | null;
   saveStatus: SaveStatus;
 
-  addEntity: (kind: EntityKind, data?: Partial<Entity>) => string;
+  addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
   addRelation: (source: string, target: string, type: RelationType) => string;
@@ -49,7 +50,7 @@ interface GraphStore {
   restoreFolder: () => Promise<boolean>;
 }
 
-export const useGraphStore = create<GraphStore>((set) => ({
+export const useGraphStore = create<GraphStore>((set, get) => ({
   entities: [],
   relations: [],
   view: {
@@ -62,13 +63,18 @@ export const useGraphStore = create<GraphStore>((set) => ({
   folderName: null,
   saveStatus: "saved",
 
-  addEntity: (kind, data = {}) => {
-    const id = `${kind}_${Date.now()}`;
+  addEntity: (kind, data = {}, parentId = null) => {
+    const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
+    const siblingCount = parentId
+      ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
+      : 0;
+    const id = generateUniqueId(parentId, kind, data.title, existingIds, siblingCount);
+
     const entity: Entity = {
       id,
       kind,
-      title: data.title ?? kind,
-      content: data.content,
+      title: kind === "segment" ? undefined : (data.title ?? kind),
+      content: kind === "container" ? undefined : data.content,
       metadata: data.metadata ?? {},
     };
     set((state) => ({ entities: [...state.entities, entity] }));
@@ -76,9 +82,32 @@ export const useGraphStore = create<GraphStore>((set) => ({
   },
 
   updateEntity: (id, data) => {
+    const current = get().entities.find((e) => e.id === id);
+    if (!current) return;
+
+    let final = { ...data };
+
+    if (current.kind === "segment") delete final.title;
+    if (current.kind === "container") delete final.content;
+
+    if (final.id && final.id !== id) {
+      const oldId = id;
+      const newId = final.id;
+      set((state) => ({
+        relations: state.relations.map((r) => ({
+          ...r,
+          source: r.source === oldId ? newId : r.source,
+          target: r.target === oldId ? newId : r.target,
+        })),
+      }));
+      id = newId;
+    }
+
     set((state) => ({
       entities: state.entities.map((e) =>
-        e.id === id ? { ...e, ...data, metadata: { ...e.metadata, ...(data.metadata ?? {}) } } : e,
+        e.id === id
+          ? { ...e, ...final, metadata: { ...e.metadata, ...(final.metadata ?? {}) } }
+          : e,
       ),
     }));
   },
