@@ -3,17 +3,31 @@
 ## Purpose
 How the system is designed and where core responsibilities live.
 
+## System Architecture
+
+```
+Entity Graph → Projection Layer → Renderer
+```
+
+The core is a **Relation-Native Content Engine**. Entities carry content directly. Relations carry typed links. Projections interpret the graph for a specific use case. Renderers display projections.
+
+React Flow is one renderer among many (graph visualization), introduced in Phase 4. It is NOT the core runtime.
+
+Guiding principle: *The graph is infrastructure. The viewport is the product. Renderers are interchangeable. Contextual reading is the core interaction.*
+
 ## System Style
-- Architecture style: React SPA with graph visualization
+- Architecture style: React SPA with a content-graph engine at the core
 - Deployment style: Tauri-packaged desktop app (dev via `npm run dev`)
 - Execution model: Client-side SPA, no server
 
 ## Tech Stack
 - Vite 8 + React 19 + TypeScript
-- @xyflow/react (React Flow) — graph canvas
 - Zustand 5 — global state
+- @xyflow/react (React Flow) — optional graph renderer (Phase 4+)
 - @phosphor-icons/react — icon library
 - Native CSS nesting (no preprocessor)
+- TipTap — rich text editor (future)
+- @dagrejs/dagre — auto-layout (future)
 
 ## Build Pipeline
 Entrypoint: `npm run build` → `vite build`
@@ -23,37 +37,72 @@ Entrypoint: `npm run build` → `vite build`
 
 ## Data Contracts
 
-### Graph Schema (`src/types/graph.ts`)
-- Nodes extend React Flow's `Node<NodeData, NodeKind>`:
-  - `type` field doubles as the NodeKind discriminator.
-  - `data` contains `label: string`, `status: pending|in-progress|done|active`, optional `specRef`.
-  - Must include `[key: string]: unknown` index signature to satisfy React Flow's generic constraint.
-- Edges extend React Flow's `Edge<EdgeData>`:
-  - `data` contains `kind: EdgeKind`, `behavior: EdgeBehavior`, optional `label`.
-  - Must include `[key: string]: unknown` index signature.
-- `EdgeKind` → `EdgeBehavior` resolved via `kindToBehavior` lookup in the store.
+### Domain Model (`src/types/graph.ts`)
+
+#### Entity
+The atomic semantic object. Content is native — no separate `docId` indirection.
+
+```ts
+type EntityKind = "segment" | "container" | "annotation" | "concept" | "summary"
+
+type Entity = {
+  id: string
+  kind: EntityKind
+  title?: string
+  content?: string        // rich text, native to entity
+  metadata: Record<string, unknown>   // product-specific fields (e.g. status, priority)
+}
+```
+
+#### Relation
+Typed edge between entities. No `EdgeBehavior` — behavior belongs to the interaction layer, not storage.
+
+```ts
+type RelationType = "contains" | "next" | "references" | "annotates" | "summarizes" | "related_to"
+
+type Relation = {
+  id: string
+  source: string
+  target: string
+  type: RelationType
+  metadata: Record<string, unknown>
+}
+```
+
+#### View State
+Separate from domain state entirely.
+
+```ts
+type ViewState = {
+  focusedEntityId?: string
+  visibleEntityIds: string[]
+  expandedPanels: PanelState[]
+  layout?: LayoutState
+}
+```
 
 ### Store (`src/store/useGraphStore.ts`)
-- `nodes: AppNode[]` — current graph nodes.
-- `edges: AppEdge[]` — current graph edges.
-- `documents: Record<string, string>` — rich text content keyed by docId.
-- Mutations: `addNode`, `deleteNode`, `updateNodeData`, `addEdge`, `deleteEdge`, `updateDocument`.
-- React Flow integration: `onNodesChange`, `onEdgesChange` wired through `applyNodeChanges`/`applyEdgeChanges`.
+- `entities: Entity[]` — domain graph entities.
+- `relations: Relation[]` — typed edges.
+- `view: ViewState` — UI-only state, separate from domain.
+- Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `removeRelation`.
+- View actions: `focusEntity`, `expandPanel`, `promotePanel`.
 
 ### Output / State
 - `dist/` — production build.
-- Store lives in memory only (no persistence yet).
+- Store persisted to localStorage initially; SQLite (via Tauri) later.
 
 ## Module Map
 
 | Path | Role |
 |------|------|
 | `src/main.tsx` | App entrypoint |
-| `src/App.tsx` | React Flow canvas mount |
-| `src/types/graph.ts` | TypeScript type definitions |
-| `src/store/useGraphStore.ts` | Zustand store + mutations |
+| `src/App.tsx` | Root component — routes to active renderer |
+| `src/types/graph.ts` | Entity/Relation type definitions |
+| `src/store/useGraphStore.ts` | Zustand store (domain + view state) |
+| `src/engine/` | Query engine: getEntity, getRelations, getSequentialContext, getLinkedContext |
+| `src/renderers/` | Renderer implementations: reading, outline, graph (future) |
 | `src/index.css` | Global styles, dark mode |
-| `src/assets/` | Static images |
 
 ## Change Impact
 - Schema change → update `src/types/graph.ts` + `dev-docs/architecture.md` + `dev-docs/changelog.md` + ADR.
@@ -69,3 +118,4 @@ Entrypoint: `npm run build` → `vite build`
 - `roadmap.md` — priorities.
 - `changelog.md` — history.
 - `AGENTS.md` — operating conventions.
+- `dev-docs/prd0001-contextual-graph-platform/contextual_graph_platform_architecture_review.md` — full review rationale.
