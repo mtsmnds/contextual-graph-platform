@@ -126,39 +126,7 @@ function loadInitialState(): { entities: Entity[]; relations: Relation[] } {
     base = { entities: seedEntities, relations: seedRelations };
   }
 
-  // Ensure annotation entities always exist in the final state
-  const annotationEntityIds = new Set(["note_1", "note_2", "note_3", "note_4", "ref_1"]);
-  const annotationRelIds = new Set(["r_6", "r_7", "r_8", "r_9", "r_10"]);
-
-  const final = base!;
-
-  for (const e of seedEntities) {
-    if (annotationEntityIds.has(e.id) && !final.entities.find((x) => x.id === e.id)) {
-      final.entities.push(e);
-    }
-  }
-
-  // Merge annotation relations matching the data source
-  const hasHamletSegs =
-    final.entities.some((e) => e.id === "seg_18") &&
-    final.entities.some((e) => e.id === "seg_1614");
-
-  if (hasHamletSegs) {
-    const fresh = hamletData as GraphSnapshot;
-    for (const r of fresh.relations) {
-      if (annotationRelIds.has(r.id) && !final.relations.find((x) => x.id === r.id)) {
-        final.relations.push(r);
-      }
-    }
-  } else {
-    for (const r of seedRelations) {
-      if (annotationRelIds.has(r.id) && !final.relations.find((x) => x.id === r.id)) {
-        final.relations.push(r);
-      }
-    }
-  }
-
-  return final;
+  return base;
 }
 
 function persistToDisk(entities: Entity[], relations: Relation[]) {

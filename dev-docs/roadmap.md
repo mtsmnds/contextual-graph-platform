@@ -59,9 +59,11 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-13 — Continuous scroll viewport (PRD0005): container-aware rendering, segment variants, breadcrumb nav, canvas-to-container resolution
 - 2026-05-13 — Full text import (PRD0006): Gutenberg parser, 1342 entities / 2634 relations, first-run seed data
 - 2026-05-13 — Work entity + full-play scrolling: `hamlet--william-shakespeare` as root container, recursive flattening, canvas shows work node, all 1,349 entities scrollable in one view
+- 2026-05-13 — Contextual expansion (PRD0007): inline annotation cards, relation indicators, seed data enrichment
+- 2026-05-14 — Pure Domain Loader (PRD0008): stripped all runtime merging/detection from `loadInitialState()` — each data source is self-contained
 
 ## Now (Current Sprint)
-- **Contextual expansion (PRD0007)** — inline annotation cards revealed by clicking relation indicators on segments. Notion-style horizontal alignment.
+- **File System Persistence (PRD0009)** — user's graph data lives as `graph.json` in a folder they choose. No seed data, no localStorage, no hidden state.
 
 ## Next (Near-Term)
 - Annotation creation (highlight + note)
@@ -74,7 +76,6 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - Tauri packaging
 - Undo/redo
 - Keyboard shortcuts and accessibility
-- File System Access API (showSaveFilePicker) for export/import to user-chosen folder
 
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.
