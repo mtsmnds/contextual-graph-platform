@@ -35,10 +35,17 @@ type ViewState = {
   expandedPanels: string[];
 };
 
+type GraphSnapshot = {
+  version: number;
+  entities: Entity[];
+  relations: Relation[];
+};
+
 export type {
   EntityKind,
   Entity,
   RelationType,
   Relation,
   ViewState,
+  GraphSnapshot,
 };

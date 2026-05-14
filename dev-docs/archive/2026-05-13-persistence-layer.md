@@ -1,7 +1,13 @@
+# 2026-05-13: Persistence Layer (PRD0003)
+
+> **Completion note:** Straightforward feature — localStorage auto-save with debounce, startup hydration, export/import. No architectural tradeoffs worth an ADR. The plan below is preserved for reference.
+
+---
+
 # PRD0003 — Persistence Layer
 
 ## Status
-Draft — ready for implementation
+Completed — localStorage auto-save, hydration, export/import implemented
 
 ## Problem
 

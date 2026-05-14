@@ -5,6 +5,7 @@ import type {
   Relation,
   RelationType,
   ViewState,
+  GraphSnapshot,
 } from "../types/graph";
 
 const seedEntities: Entity[] = [
@@ -65,6 +66,37 @@ const seedRelations: Relation[] = [
   { id: "r_5", source: "hamlet_1", target: "note_1", type: "annotates", metadata: {} },
 ];
 
+const PERSIST_KEY = "react-roadmap-graph";
+const DEBOUNCE_MS = 300;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function loadInitialState(): { entities: Entity[]; relations: Relation[] } {
+  try {
+    const raw = localStorage.getItem(PERSIST_KEY);
+    if (raw) {
+      const parsed: GraphSnapshot = JSON.parse(raw);
+      if (parsed.version === 1 && Array.isArray(parsed.entities)) {
+        return {
+          entities: parsed.entities,
+          relations: parsed.relations ?? [],
+        };
+      }
+    }
+  } catch {
+    // corrupt data — fall through to seeds
+  }
+  return { entities: seedEntities, relations: seedRelations };
+}
+
+function persistToDisk(entities: Entity[], relations: Relation[]) {
+  const snapshot: GraphSnapshot = {
+    version: 1,
+    entities,
+    relations,
+  };
+  localStorage.setItem(PERSIST_KEY, JSON.stringify(snapshot));
+}
+
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
@@ -73,21 +105,22 @@ interface GraphStore {
   addEntity: (kind: EntityKind, data?: Partial<Entity>) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
-  addRelation: (
-    source: string,
-    target: string,
-    type: RelationType,
-  ) => string;
+  addRelation: (source: string, target: string, type: RelationType) => string;
   removeRelation: (id: string) => void;
 
   focusEntity: (id: string | null) => void;
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
+
+  exportGraph: () => void;
+  importGraph: (data: { entities: Entity[]; relations: Relation[] }) => void;
 }
 
-export const useGraphStore = create<GraphStore>((set) => ({
-  entities: seedEntities,
-  relations: seedRelations,
+const initialState = loadInitialState();
+
+export const useGraphStore = create<GraphStore>((set, get) => ({
+  entities: initialState.entities,
+  relations: initialState.relations,
   view: {
     focusedEntityId: null,
     visibleEntityIds: [],
@@ -160,4 +193,29 @@ export const useGraphStore = create<GraphStore>((set) => ({
       },
     }));
   },
+
+  exportGraph: () => {
+    const { entities, relations } = get();
+    const snapshot: GraphSnapshot = { version: 1, entities, relations };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `graph-export-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  importGraph: (data) => {
+    set({ entities: data.entities, relations: data.relations });
+  },
 }));
+
+// Auto-save: debounced persist on every domain state change
+useGraphStore.subscribe((state, prevState) => {
+  if (state.entities === prevState.entities && state.relations === prevState.relations) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    persistToDisk(state.entities, state.relations);
+  }, DEBOUNCE_MS);
+});
