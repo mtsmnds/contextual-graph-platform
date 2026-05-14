@@ -7,16 +7,25 @@ import type {
   ViewState,
   GraphSnapshot,
 } from "../types/graph";
+import { FEATURES } from "../config";
+import { saveHandle, loadHandle } from "../persistence";
 
 declare global {
   interface Window {
     showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
+  }
+
+  interface FileSystemHandle {
+    requestPermission(descriptor?: { mode: "read" | "readwrite" }): Promise<PermissionState>;
+    queryPermission(descriptor?: { mode: "read" | "readwrite" }): Promise<PermissionState>;
   }
 }
 
 type SaveStatus = "saved" | "unsaved" | "saving" | "error";
 
 const FILE_NAME = "graph.json";
+
+let _hydrated = false;
 
 interface GraphStore {
   entities: Entity[];
@@ -37,6 +46,7 @@ interface GraphStore {
   closePanel: (entityId: string) => void;
 
   openFolder: () => Promise<void>;
+  restoreFolder: () => Promise<boolean>;
 }
 
 export const useGraphStore = create<GraphStore>((set) => ({
@@ -126,6 +136,57 @@ export const useGraphStore = create<GraphStore>((set) => ({
     }));
   },
 
+  restoreFolder: async () => {
+    if (!FEATURES.PERSIST_HANDLE) return false;
+    if (!window.showDirectoryPicker) return false;
+    try {
+      const handle = await loadHandle();
+      if (!handle) return false;
+      const permission = await handle.requestPermission({ mode: "readwrite" });
+      if (permission !== "granted") return false;
+
+      let entities: Entity[] = [];
+      let relations: Relation[] = [];
+
+      try {
+        const fileHandle = await handle.getFileHandle(FILE_NAME);
+        const file = await fileHandle.getFile();
+        const text = await file.text();
+        const data: GraphSnapshot = JSON.parse(text);
+        if (data.version === 1) {
+          entities = data.entities ?? [];
+          relations = data.relations ?? [];
+        }
+      } catch {
+        const fileHandle = await handle.getFileHandle(FILE_NAME, { create: true });
+        const writable = await fileHandle.createWritable();
+        const snapshot: GraphSnapshot = { version: 1, entities: [], relations: [] };
+        await writable.write(JSON.stringify(snapshot, null, 2));
+        await writable.close();
+      }
+
+      set({
+        entities,
+        relations,
+        directoryHandle: handle,
+        folderName: handle.name,
+        saveStatus: "saved",
+        view: {
+          focusedEntityId: null,
+          anchorEntityId: null,
+          visibleEntityIds: [],
+          expandedPanels: [],
+        },
+      });
+
+      _hydrated = true;
+      return true;
+    } catch (err) {
+      console.error("Failed to restore folder:", err);
+      return false;
+    }
+  },
+
   openFolder: async () => {
     if (!window.showDirectoryPicker) return;
     try {
@@ -165,6 +226,14 @@ export const useGraphStore = create<GraphStore>((set) => ({
           expandedPanels: [],
         },
       });
+
+      _hydrated = true;
+
+      if (FEATURES.PERSIST_HANDLE) {
+        saveHandle(handle).catch((err) =>
+          console.error("Failed to persist directory handle:", err),
+        );
+      }
     } catch (err) {
       if ((err as DOMException)?.name === "AbortError") return;
       console.error("Failed to open folder:", err);
@@ -176,6 +245,7 @@ export const useGraphStore = create<GraphStore>((set) => ({
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 useGraphStore.subscribe((state, prevState) => {
+  if (!_hydrated) return;
   if (state.entities === prevState.entities && state.relations === prevState.relations) return;
   if (!state.directoryHandle) return;
 

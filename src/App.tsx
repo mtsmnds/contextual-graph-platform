@@ -1,9 +1,9 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect, useRef } from "react";
 import type React from "react";
 import { ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useGraphStore } from "./store/useGraphStore";
-import { resolveContainer } from "./engine/queries";
+import { resolveContainer, getEntity } from "./engine/queries";
 import ReadingViewport from "./renderers/ReadingViewport";
 import type { Entity, Relation } from "./types/graph";
 
@@ -183,10 +183,60 @@ function AppHeader() {
   );
 }
 
+function getViewParams(): { focused: string | null; anchor: string | null } {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    focused: params.get("focused"),
+    anchor: params.get("anchor"),
+  };
+}
+
+function updateUrl(focused: string | null, anchor: string | null) {
+  const params = new URLSearchParams();
+  if (focused) params.set("focused", focused);
+  if (anchor) params.set("anchor", anchor);
+  const search = params.toString();
+  const url = search ? `${window.location.pathname}?${search}` : window.location.pathname;
+  history.replaceState(null, "", url);
+}
+
 function App() {
   const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId);
+  const anchorEntityId = useGraphStore((s) => s.view.anchorEntityId);
   const directoryHandle = useGraphStore((s) => s.directoryHandle);
   const openFolder = useGraphStore((s) => s.openFolder);
+  const restoreFolder = useGraphStore((s) => s.restoreFolder);
+  const focusEntity = useGraphStore((s) => s.focusEntity);
+
+  const hasRestoredFromUrl = useRef(false);
+
+  useEffect(() => {
+    restoreFolder();
+  }, [restoreFolder]);
+
+  useEffect(() => {
+    if (!directoryHandle || hasRestoredFromUrl.current) return;
+    hasRestoredFromUrl.current = true;
+
+    const { focused, anchor } = getViewParams();
+    if (focused) {
+      const state = useGraphStore.getState();
+      const entity = getEntity(state, focused);
+      if (entity) {
+        focusEntity(focused, anchor ?? focused);
+      }
+    }
+  }, [directoryHandle, focusEntity]);
+
+  useEffect(() => {
+    if (!directoryHandle) return;
+
+    const timer = setTimeout(() => {
+      updateUrl(focusedEntityId, anchorEntityId);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [focusedEntityId, anchorEntityId, directoryHandle]);
 
   if (!directoryHandle) {
     return <FolderPicker onOpen={openFolder} />;

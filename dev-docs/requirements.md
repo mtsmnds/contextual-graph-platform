@@ -39,8 +39,9 @@ This document defines why this project exists, who it serves, and what capabilit
 - As a developer, I can control view state (focused entity, anchor entity, expanded panels) separately from domain state.
 
 ### Persistence
-- As a user, my graph state survives page refresh via localStorage auto-save.
-- As a user, I can export the full graph as a JSON file and import it later.
+- As a user, my graph state lives in a `graph.json` file inside a folder I choose via the File System Access API.
+- As a user, the folder handle can be persisted to IndexedDB (behind `VITE_PERSIST_HANDLE` flag) so I don't re-pick the folder every session.
+- As a user, my view state (focused entity, anchor entity) is encoded in the URL, so page reloads restore my position without re-navigating.
 
 ### Non-Functional Requirements
 - TypeScript strict mode enabled — no `any` in graph types.

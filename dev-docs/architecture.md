@@ -99,6 +99,8 @@ type ViewState = {
 - Persistence: File System Access API — user picks a folder, app reads/writes `graph.json` inside it.
 - Auto-save: debounced (300ms) write to `graph.json` on every entity/relation change. No hidden storage.
 - Actions: `openFolder()` opens folder picker, reads or creates `graph.json`.
+- Handle persistence: `restoreFolder()` (behind `FEATURES.PERSIST_HANDLE`) restores the last-used folder handle from IndexedDB on startup. `openFolder()` persists the handle after successful pick.
+- URL sync: On view state change, `focusedEntityId` and `anchorEntityId` are synced to URL search params (debounced 200ms, `history.replaceState`). On app load, after folder is resolved, URL params are read to restore the view.
 
 ### Query Engine (`src/engine/queries.ts`)
 Pure functions over store state — no hooks, no components:
@@ -129,6 +131,10 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 - **SegmentCard variants**: Act, scene, title-page, front-matter, stage-direction, character speech, end-matter, dramatis-personae — each renders with appropriate typography and spacing.
 - **Canvas bridge**: A temporary adapter in `App.tsx` transforms Entity/Relation data into React Flow nodes/edges for the overview canvas.
 
+### Feature Flags (`src/config.ts`)
+- `FEATURES.PERSIST_HANDLE` — reads from `import.meta.env.VITE_PERSIST_HANDLE !== "false"` (default `true`). When enabled, the folder handle is stored in IndexedDB and restored on startup, skipping the folder picker. Set `VITE_PERSIST_HANDLE=false` to opt out.
+- All feature flags are `as const` for dead-code elimination by bundlers in production builds.
+
 ### Output / State
 - `dist/` — production build.
 - Store reads/writes `graph.json` in the user's chosen folder via the File System Access API. No bundled seed data.
@@ -143,6 +149,8 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 | `src/store/useGraphStore.ts` | Zustand store (domain + view state + persistence) |
 | `src/engine/` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
+| `src/config.ts` | Feature flags (`PERSIST_HANDLE` from env var) |
+| `src/persistence.ts` | IndexedDB helpers for directory handle persistence |
 | `src/components/ui/` | shadcn/ui components (Button) |
 | `src/lib/utils.ts` | cn() utility for Tailwind class merging |
 | `src/data/hamlet.json` | Hamlet snapshot (reference only, no longer bundled) |

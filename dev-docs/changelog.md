@@ -58,6 +58,35 @@ Use this to recover context after breaks.
 
 ## 2026-05-14
 
+### Fix: skip auto-save on initial disk load, flip PERSIST_HANDLE default to true
+- **What:** Two fixes: (1) the auto-save subscription now checks `_hydrated` flag and skips writes during initial store population from disk — prevents Vite HMR loop when `graph.json` is inside the project root; (2) `PERSIST_HANDLE` default flipped to `true` (opt-out via `VITE_PERSIST_HANDLE=false`).
+- **Reason:** Opening a folder inside the Vite project root caused the initial auto-save write-back to trigger a full page reload, creating an infinite loop. Handle persistence was opt-in but the user expects it to just work.
+- **Files changed:**
+  - `src/store/useGraphStore.ts`: Added `_hydrated` module-level flag, set to `true` after `openFolder()` and `restoreFolder()` population, checked in auto-save subscription
+  - `src/config.ts`: Changed `=== "true"` to `!== "false"` — default is now `true`
+  - `dev-docs/architecture.md`: Updated feature flag description
+  - `dev-docs/roadmap.md`: Updated Recently Completed
+- **Impact:** No more reload loop. Handle persistence works out of the box.
+
+---
+
+### Handle Persistence & URL-Based Navigation — PRD0011
+- **What:** Two coordinated changes: (1) feature-flagged folder handle persistence via IndexedDB so users don't re-pick their folder every session, (2) URL-based view state sync so page reloads restore the reading viewport position. When `VITE_PERSIST_HANDLE=true`, the `FileSystemDirectoryHandle` is stored in IndexedDB and silently restored on startup — the folder picker is skipped entirely. The view state (`focusedEntityId`, `anchorEntityId`) is synced to URL search params via `history.replaceState` (debounced 200ms), and restored after folder resolution on load. Stale entity IDs in URLs gracefully fall back to the canvas view.
+- **Reason:** Editing `graph.json` externally caused page reloads that lost the user's place. Re-picking the folder every session was friction that broke flow. The URL is a natural bookmarkable anchor for the reading viewport.
+- **Files changed:**
+  - `src/config.ts`: Created — feature flag `PERSIST_HANDLE` from `VITE_PERSIST_HANDLE` env var
+  - `src/persistence.ts`: Created — IndexedDB helpers (`saveHandle`, `loadHandle`, `clearHandle`)
+  - `src/store/useGraphStore.ts`: Added `restoreFolder()` action, persist handle after `openFolder()` when flag is on, global type augmentation for `FileSystemHandle.requestPermission`
+  - `src/App.tsx`: Added three effects — handle restore on mount, URL param restoration after folder resolve, URL sync on view state change
+  - `dev-docs/requirements.md`: Updated persistence requirements
+  - `dev-docs/architecture.md`: Added store actions, feature flag section, module map entries
+  - `dev-docs/roadmap.md`: Updated Recently Completed
+- **Impact:** Users with `VITE_PERSIST_HANDLE=true` see zero friction on reload — folder reconnects, view restores. Users with the flag off see no change. URL is now a bookmarkable entry point to any entity. No new dependencies.
+- **ADR:** `archive/2026-05-14-handle-persistence-and-url-navigation.md`
+- **Archive:** `archive/2026-05-14-prd0011-handle-persistence-and-url-navigation.md`
+
+---
+
 ### File System Persistence — PRD0009
 - **What:** Replaced localStorage with the File System Access API. The user picks a folder at startup — the app reads/writes `graph.json` inside it. No seed data, no localStorage, no hidden state. App shows a folder picker gate on launch, renders folder name + save status in a header bar. Removed `hamlet.json` bundle import (cut JS bundle from 968 KB to 425 KB).
 - **Reason:** localStorage is opaque to users and agents, has no permanence across machines, and contradicts the product goal of making data transparent and portable. The user's graph should be a file they can see, edit, version, and share.

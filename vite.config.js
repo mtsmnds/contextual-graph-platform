@@ -8,4 +8,9 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },
+  server: {
+    watch: {
+      ignored: ["**/hello2/graph.json"],
+    },
+  },
 })
