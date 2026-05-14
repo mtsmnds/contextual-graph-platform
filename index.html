@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>react-roadmap</title>
+    <script>
+      if (matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+      matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        document.documentElement.classList.toggle('dark', e.matches);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

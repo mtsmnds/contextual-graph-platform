@@ -26,6 +26,26 @@ Use this to recover context after breaks.
 
 ## 2026-05-13
 
+### Reading viewport + shadcn/ui — PRD0004
+- **What:** Built the first real renderer — a focused reading viewport that displays entity content with prev/next navigation. Added Tailwind v4 and shadcn/ui (Base UI) as the component foundation. Canvas now supports click-to-focus mode switching.
+- **Reason:** The canvas adapter bridge was temporary — the product validates on a clean reading experience. shadcn/ui provides high-quality accessible components without obscuring custom styles, laying a scalable design foundation.
+- **Files changed:**
+  - `src/renderers/ReadingViewport.tsx`: Created — focused entity display with prev/next/back navigation
+  - `src/App.tsx`: Updated — mode-switch rendering (canvas vs viewport), onNodeClick wiring
+  - `src/index.css`: Replaced Vite template styles with full shadcn/Tailwind theme, cleaned up conflicts
+  - `index.html`: Added dark mode class toggle script
+  - `vite.config.js`: Added tailwindcss plugin, @/ path alias
+  - `tsconfig.json`: Added @/ path alias
+  - `package.json`: Added tailwindcss, @tailwindcss/vite
+  - `src/components/ui/button.tsx`: Created by shadcn init
+  - `src/lib/utils.ts`: Created by shadcn init (cn utility)
+  - `dev-docs/visual-design.md`: Created — design principles and conventions
+- **Impact:** First real renderer replaces the temporary canvas bridge. Prev/Next navigation works via query engine. Component foundation clean and scalable.
+
+---
+
+## 2026-05-13
+
 ### Domain engine refactor — PRD0002
 - **What:** Replaced the React-Flow-coupled AppNode/AppEdge types with a pure Entity/Relation domain model. Rewrote the store to hold separate domain state and view state. Created the query engine. Added a canvas adapter bridge to keep React Flow rendering alive during the transition.
 - **Reason:** The old architecture treated React Flow nodes as domain entities, mixing viewport state (coordinates, dragging, selection) with the semantic model. The new model decouples state from rendering, enabling the reading workspace (M2) without fighting canvas internals.

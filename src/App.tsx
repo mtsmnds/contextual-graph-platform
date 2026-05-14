@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useGraphStore } from "./store/useGraphStore";
+import ReadingViewport from "./renderers/ReadingViewport";
 import type { Entity, Relation } from "./types/graph";
 
 function assignLayout(
@@ -41,10 +42,13 @@ function assignLayout(
   return entities.map((e) => ordered.get(e.id) ?? { x: 0, y: 0 });
 }
 
-function toReactFlowNodes(entities: Entity[], positions: { x: number; y: number }[]) {
+function toReactFlowNodes(
+  entities: Entity[],
+  positions: { x: number; y: number }[],
+) {
   return entities.map((entity, i) => ({
     id: entity.id,
-    type: "default",
+    type: "default" as const,
     position: positions[i],
     data: {
       label: entity.title ?? entity.id,
@@ -64,9 +68,10 @@ function toReactFlowEdges(relations: Relation[]) {
   }));
 }
 
-function App() {
+function CanvasView() {
   const entities = useGraphStore((s) => s.entities);
   const relations = useGraphStore((s) => s.relations);
+  const focusEntity = useGraphStore((s) => s.focusEntity);
 
   const { nodes, edges } = useMemo(() => {
     const positions = assignLayout(entities, relations);
@@ -78,9 +83,24 @@ function App() {
 
   return (
     <div style={{ width: "100%", height: "100vh" }}>
-      <ReactFlow nodes={nodes} edges={edges} fitView />
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodeClick={(_, node) => focusEntity(node.id)}
+        fitView
+      />
     </div>
   );
+}
+
+function App() {
+  const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId);
+
+  if (focusedEntityId) {
+    return <ReadingViewport />;
+  }
+
+  return <CanvasView />;
 }
 
 export default App;

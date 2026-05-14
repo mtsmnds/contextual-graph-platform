@@ -34,10 +34,9 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - ~~Seed content for validation~~ ✅
 
 ### M2 — Reading Workspace
-- Focused entity viewport with contextual radius
-- Sequential traversal (next/previous)
+- Focused entity viewport with sequential traversal (PRD0004)
+- Full text import at scale (PRD0005)
 - Side-panel contextual expansion
-- Focus promotion (secondary → primary)
 - Annotation creation (highlight + note)
 
 ### M3 — Projection Layer
@@ -53,22 +52,25 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 ## Recently Completed (Rolling)
 - 2026-05-13 — Typed data layer + Zustand store + React Flow canvas (tightly-coupled; refactored in PRD0002)
 - 2026-05-13 — Domain engine refactor (PRD0002): Entity/Relation schema, query engine, fresh seed data. See `archive/2026-05-13-domain-engine-refactor.md`
+- 2026-05-13 — Persistence layer (PRD0003): localStorage auto-save, hydration, export/import
+- 2026-05-13 — Reading viewport (PRD0004): focused entity display, prev/next navigation, mode-switch rendering, shadcn/ui + Tailwind foundation
 
 ## Now (Current Sprint)
-- **Persistence layer (PRD0003)** — localStorage save/load of entities and relations. Auto-save on mutation, load on startup.
+- **Full text import (PRD0005)** — Hamlet from Gutenberg HTML parsed into ~775 entities + ~800 relations via build-time script. Validates the reading experience at scale.
 
 ## Next (Near-Term)
-- Reading viewport with focused entity display and sequential traversal
+- Side-panel contextual expansion
 
 ## Later (Backlog)
-- Annotation creation (highlight + note)
 - Side-panel contextual expansion
+- Annotation creation (highlight + note)
 - Multi-column reading workspace
 - Projection layer abstractions
 - React Flow graph visualization (Phase 4+)
 - Tauri packaging
 - Undo/redo
 - Keyboard shortcuts and accessibility
+- File System Access API (showSaveFilePicker) for export/import to user-chosen folder
 
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.

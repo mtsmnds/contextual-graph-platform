@@ -1,7 +1,7 @@
 # PRD0004 — Reading Viewport
 
 ## Status
-Draft — ready for implementation
+Completed — ReadingViewport component, canvas click-to-open, prev/next navigation, mode-switch rendering
 
 ## Problem
 
