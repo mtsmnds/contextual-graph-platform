@@ -61,13 +61,14 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-13 — Work entity + full-play scrolling: `hamlet--william-shakespeare` as root container, recursive flattening, canvas shows work node, all 1,349 entities scrollable in one view
 
 ## Now (Current Sprint)
-- **Side-panel contextual expansion** — when reading, clicking a relation indicator (`annotates`, `references`) opens a column to the right with the linked content. Reading position preserved. This is the horizontal axis of the vision document.
+- **Contextual expansion (PRD0007)** — inline annotation cards revealed by clicking relation indicators on segments. Notion-style horizontal alignment.
 
 ## Next (Near-Term)
 - Annotation creation (highlight + note)
 - Multi-column reading workspace
 
 ## Later (Backlog)
+- "Talmud mode" toggle — show all annotations at once, each aligned with its source segment
 - Projection layer abstractions
 - React Flow graph visualization (Phase 4+)
 - Tauri packaging

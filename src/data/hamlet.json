@@ -13298,6 +13298,41 @@
         "type": "end-matter",
         "source": "hamlet"
       }
+    },
+    {
+      "id": "note_1",
+      "kind": "annotation",
+      "title": "Identity theme",
+      "content": "The play opens with a question of identity — fitting for a story about uncertainty and deception.",
+      "metadata": {}
+    },
+    {
+      "id": "note_2",
+      "kind": "annotation",
+      "title": "Famous soliloquy",
+      "content": "This is the most famous passage. Note the existential framing — not just suicide but the human condition.",
+      "metadata": {}
+    },
+    {
+      "id": "note_3",
+      "kind": "annotation",
+      "title": "Opening tension",
+      "content": "The play begins with a challenge — 'Who's there?' — establishing uncertainty as the central theme.",
+      "metadata": {}
+    },
+    {
+      "id": "note_4",
+      "kind": "annotation",
+      "title": "Supernatural element",
+      "content": "The ghost appears immediately, grounding the political drama in the supernatural.",
+      "metadata": {}
+    },
+    {
+      "id": "ref_1",
+      "kind": "segment",
+      "title": "Montaigne reference",
+      "content": "Shakespeare's soliloquy echoes Montaigne's Apology for Raymond Sebond, which questions whether man is 'nobler' than beasts.",
+      "metadata": {}
     }
   ],
   "relations": [
@@ -31982,6 +32017,41 @@
       "source": "seg_4012",
       "target": "seg_4015",
       "type": "next",
+      "metadata": {}
+    },
+    {
+      "id": "r_7",
+      "source": "seg_18",
+      "target": "note_1",
+      "type": "annotates",
+      "metadata": {}
+    },
+    {
+      "id": "r_8",
+      "source": "seg_18",
+      "target": "note_3",
+      "type": "annotates",
+      "metadata": {}
+    },
+    {
+      "id": "r_9",
+      "source": "seg_18",
+      "target": "note_4",
+      "type": "annotates",
+      "metadata": {}
+    },
+    {
+      "id": "r_6",
+      "source": "seg_1614",
+      "target": "note_2",
+      "type": "annotates",
+      "metadata": {}
+    },
+    {
+      "id": "r_10",
+      "source": "seg_1614",
+      "target": "ref_1",
+      "type": "references",
       "metadata": {}
     }
   ]

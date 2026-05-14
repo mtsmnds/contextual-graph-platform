@@ -56,6 +56,30 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-14
+
+### Fix annotation seed data — embed directly in hamlet.json
+- **What:** Replaced the fragile content-matching approach (which tried to match segments by text normalization at runtime) with direct embedding of 5 annotation entities (`note_1`–`note_4`, `ref_1`) and 5 relations (`r_6`–`r_10`) in `src/data/hamlet.json`. The relations now target actual hamlet segment IDs (`seg_18` for "Who's there?", `seg_1614` for "To be, or not to be"). The store's `loadInitialState()` was cleaned up — removed the broken content-matching code, and the annotation merging now correctly sources relations from hamlet.json when hamlet data is detected (presence of `seg_18`/`seg_1614`), falling back to seed relations for the seed data path.
+- **Reason:** The content-matching approach was broken — the `norm()` regex only handled straight apostrophes but the hamlet JSON uses curly quotes (U+2019), so "Who's there?" never matched its segment. Only the "To be" segment worked because its search term has no apostrophes. Additionally, the approach was fragile (depended on text normalization) and added relations with wrong source IDs (`hamlet_1`/`hamlet_2` don't exist in hamlet JSON) when loaded from localStorage.
+- **Files changed:**
+  - `src/data/hamlet.json`: Added 5 annotation entities and 5 annotates/references relations directly into the JSON
+  - `src/store/useGraphStore.ts`: Removed content-matching block; annotation merging now detects hamlet data and sources relations from the embedded hamlet.json data; falls back to seed relations for non-hamlet data
+- **Impact:** Annotation indicators now appear on both "Who's there?" (seg_18) and "To be, or not to be" (seg_1614) in the reading viewport. Users with existing localStorage should clear it (DevTools > Application > Local Storage) to pick up the fresh hamlet.json annotations. The approach is now data-driven rather than algorithm-driven, which is more reliable.
+
+---
+
+## 2026-05-13
+
+### Contextual expansion — PRD0007
+- **What:** Added relation indicators (`ChatCircleText` for annotations, `Link` for references) in the right gutter of segments with outgoing relations. Clicking an indicator reveals an annotation card below the segment with the linked content. Cards use a bordered card style with relation type label, entity title, content, and × close button. Seed data enriched with 2 new annotations and 1 reference. `focusEntity` resets expanded panels on navigation.
+- **Reason:** The horizontal axis of the vision (contextual expansion) was completely missing — readers could see no relations and had no way to view linked content. This is the first step toward the Notion-style/Talmudic inline annotation model.
+- **Files changed:**
+  - `src/renderers/ReadingViewport.tsx`: Added AnnotationCard component, indicator icon in right gutter of SegmentCard, toggle via expandedPanels
+  - `src/store/useGraphStore.ts`: Enriched seed data (note_3, note_4, ref_1 + relations); focusEntity resets expandedPanels
+- **Impact:** Reading viewport now shows relation indicators. Clicking reveals annotations inline. Foundation for "Talmud mode" (show all) and annotation creation.
+
+---
+
 ## 2026-05-13
 
 ### Work entity + full-play scrolling

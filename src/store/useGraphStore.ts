@@ -57,6 +57,30 @@ const seedEntities: Entity[] = [
     content: "The setup: ghost appears, Claudius marries Gertrude.",
     metadata: { source: "hamlet", type: "act" },
   },
+  {
+    id: "note_3",
+    kind: "annotation",
+    title: "Opening tension",
+    content:
+      "The play begins with a challenge — 'Who's there?' — establishing uncertainty as the central theme.",
+    metadata: {},
+  },
+  {
+    id: "note_4",
+    kind: "annotation",
+    title: "Supernatural element",
+    content:
+      "The ghost appears immediately, grounding the political drama in the supernatural.",
+    metadata: {},
+  },
+  {
+    id: "ref_1",
+    kind: "segment",
+    title: "Montaigne reference",
+    content:
+      "Shakespeare's soliloquy echoes Montaigne's Apology for Raymond Sebond, which questions whether man is 'nobler' than beasts.",
+    metadata: {},
+  },
 ];
 
 const seedRelations: Relation[] = [
@@ -67,6 +91,9 @@ const seedRelations: Relation[] = [
   { id: "r_5", source: "hamlet_2", target: "hamlet_3", type: "next", metadata: {} },
   { id: "r_6", source: "hamlet_2", target: "note_2", type: "annotates", metadata: {} },
   { id: "r_7", source: "hamlet_1", target: "note_1", type: "annotates", metadata: {} },
+  { id: "r_8", source: "hamlet_1", target: "note_3", type: "annotates", metadata: {} },
+  { id: "r_9", source: "hamlet_1", target: "note_4", type: "annotates", metadata: {} },
+  { id: "r_10", source: "hamlet_2", target: "ref_1", type: "references", metadata: {} },
 ];
 
 const PERSIST_KEY = "react-roadmap-graph";
@@ -74,26 +101,64 @@ const DEBOUNCE_MS = 300;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function loadInitialState(): { entities: Entity[]; relations: Relation[] } {
+  let base: { entities: Entity[]; relations: Relation[] } | null = null;
+
   try {
     const raw = localStorage.getItem(PERSIST_KEY);
     if (raw) {
       const parsed: GraphSnapshot = JSON.parse(raw);
       if (parsed.version === 1 && Array.isArray(parsed.entities)) {
-        return {
-          entities: parsed.entities,
-          relations: parsed.relations ?? [],
-        };
+        base = { entities: parsed.entities, relations: parsed.relations ?? [] };
       }
     }
-    // First run — load full Hamlet from bundled snapshot
-    const hamlet = hamletData as GraphSnapshot;
-    if (hamlet?.entities?.length) {
-      return { entities: hamlet.entities, relations: hamlet.relations };
-    }
-  } catch {
-    // corrupt data — fall through to seeds
+  } catch { /* ignore */ }
+
+  if (!base) {
+    try {
+      const hamlet = hamletData as GraphSnapshot;
+      if (hamlet?.entities?.length) {
+        base = { entities: hamlet.entities, relations: hamlet.relations };
+      }
+    } catch { /* ignore */ }
   }
-  return { entities: seedEntities, relations: seedRelations };
+
+  if (!base) {
+    base = { entities: seedEntities, relations: seedRelations };
+  }
+
+  // Ensure annotation entities always exist in the final state
+  const annotationEntityIds = new Set(["note_1", "note_2", "note_3", "note_4", "ref_1"]);
+  const annotationRelIds = new Set(["r_6", "r_7", "r_8", "r_9", "r_10"]);
+
+  const final = base!;
+
+  for (const e of seedEntities) {
+    if (annotationEntityIds.has(e.id) && !final.entities.find((x) => x.id === e.id)) {
+      final.entities.push(e);
+    }
+  }
+
+  // Merge annotation relations matching the data source
+  const hasHamletSegs =
+    final.entities.some((e) => e.id === "seg_18") &&
+    final.entities.some((e) => e.id === "seg_1614");
+
+  if (hasHamletSegs) {
+    const fresh = hamletData as GraphSnapshot;
+    for (const r of fresh.relations) {
+      if (annotationRelIds.has(r.id) && !final.relations.find((x) => x.id === r.id)) {
+        final.relations.push(r);
+      }
+    }
+  } else {
+    for (const r of seedRelations) {
+      if (annotationRelIds.has(r.id) && !final.relations.find((x) => x.id === r.id)) {
+        final.relations.push(r);
+      }
+    }
+  }
+
+  return final;
 }
 
 function persistToDisk(entities: Entity[], relations: Relation[]) {
@@ -185,6 +250,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
         ...state.view,
         focusedEntityId: id,
         anchorEntityId: anchorId ?? id,
+        expandedPanels: [],
       },
     }));
   },
