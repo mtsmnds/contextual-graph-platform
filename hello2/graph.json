@@ -2,12 +2,12 @@
   "version": 1,
   "entities": [
     {
-      "id": "hamlet--william-shakespeare",
+      "id": "hamlet",
       "kind": "container",
       "title": "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK",
       "metadata": {
         "type": "work",
-        "author": "William Shakespeare"
+        "author": "william-shakespeare"
       }
     },
     {

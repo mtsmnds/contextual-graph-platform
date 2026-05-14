@@ -16,42 +16,65 @@
   .schema code { display: block; white-space: pre; background: none; font-size: 0.9rem; }
   .question { background: #e8f4f8; border-left: 4px solid #2196F3; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
   .question strong { color: #1565C0; }
-  .example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; }
-  .example-grid .old { color: #999; }
-  .example-grid .new { color: #1a1a2e; font-weight: 500; }
   .tag { display: inline-block; background: #e0e0e0; padding: 1px 8px; border-radius: 3px; font-size: 0.75rem; margin-right: 4px; }
   .tag.container { background: #bbdefb; }
   .tag.segment { background: #c8e6c9; }
   .tag.annotation { background: #ffe0b2; }
+  .tag.root { background: #d1c4e9; }
   .callout { background: #fff8e1; border: 1px solid #ffe082; padding: 12px 16px; border-radius: 8px; margin: 16px 0; font-size: 0.9rem; }
+  .warning { background: #ffebee; border-left: 4px solid #e53935; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .warning strong { color: #c62828; }
+  .qa { background: #f3e5f5; border-left: 4px solid #9c27b0; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .qa strong { color: #7b1fa2; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+  .rec { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
 </style>
 </head>
 <body>
 
 <h1>PRD0010 — Entity ID Scheme</h1>
-<span class="status">Proposed — questions embedded</span>
+<span class="status">Proposed — v2 after review</span>
 
 <h2>Problem</h2>
 <p>
-Current IDs are opaque integers with prefixes: <code>seg_18</code>, <code>act_11</code>, <code>scene_14</code>, <code>note_1</code>. They carry zero semantic information. With PRD0009, users now own their data as a plain JSON file. An ID like <code>seg_18</code> tells them nothing about what it refers to. If they open <code>graph.json</code> in an editor, they have to cross-reference relations to understand the structure.
-</p>
-<p>
-Semantic IDs fix this: the ID encodes the entity's place in the graph. <code>hamlet_act-i_scene-i_seg-001</code> tells you immediately: this is the first segment in Scene I of Act I of Hamlet.
+Current IDs are opaque integer prefixes: <code>seg_18</code>, <code>act_11</code>, <code>note_1</code>. With PRD0009, users own their data as plain JSON. An ID like <code>seg_18</code> tells them nothing. Semantic IDs encode the entity's place in the graph — <code>hamlet_act-i_scene-i_seg-0001</code> is self-documenting.
 </p>
 
-<h2>Goal</h2>
-<p>
-Define a deterministic, human-readable ID scheme that encodes the containment path. Replace all opaque IDs so the graph is self-documenting. Apply it to all future entities and migrate existing data.
-</p>
+<h2>Design Constraint: ID Stability</h2>
+
+<div class="warning">
+<strong>Critical tension:</strong> If IDs are derived from titles and containment, renaming a container changes every descendant ID. That breaks all <code>source</code>/<code>target</code> references in relations.
+</div>
+
+<p><strong>Rule: IDs are assigned once and never recalculated.</strong> The title/position slug is used at creation time to generate the ID. Renaming a node does not propagate to its children's IDs. Reordering segments does not renumber them. The ID is a snapshot of identity at creation time, not a live path.</p>
+
+<p>This means:</p>
+<ul>
+  <li>A segment created as <code>hamlet_act-i_scene-i_seg-0001</code> keeps that ID even if you rename the scene to "Scene 1 (Revised)"</li>
+  <li>A typo in a container title at creation time is permanent in the ID (edit the <code>title</code> field, the ID stays)</li>
+  <li>If you really need to change an ID, you edit <code>graph.json</code> directly and update all relations manually (future: app-level "rename entity" with automatic relation updates)</li>
+</ul>
 
 <h2>Proposed Scheme</h2>
 
 <div class="schema">
-<code><strong>root</strong>:       [slug]
-<strong>container</strong>:  [parent-id]_[slug]
-<strong>segment</strong>:   [parent-id]_seg-[counter]
-<strong>annotation</strong>: [annotated-id]_ann-[slug]
-<strong>concept</strong>:    conc_[slug]
+<code><strong>Root container</strong> (no parent):
+  [slug]
+  <em>Collision: append -1, -2, etc.</em>
+
+<strong>Sub-container</strong> (act, scene, section, chapter):
+  [parent-id]_[slug]
+  <em>If the parent uses positional counters (e.g. "Section 1", "Section 2"), use 2-digit padding: _sec-01, _sec-02</em>
+
+<strong>Segment</strong> (content-bearing):
+  [parent-id]_seg-[4-digit counter]
+  <em>0001–9999 per parent container</em>
+
+<strong>Annotation</strong> or <strong>Reference</strong>:
+  [own-container-id]_ann-[slug]
+  or
+  [own-container-id]_ref-[slug]
+  <em>Not nested under the work — they live in their own containers like hamlet-notes, hamlet-references</em>
 </code>
 </div>
 
@@ -59,114 +82,120 @@ Define a deterministic, human-readable ID scheme that encodes the containment pa
 <ol>
   <li>Lowercase the title</li>
   <li>Replace whitespace runs with <code>-</code></li>
-  <li>Strip punctuation except apostrophes (they're content — <code>who's</code>)</li>
+  <li>Strip punctuation (<code>',.!?":;()[]{}—…,</code>)</li>
+  <li>Convert accented letters to ASCII (<code>áéíóúçãõâêîôûñ</code> → <code>aeiouc aoaeioun</code>)</li>
   <li>Collapse multiple <code>-</code> into one</li>
   <li>Trim leading/trailing <code>-</code></li>
 </ol>
 
-<h3>Segment counter</h3>
-<p>
-Zero-padded index within the parent container. The number of digits should accommodate the largest container:
-</p>
 <table>
-  <tr><th>Parent type</th><th>Max segments (Hamlet)</th><th>Suggested digits</th></tr>
-  <tr><td>Per scene</td><td>~80</td><td>3 <code>(001–999)</code></td></tr>
-  <tr><td>Per act</td><td>~300</td><td>3 <code>(001–999)</code></td></tr>
-  <tr><td>Per work</td><td>~1323</td><td>4 <code>(0001–9999)</code></td></tr>
+  <tr><th>Title</th><th>Slug</th></tr>
+  <tr><td><code>Who's there?</code></td><td><code>whos-there</code></td></tr>
+  <tr><td><code>To be, or not to be</code></td><td><code>to-be-or-not-to-be</code></td></tr>
+  <tr><td><code>SCÈNE I. Elsinore.</code></td><td><code>scene-i-elsinore</code></td></tr>
+  <tr><td><code>Identidade & Identificação</code></td><td><code>identidade-identificacao</code></td></tr>
 </table>
 
-<h3>Hierarchy separator</h3>
-<p>
-<code>_</code> descends one level. The ID is built by chaining parent IDs from root to leaf:
-</p>
-<pre>work → work_act → work_act_scene → work_act_scene_seg-001</pre>
+<h2>Counter Scheme</h2>
+
+<table>
+  <tr><th>Entity type</th><th>Counter</th><th>Padding</th><th>Range</th><th>Example</th></tr>
+  <tr><td>Root container</td><td>none (use slug)</td><td>—</td><td>unique by name + <code>-N</code> fallback</td><td><code>hamlet</code>, <code>my-project</code>, <code>hamlet-1</code></td></tr>
+  <tr><td>Sub-container (numbered section)</td><td>positional</td><td>2 digits</td><td>01–99</td><td><code>act-01</code>, <code>chapter-12</code></td></tr>
+  <tr><td>Sub-container (named)</td><td>none (use slug)</td><td>—</td><td>—</td><td><code>prologue</code>, <code>dramatis-personae</code></td></tr>
+  <tr><td>Segment</td><td>sequential within parent</td><td>4 digits</td><td>0001–9999</td><td><code>seg-0001</code></td></tr>
+</table>
+
+<h3>Zero-padding pushback</h3>
+
+<p>Without padding: <code>seg-1</code>, <code>seg-2</code>, …, <code>seg-10</code>, <code>seg-11</code>.</p>
+<p>The problem is <strong>sort order</strong>:</p>
+<ul>
+  <li>Alphabetical sort: <code>seg-1</code>, <code>seg-10</code>, <code>seg-100</code>, <code>seg-11</code>, <code>seg-2</code>, <code>seg-20</code> — wrong</li>
+  <li>Natural sort: requires special handling in every tool (editors, git diff, scripting)</li>
+  <li>JSON arrays are ordered, but manual edits in a text editor reorder by alphabet</li>
+</ul>
+<p>Zero-padded <code>seg-0001</code> → <code>seg-9999</code> sorts correctly alphabetically <em>and</em> numerically. The cost: slightly longer IDs and a hard cap at 9999 per parent (more than enough for any single container).</p>
+
+<p><strong>For sub-containers</strong> that are positional (like <code>Chapter 1</code>, <code>Section 2</code>), 2-digit padding (<code>ch-01</code>, <code>sec-02</code>) gives correct sort order up to 99. Named sub-containers (like <code>dramatis-personae</code>) don't need counters.</p>
+
+<div class="rec">
+<strong>Recommendation:</strong> Keep padding. It solves a real (sorting) problem at negligible cost. 4 digits for segments because that's the largest volume tier. 2 digits for sub-containers because you rarely have more than 99 chapters/sections. Root containers don't pad because they're unique by name with collision suffixes.
+</div>
 
 <h2>Examples</h2>
 
 <table>
   <tr><th>Old ID</th><th>Type</th><th>New ID</th></tr>
-  <tr><td><code>hamlet--william-shakespeare</code></td><td><span class="tag container">container</span></td><td><code>the-tragedy-of-hamlet-prince-of-denmark</code></td></tr>
-  <tr><td><code>act_11</code></td><td><span class="tag container">container</span></td><td><code>the-tragedy-of-hamlet-prince-of-denmark_act-i</code></td></tr>
-  <tr><td><code>scene_14</code></td><td><span class="tag container">container</span></td><td><code>the-tragedy-of-hamlet-prince-of-denmark_act-i_scene-i</code></td></tr>
-  <tr><td><code>seg_18</code></td><td><span class="tag segment">segment</span></td><td><code>…act-i_scene-i_seg-001</code></td></tr>
-  <tr><td><code>seg_1614</code></td><td><span class="tag segment">segment</span></td><td><code>…act-iii_scene-i_seg-001</code></td></tr>
-  <tr><td><code>note_1</code></td><td><span class="tag annotation">annotation</span></td><td><code>…scene-i_seg-001_ann-identity-theme</code></td></tr>
-  <tr><td><code>ref_1</code></td><td><span class="tag segment">segment</span></td><td><code>…act-iii_scene-i_seg-001_ann-montaigne-reference</code></td></tr>
+  <tr><td><code>hamlet--william-shakespeare</code></td><td><span class="tag root">root container</span></td><td><code>hamlet</code></td></tr>
+  <tr><td><code>act_11</code></td><td><span class="tag container">sub-container</span></td><td><code>hamlet_act-01</code></td></tr>
+  <tr><td><code>scene_14</code></td><td><span class="tag container">sub-container</span></td><td><code>hamlet_act-01_scene-01</code></td></tr>
+  <tr><td><code>seg_18</code> (Barnardo's "Who's there?")</td><td><span class="tag segment">segment</span></td><td><code>hamlet_act-01_scene-01_seg-0001</code></td></tr>
+  <tr><td><code>seg_1614</code> (Hamlet's soliloquy)</td><td><span class="tag segment">segment</span></td><td><code>hamlet_act-03_scene-01_seg-0001</code></td></tr>
+  <tr><td><code>dramatis_5</code></td><td><span class="tag container">sub-container</span></td><td><code>hamlet_dramatis-personae</code></td></tr>
+  <tr><td><code>note_1</code> → (lives in <code>hamlet-notes</code>)</td><td><span class="tag annotation">annotation</span></td><td><code>hamlet-notes_ann-identity-theme</code></td></tr>
 </table>
 
-<h2>Questions</h2>
+<h3>Notes on specific examples</h3>
 
-<div class="question">
-<strong>Q1: Root ID — long canonical title or short name?</strong>
-<p>The full work title slugifies to <code>the-tragedy-of-hamlet-prince-of-denmark</code> (39 chars). This propagates to every child ID:</p>
-<table>
-  <tr><th>Option A (full title)</th><th>Option B (short canonical name)</th></tr>
-  <tr><td><code>the-tragedy-of-hamlet-prince-of-denmark_act-i_scene-i_seg-001</code> (71 chars)</td><td><code>hamlet_act-i_scene-i_seg-001</code> (30 chars)</td></tr>
-</table>
-<p>Option B uses a known short name (<code>hamlet</code>). For user-created projects the folder name could become the root slug automatically.</p>
-<p>I'd recommend <strong>Option B</strong> — IDs are already long enough. The title is available in the entity's <code>title</code> field.</p>
-</div>
-
-<div class="question">
-<strong>Q2: Segment counter scope — per-parent or sequential across the work?</strong>
-<p><strong>Per-parent</strong>: counter resets within each container (scene → <code>seg-001</code>, <code>seg-002</code>…).</p>
-<p><strong>Sequential</strong>: single counter across the entire work (<code>seg-0001</code>, <code>seg-0002</code>…).</p>
-<p>Per-parent gives more semantic signal (you can compute structure from IDs) but requires knowing the parent. Sequential is simpler to generate but encodes less information. The full path already contains the parent name, so the extra signal from per-parent counters is marginal.</p>
-<p>I'd recommend <strong>per-parent with 3 digits</strong> (<code>seg-001</code>). No parent in Hamlet has more than 100 segments within a single scene.</p>
-</div>
-
-<div class="question">
-<strong>Q3: Annotations with multiple parents — which parent in the ID?</strong>
-<p>An annotation like <code>note_1</code> (Identity theme) annotates <code>seg_18</code> (Barnardo's "Who's there?"). The annotation entity itself isn't contained by any scene — it's linked via <code>annotates</code>, not <code>contains</code>.</p>
-<p>Options:</p>
 <ul>
-  <li><strong>A</strong>: Use the annotated segment's ID as the prefix: <code>…seg-001_ann-identity-theme</code></li>
-  <li><strong>B</strong>: Annotations are root-level with an <code>ann_</code> prefix: <code>ann_identity-theme</code></li>
-  <li><strong>C</strong>: Annotations use a slug derived from their own title with no parent: <code>identity-theme</code></li>
+  <li><strong>Root container:</strong> <code>hamlet--william-shakespeare</code> → <code>hamlet</code>. The full title "THE TRAGEDY OF HAMLET, PRINCE OF DENMARK" is the <code>title</code> field on the entity. The ID is a canonical short name. If another work called "Hamlet" appears, it becomes <code>hamlet-1</code>.</li>
+  <li><strong>The title page</strong> ("THE TRAGEDY OF HAMLET, PRINCE OF DENMARK by William Shakespeare") is a <em>segment</em> within the <code>hamlet</code> container, not a separate container.</li>
+  <li><strong>Dramatis Personæ</strong> is a named sub-container of <code>hamlet</code>: <code>hamlet_dramatis-personae</code>. No act/scene path.</li>
+  <li><strong>Annotations/References</strong> live in their own containers (e.g., <code>hamlet-notes</code>), not under the work's act/scene hierarchy. Their IDs are <code>hamlet-notes_ann-slug</code> or <code>hamlet-references_ref-slug</code>.</li>
 </ul>
-<p>Option A ties the annotation to its source segment — but if an annotation links to multiple segments, which one goes in the ID? Option B/C are simpler and avoid the multiple-parent problem.</p>
-<p>I'd recommend <strong>Option B</strong> — root-level with <code>ann_</code> prefix. Clean and unambiguous.</p>
-</div>
 
-<div class="question">
-<strong>Q4: Non-parented entities (dramatis personae, front matter) — what path?</strong>
-<p>In Hamlet, there are entities outside the act/scene hierarchy: the title page, Dramatis Personæ, Transcriber's Notes. These are contained by the work directly, not by an act. The ID would just omit the intermediate levels:</p>
-<table>
-  <tr><td><code>dramatis_5</code> (Dramatis Personæ)</td><td><code>hamlet_dramatis-personae</code></td></tr>
-  <tr><td><code>seg_1</code> (title page)</td><td><code>hamlet_seg-001</code> (first segment under work directly)</td></tr>
-</table>
-<p>Multiple hierarchy depths in the same work: some entities go <code>work→act→scene→segment</code>, others go <code>work→segment</code>. This is fine — the ID reflects the actual containment path.</p>
-</div>
-
-<div class="question">
-<strong>Q5: Stage directions with character metadata — no title, how to identify?</strong>
-<p>Many segments (speeches) have a <code>character</code> metadata field but no <code>title</code>. The content starts with the character name. Some segments (stage directions, scene descriptions) have neither title nor character.</p>
-<p>Since segments use <code>seg-[counter]</code> regardless, this isn't an issue — the counter is the identifier. Character info stays in metadata.</p>
-</div>
-
-<div class="question">
-<strong>Q6: Migration — rewrite hamlet.json or generate on import?</strong>
-<p>With PRD0009, hamlet.json is no longer bundled. But we still have it in the source tree as a reference. Two approaches:</p>
-<ul>
-  <li><strong>A</strong>: Rewrite hamlet.json with new IDs, update all relations to match. The file becomes a sample data set using the new scheme.</li>
-  <li><strong>B</strong>: Keep hamlet.json as-is. Only apply the new scheme to entities created through the app going forward. Build a migration script for users who want to update existing files.</li>
-</ul>
-<p>I'd recommend <strong>Option A</strong> — the old IDs are a dead pattern. Rewriting hamlet.json is a one-time effort and gives us a validated reference implementation of the new scheme.</p>
-</div>
-
-<h2>Open Design Decisions</h2>
-
-<p>Three choices I need your input on:</p>
+<h2>Edge Cases</h2>
 
 <table>
-  <tr><th>#</th><th>Decision</th><th>My recommendation</th></tr>
-  <tr><td>1</td><td>Root slug: full title vs canonical short name</td><td><strong>Short name</strong> (e.g. <code>hamlet</code>)</td></tr>
-  <tr><td>2</td><td>Counter scope: per-parent vs per-work sequential</td><td><strong>Per-parent</strong>, 3 digits (<code>seg-001</code>)</td></tr>
-  <tr><td>3</td><td>Annotation format: parent-prefixed vs root-level <code>ann_</code></td><td><strong>Root-level <code>ann_</code></strong> (<code>ann_identity-theme</code>)</td></tr>
+  <tr><th>Case</th><th>Rule</th><th>Example</th></tr>
+  <tr><td>Duplicate title in same parent</td><td>Append <code>-1</code>, <code>-2</code> to the slug</td><td><code>hamlet_scene-i</code> and <code>hamlet_scene-i-1</code></td></tr>
+  <tr><td>Title is empty</td><td>Use kind + counter: <code>segment-0001</code></td><td><code>hamlet_segment-0001</code></td></tr>
+  <tr><td>Title is purely punctuation</td><td>Same as empty</td><td><code>hamlet_segment-0002</code></td></tr>
+  <tr><td>EM dash in title</td><td>Stripped by punctuation rule</td><td>"To be—or not to be" → <code>to-beor-not-to-be</code> (collapsing double <code>-</code> into one → <code>to-be-or-not-to-be</code>)</td></tr>
+  <tr><td>Segment counter overflow (10000+)</td><td>Unlikely per parent. If it happens, the import process increments padding or uses non-padded fallback.</td><td>Deferred.</td></tr>
 </table>
 
-<div class="callout">
-  <strong>Bottom line from me:</strong> The scheme is straightforward — slugify the containment path, append <code>seg-[counter]</code> for content entities, use <code>ann_</code> for annotations. The only real design surface is the three questions above. Once settled, I'll write the ID generation function and a migration script for hamlet.json.
+<h2>Scope</h2>
+
+<p><strong>This PRD covers:</strong> the ID scheme design, slug rules, counter scheme, and the ID generation utility function. It applies to all new entities created through the app.</p>
+
+<p><strong>Not in scope:</strong> Migrating hamlet.json to the new scheme (separate PRD). Hamlet keeps its old IDs for now. A future PRD will restructure the hamlet data with corrected containment and the new IDs.</p>
+
+<h2>File Changes</h2>
+
+<table>
+  <tr><th>File</th><th>Action</th></tr>
+  <tr><td><code>src/engine/ids.ts</code></td><td>Create — ID generation utility: <code>generateEntityId(parent, entity)</code>, <code>slugify(title)</code>, duplicate collision logic</td></tr>
+  <tr><td><code>src/store/useGraphStore.ts</code></td><td>Wire <code>generateEntityId</code> into <code>addEntity</code> action</td></tr>
+  <tr><td><code>src/types/graph.ts</code></td><td>No changes needed (Entity type already has <code>id: string</code>)</td></tr>
+</table>
+
+<h2>Q&A</h2>
+
+<div class="qa">
+<strong>Q: What happens if I rename "Act I" to "Act One" — do child IDs change?</strong>
+<p><strong>A: No.</strong> IDs are created once and never recalculated. The children keep their <code>act-01</code> prefix. The <code>title</code> field on the container is updated separately. This means IDs can become "stale" relative to titles — but that's acceptable given the alternative (breaking all relations).</p>
+</div>
+
+<div class="qa">
+<strong>Q: What if I reorder segments — do counters renumber?</strong>
+<p><strong>A: No.</strong> Reordering doesn't change IDs. Counters reflect position at creation/import time. If you need a specific order, you use <code>next</code> relations (which already encode order). The counter is an identifier, not a sequence number.</p>
+</div>
+
+<div class="qa">
+<strong>Q: What about entities created by agents (import scripts, automated tools)?</strong>
+<p><strong>A: Same rules apply.</strong> The import script calls <code>generateEntityId</code> which uses the same slug + counter logic. Deterministic input → deterministic ID. Importing the same data twice produces the same IDs (minus collision suffixes for duplicates).</p>
+</div>
+
+<div class="qa">
+<strong>Q: Why not use UUIDs or hashes for stability?</strong>
+<p><strong>A: The goal is human-readability in the JSON file.</strong> A hash like <code>a3f2c8e1</code> is stable but opaque. A semantic ID like <code>hamlet_act-01_scene-01_seg-0001</code> tells you the entity's place in the graph without cross-referencing. The trade-off is that renaming a container creates a mismatch between the ID and the title — but you can still trace the ID through the containment chain.</p>
+</div>
+
+<div class="qa">
+<strong>Q: Can the user change an entity's ID?</strong>
+<p><strong>A: Not through the UI in v1.</strong> They can edit <code>graph.json</code> directly (it's their file). Future: an app-level "rename entity" action that updates the ID and all relations referencing it.</p>
 </div>
 
 </body>
