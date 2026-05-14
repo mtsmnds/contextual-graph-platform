@@ -37,7 +37,7 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - Focused entity viewport with sequential traversal (PRD0004)
 - Continuous scroll viewport with recursive container flattening (PRD0005)
 - Full text import + work entity (PRD0006)
-- Side-panel contextual expansion (current sprint)
+- Side-panel contextual expansion (PRD0007)
 - Annotation creation (highlight + note)
 - Multi-column reading workspace
 
@@ -65,15 +65,16 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — Handle Persistence & URL Navigation (PRD0011): feature-flagged IndexedDB handle persistence (skip folder picker on reload), URL-based view state sync (reloads restore focused entity)
 
 ## Now (Current Sprint)
-- **Annotation creation (highlight + note)** — users need to populate their graph with annotations
-- Sample data import workflow — giving users a way to load existing content (e.g., hamlet) into their folder
+- **Entity ID scheme + model rules (PRD0010)** — implement `src/engine/ids.ts` with `generateEntityId`, `slugify`, collision logic. Wire into `addEntity`. Enforce: segments no `title`, containers no `content`, `metadata.type` drives rendering.
 
 ## Next (Near-Term)
-- Multi-column reading workspace
-- "Talmud mode" toggle — show all annotations at once
+- **TipTap rich text display** — integrate TipTap for HTML content rendering in the reading viewport. Evaluates `metadata.type` rendering rules and HTML content support. Unlocks annotation creation.
+- **Annotation creation (highlight + note)** — depends on TipTap for rich text editing. Selection → create annotation entity + `annotates` relation.
+- **Sample data re-import** — update the Gutenberg import script to produce data following the new ID scheme and model rules. Replace hello2/graph.json with a cleanly structured version.
+- **Multi-column reading workspace**
+- **Talmud mode** — show all annotations at once
 
 ## Later (Backlog)
-- "Talmud mode" toggle — show all annotations at once, each aligned with its source segment
 - Projection layer abstractions
 - React Flow graph visualization (Phase 4+)
 - Tauri packaging
