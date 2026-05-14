@@ -114,6 +114,17 @@ export function getContainerChildren(
   return flattened;
 }
 
+export function getRootContainers(state: GraphState): Entity[] {
+  const childIds = new Set(
+    state.relations
+      .filter((r) => r.type === "contains")
+      .map((r) => r.target),
+  );
+  return state.entities.filter(
+    (e) => e.kind === "container" && !childIds.has(e.id),
+  );
+}
+
 export function resolveContainer(
   state: GraphState,
   entityId: string,

@@ -76,6 +76,7 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — File System Persistence (PRD0009): user picks a folder, app reads/writes `graph.json` directly, no seed data, no localStorage
 - 2026-05-14 — Handle Persistence & URL Navigation (PRD0011): feature-flagged IndexedDB handle persistence (skip folder picker on reload), URL-based view state sync (reloads restore focused entity)
 - 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
+- 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.html`.
 
 ## Now (Current Sprint) — M2 Phase 1
 - **Home page** — on launch (no folder, no focused entity), show a page listing root-level containers instead of the canvas
@@ -86,10 +87,10 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 
 The canvas is no longer the default first page. The app is about choosing how you navigate your graph. Three modes, each URL-addressable (`?view=page`, `?view=tree`, `?view=graph`).
 
-### Phase 2 — Tree sidebar
-- **Collapsible tree sidebar** showing the `contains` hierarchy (root containers → children → segments)
-- Clicking any item navigates the page view to that entity
-- Uses shadcn tree primitives
+### Phase 2 — Home page + page view default
+- **Home page** — on launch, show a page listing root-level containers
+- **Page view as default** — reading viewport is the primary navigation surface. Containers render their title and children. Linked entities navigate to their page.
+- **Canvas mode-switcher** — canvas accessible via sidebar action, no longer the default first page
 
 ### Phase 3 — Node component + columns
 - **Node component design** — segment and container node types with action icons in the border area

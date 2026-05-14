@@ -1,11 +1,29 @@
-import { useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import type React from "react";
 import { ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { MoreHorizontal, BookOpen, MapIcon, StickyNote, Folder, Layout } from "lucide-react";
 import { useGraphStore } from "./store/useGraphStore";
-import { resolveContainer, getEntity } from "./engine/queries";
+import { resolveContainer, getEntity, getRootContainers } from "./engine/queries";
 import ReadingViewport from "./renderers/ReadingViewport";
 import type { Entity, Relation } from "./types/graph";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 declare global {
   interface Window {
@@ -140,46 +158,93 @@ function FolderPicker({ onOpen }: { onOpen: () => Promise<void> }) {
   );
 }
 
-const saveStatusLabel: Record<string, string> = {
-  saved: "Saved",
-  unsaved: "Unsaved changes",
-  saving: "Saving…",
-  error: "Save error",
-};
-
-const saveStatusColor: Record<string, string> = {
-  saved: "bg-green-500",
-  unsaved: "bg-yellow-500",
-  saving: "bg-blue-500",
-  error: "bg-red-500",
-};
-
-function AppHeader() {
+function SidebarPopover() {
+  const [open, setOpen] = useState(false);
+  const entities = useGraphStore((s) => s.entities);
+  const relations = useGraphStore((s) => s.relations);
   const folderName = useGraphStore((s) => s.folderName);
   const saveStatus = useGraphStore((s) => s.saveStatus);
+  const focusEntity = useGraphStore((s) => s.focusEntity);
   const openFolder = useGraphStore((s) => s.openFolder);
 
+  const state = { entities, relations };
+
+  const rootContainers = useMemo(
+    () => getRootContainers(state),
+    [entities, relations],
+  );
+
+  const saveDotClass =
+    saveStatus === "saved" ? "bg-green-500" :
+    saveStatus === "unsaved" ? "bg-yellow-500" :
+    saveStatus === "saving" ? "bg-blue-500" :
+    "bg-red-500";
+
+  const saveLabel =
+    saveStatus === "saved" ? "Saved" :
+    saveStatus === "unsaved" ? "Unsaved" :
+    saveStatus === "saving" ? "Saving…" :
+    "Error";
+
   return (
-    <header className="flex items-center justify-between border-b shrink-0 px-4 py-1.5">
-      <div className="flex items-center gap-2">
-        <button
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium flex items-center gap-1.5"
-          onClick={openFolder}
-          title="Switch folder"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          </svg>
-          {folderName}
-        </button>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${saveStatusColor[saveStatus] ?? "bg-gray-500"}`} />
-        <span className="text-[10px] text-muted-foreground">
-          {saveStatusLabel[saveStatus] ?? ""}
-        </span>
-      </div>
-    </header>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={
+        <Button variant="ghost" size="icon-sm"
+                className="fixed top-2 right-2 z-40 h-7 w-7 data-[state=open]:bg-accent">
+          <MoreHorizontal />
+        </Button>
+      } />
+      <PopoverContent className="w-56 overflow-hidden rounded-lg p-0" align="end">
+        <Sidebar collapsible="none" className="bg-transparent">
+          <SidebarContent>
+            {rootContainers.length > 0 && (
+              <SidebarGroup className="border-b last:border-none">
+                <SidebarGroupContent className="gap-0">
+                  <SidebarMenu>
+                    {rootContainers.map((entity) => (
+                      <SidebarMenuItem key={entity.id}>
+                        <SidebarMenuButton onClick={() => { focusEntity(entity.id); setOpen(false); }}>
+                          {entity.metadata?.type === "work" ? <BookOpen /> :
+                           entity.metadata?.type === "roadmap" ? <MapIcon /> :
+                           <StickyNote />}
+                          <span>{entity.title ?? entity.id}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+            <SidebarGroup>
+              <SidebarGroupContent className="gap-0">
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => { focusEntity(null); setOpen(false); }}>
+                      <Layout />
+                      <span>Canvas View</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => { openFolder(); setOpen(false); }}>
+                      <Folder />
+                      <span>Switch Folder…</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter className="flex flex-row items-center gap-1.5 border-t px-3 py-2 text-xs text-muted-foreground">
+            <Folder className="size-3 shrink-0" />
+            <span className="truncate">{folderName}</span>
+            <span className="ml-auto flex items-center gap-1 shrink-0">
+              <span className={`size-1.5 rounded-full ${saveDotClass}`} />
+              {saveLabel}
+            </span>
+          </SidebarFooter>
+        </Sidebar>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -243,12 +308,12 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <AppHeader />
-      <div className="flex-1 overflow-hidden">
+    <SidebarProvider className="contents">
+      <SidebarPopover />
+      <div className="h-screen overflow-hidden">
         {focusedEntityId ? <ReadingViewport /> : <CanvasView />}
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
 

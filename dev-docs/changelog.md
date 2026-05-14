@@ -11,6 +11,30 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-14
+
+### Popover sidebar navigation — M2 Phase 1 (PRD0012)
+- **What:** Replaced the AppHeader with a floating three-dots button (MoreHorizontal) that opens a popover containing a shadcn Sidebar with root-level entity navigation. The sidebar lists root containers (works, roadmaps, note collections) as flat menu items. The ReadingViewport header (X + breadcrumb) was removed — titles display inline as card content. Added `getRootContainers` to the query engine.
+- **Reason:** The header was a relic of the canvas-centric design. Removing it gives a cleaner, card-based reading experience. The popover sidebar provides immediate graph navigation without a persistent sidebar that changes the main layout.
+- **Files changed:**
+  - `src/App.tsx`: Removed AppHeader component. Added SidebarPopover inline component using shadcn Popover + Sidebar primitives. Layout is now content-only with a floating dots button.
+  - `src/renderers/ReadingViewport.tsx`: Removed `<header>` with X button and breadcrumb. Removed unused `getContainerBreadcrumb` and `resolveContainer` imports.
+  - `src/engine/queries.ts`: Added `getRootContainers` — returns entities with kind "container" and no incoming "contains" relation.
+  - `src/components/ui/popover.tsx`: Installed (shadcn Base UI popover)
+  - `src/components/ui/sidebar.tsx` + 6 supporting files: Installed (shadcn Base UI sidebar)
+- **Impact:** No header bar — content fills the full viewport. Three-dots button floats in the top-right corner. Opening it shows root containers for navigation. ReadingViewport content scrolls edge-to-edge with card-based rendering. Canvas View access moved into the sidebar popover. Foundation for home page (root container listing) and mode switcher.
+- **Archive:** `archive/2026-05-14-sidebar-navigation.html`
+
+### Fix: SidebarProvider wrapping + layout conflict
+- **What:** Two bugs in the initial sidebar implementation: (1) `useSidebar()` threw because no `SidebarProvider` ancestor existed; (2) `SidebarProvider`'s flex layout (`flex min-h-svh w-full`) broke React Flow's parent container sizing. Fixed by importing `SidebarProvider` and wrapping the App return with `className="contents"` to provide context without layout interference.
+- **Reason:** The initial implementation followed the plan's pattern code which omitted `SidebarProvider` — the plan only showed `Popover → Sidebar` without the required provider context. The second bug was a conflict between shadcn's sidebar layout and React Flow's sizing contract.
+- **Files changed:**
+  - `src/App.tsx`: Imported `SidebarProvider`, wrapped `App` return, added `className="contents"` to prevent flex layout from breaking React Flow's parent container
+- **Impact:** Sidebar opens without errors. React Flow canvas renders at full viewport height. The fix pattern (`SidebarProvider className="contents"`) should be used for any future sidebar-in-popover or sidebar-in-overlay patterns.
+- **ADR:** `archive/2026-05-14-sidebar-navigation.html`
+
+---
+
 ## 2026-05-13
 
 ### Persistence layer — PRD0003

@@ -3,11 +3,8 @@ import { useGraphStore } from "@/store/useGraphStore";
 import {
   getEntity,
   getContainerChildren,
-  getContainerBreadcrumb,
-  resolveContainer,
   getLinkedContext,
 } from "@/engine/queries";
-import { Button } from "@/components/ui/button";
 import { X, ChatCircleText, Link as LinkIcon } from "@phosphor-icons/react";
 import type { Entity } from "@/types/graph";
 
@@ -206,19 +203,15 @@ function SegmentCard({ entity }: { entity: Entity }) {
 
 function ReadingViewport() {
   const focusedId = useGraphStore((s) => s.view.focusedEntityId);
-  const anchorId = useGraphStore((s) => s.view.anchorEntityId);
   const entities = useGraphStore((s) => s.entities);
   const relations = useGraphStore((s) => s.relations);
-  const focusEntity = useGraphStore((s) => s.focusEntity);
 
   const state = { entities, relations };
 
-  const { children, breadcrumb } = useMemo(() => {
-    if (!focusedId) return { children: [], breadcrumb: [] };
-    const kids = getContainerChildren(state, focusedId);
-    const crumbs = getContainerBreadcrumb(state, anchorId ?? focusedId);
-    return { children: kids, breadcrumb: crumbs };
-  }, [focusedId, anchorId, entities, relations]);
+  const children = useMemo(() => {
+    if (!focusedId) return [];
+    return getContainerChildren(state, focusedId);
+  }, [focusedId, entities, relations]);
 
   if (!focusedId) {
     return (
@@ -231,49 +224,22 @@ function ReadingViewport() {
   const rootEntity = getEntity(state, focusedId);
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between border-b shrink-0 px-6 py-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => focusEntity(null)}>
-            <X size={16} />
-          </Button>
-          {breadcrumb.length > 0 && (
-            <nav className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0">
-              {breadcrumb.map((crumb, i) => (
-                <span key={crumb.id} className="flex items-center gap-1.5 truncate">
-                  {i > 0 && <span className="shrink-0">/</span>}
-                  <button
-                    className="truncate hover:text-foreground transition-colors"
-                    onClick={() => {
-                      const root = resolveContainer(state, crumb.id);
-                      focusEntity(root, crumb.id);
-                    }}
-                  >
-                    {crumb.title}
-                  </button>
-                </span>
-              ))}
-            </nav>
+    <div className="flex h-full overflow-hidden">
+      <main className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="mx-auto max-w-[720px]">
+          {rootEntity && <SegmentCard key={rootEntity.id} entity={rootEntity} />}
+          {children.length > 0 ? (
+            children.map((child) => (
+              <SegmentCard key={child.id} entity={child} />
+            ))
+          ) : (
+            rootEntity?.content && (
+              <ContentHtml className="leading-relaxed text-foreground pt-4" content={rootEntity.content} />
+            )
           )}
         </div>
-      </header>
-      <div className="flex flex-1 overflow-hidden">
-        <main className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="mx-auto max-w-[720px]">
-            {rootEntity && <SegmentCard key={rootEntity.id} entity={rootEntity} />}
-            {children.length > 0 ? (
-              children.map((child) => (
-                <SegmentCard key={child.id} entity={child} />
-              ))
-            ) : (
-              rootEntity?.content && (
-                <ContentHtml className="leading-relaxed text-foreground pt-4" content={rootEntity.content} />
-              )
-            )}
-          </div>
-        </main>
-        <RelationSidebar />
-      </div>
+      </main>
+      <RelationSidebar />
     </div>
   );
 }
