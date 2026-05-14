@@ -7,6 +7,7 @@ import type {
   ViewState,
   GraphSnapshot,
 } from "../types/graph";
+import hamletData from "../data/hamlet.json";
 
 const seedEntities: Entity[] = [
   {
@@ -83,6 +84,11 @@ function loadInitialState(): { entities: Entity[]; relations: Relation[] } {
           relations: parsed.relations ?? [],
         };
       }
+    }
+    // First run — load full Hamlet from bundled snapshot
+    const hamlet = hamletData as GraphSnapshot;
+    if (hamlet?.entities?.length) {
+      return { entities: hamlet.entities, relations: hamlet.relations };
     }
   } catch {
     // corrupt data — fall through to seeds

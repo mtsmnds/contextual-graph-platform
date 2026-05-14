@@ -42,6 +42,20 @@ Use this to recover context after breaks.
 
 ## 2026-05-13
 
+### Full text import — PRD0006
+- **What:** Built a Gutenberg HTML parser for Hamlet (`scripts/import-gutenberg.ts`) that produces 1342 entities and 2634 relations across 5 acts, 20 scenes, 40 characters. The snapshot is bundled into the app and loads on first run (empty localStorage). Added `npm run import:hamlet` command.
+- **Reason:** The continuous scroll viewport needed real content at scale. The full play validates reading navigation, localStorage persistence, and canvas rendering with ~1,300 entities.
+- **Files changed:**
+  - `scripts/import-gutenberg.ts`: Created — DOM-based Gutenberg HTML parser with character extraction, scene/act detection, continuation merging
+  - `src/data/hamlet.json`: Generated — bundled Hamlet snapshot (1342 entities, 2634 relations)
+  - `src/store/useGraphStore.ts`: Updated — first run loads full Hamlet from bundled snapshot
+  - `package.json`: Added `import:hamlet` script
+- **Impact:** Demo-ready — clicking "Act I" on the canvas shows the full play as a scrollable text. Next step: side-panel contextual expansion for annotations and references.
+
+---
+
+## 2026-05-13
+
 ### Reading viewport + shadcn/ui — PRD0004
 - **What:** Built the first real renderer — a focused reading viewport that displays entity content with prev/next navigation. Added Tailwind v4 and shadcn/ui (Base UI) as the component foundation. Canvas now supports click-to-focus mode switching.
 - **Reason:** The canvas adapter bridge was temporary — the product validates on a clean reading experience. shadcn/ui provides high-quality accessible components without obscuring custom styles, laying a scalable design foundation.

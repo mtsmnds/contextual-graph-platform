@@ -1,7 +1,7 @@
 # PRD0006 — Full Text Import (Hamlet)
 
 ## Status
-Draft — implement after PRD0005 (continuous scroll viewport)
+Completed — import script generates 1342 entities / 2634 relations across 5 acts, 20 scenes, 40 characters. Snapshot bundled as seed data on first run.
 
 ## Problem
 

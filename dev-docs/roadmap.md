@@ -34,8 +34,9 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - ~~Seed content for validation~~ ✅
 
 ### M2 — Reading Workspace
-- Focused entity viewport with sequential traversal (PRD0004)
-- Full text import at scale (PRD0005)
+- Focused entity viewport with sequential traversal (PRD0004) — segment-level
+- Continuous scroll viewport: containers render children as scrollable text (PRD0005)
+- Full text import at scale (PRD0006)
 - Side-panel contextual expansion
 - Annotation creation (highlight + note)
 
@@ -54,12 +55,11 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-13 — Domain engine refactor (PRD0002): Entity/Relation schema, query engine, fresh seed data. See `archive/2026-05-13-domain-engine-refactor.md`
 - 2026-05-13 — Persistence layer (PRD0003): localStorage auto-save, hydration, export/import
 - 2026-05-13 — Reading viewport (PRD0004): focused entity display, prev/next navigation, mode-switch rendering, shadcn/ui + Tailwind foundation
+- 2026-05-13 — Continuous scroll viewport (PRD0005): container-aware rendering, segment variants, breadcrumb nav, canvas-to-container resolution
+- 2026-05-13 — Full text import (PRD0006): Gutenberg parser, 1342 entities / 2634 relations, first-run seed data
 
 ## Now (Current Sprint)
-- **Full text import (PRD0005)** — Hamlet from Gutenberg HTML parsed into ~775 entities + ~800 relations via build-time script. Validates the reading experience at scale.
-
-## Next (Near-Term)
-- Side-panel contextual expansion
+- **Side-panel contextual expansion** — click a `references` or `annotates` relation → opens a column to the right with linked content. Reading position preserved.
 
 ## Later (Backlog)
 - Side-panel contextual expansion

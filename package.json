@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "import:hamlet": "npx tsx scripts/import-gutenberg.ts scripts/hamlet/pg1524-images.html > src/data/hamlet.json"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -18,6 +19,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",
+    "node-html-parser": "^7.1.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "shadcn": "^4.7.0",
