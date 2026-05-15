@@ -7,6 +7,7 @@ import {
 } from "@/engine/queries";
 import { X, ChatCircleText, Link as LinkIcon } from "@phosphor-icons/react";
 import type { Entity } from "@/types/graph";
+import RichTextContent from "./RichTextContent";
 
 function AnnotationCard({
   sourceTitle,
@@ -39,7 +40,7 @@ function AnnotationCard({
       <p className="text-sm font-medium text-foreground mt-2">
         {context.entity.title}
       </p>
-      <ContentHtml className="text-xs text-muted-foreground leading-relaxed mt-1" content={context.entity.content ?? ""} />
+      <RichTextContent className="text-xs text-muted-foreground leading-relaxed mt-1" content={context.entity.content ?? ""} />
     </div>
   );
 }
@@ -85,14 +86,6 @@ function RelationSidebar() {
       )}
     </aside>
   );
-}
-
-function ContentHtml({ content, className }: { content: string; className?: string }) {
-  const isHtml = content.includes("<");
-  if (isHtml) {
-    return <div className={className} dangerouslySetInnerHTML={{ __html: content }} />;
-  }
-  return <div className={className} style={{ whiteSpace: "pre-wrap" }}>{content}</div>;
 }
 
 function SegmentCard({ entity }: { entity: Entity }) {
@@ -143,7 +136,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
       <div className="pt-8 pb-4">
         <h3 className="text-lg font-medium text-foreground">{entity.title}</h3>
         {entity.content && (
-          <ContentHtml className="text-sm text-muted-foreground mt-1" content={entity.content} />
+          <RichTextContent className="text-sm text-muted-foreground mt-1" content={entity.content} />
         )}
       </div>
     );
@@ -152,13 +145,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
   if (isStageDirection) {
     return (
       <div className="py-2">
-        <p className="italic text-muted-foreground text-sm leading-relaxed">
-          {entity.content?.includes("<") ? (
-            <span dangerouslySetInnerHTML={{ __html: entity.content }} />
-          ) : (
-            entity.content
-          )}
-        </p>
+        <RichTextContent className="italic text-muted-foreground text-sm leading-relaxed" content={entity.content ?? ""} />
       </div>
     );
   }
@@ -171,7 +158,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {entity.metadata.character as string}
             </span>
-            <ContentHtml className="mt-0.5 leading-relaxed text-foreground" content={entity.content ?? ""} />
+            <RichTextContent className="mt-0.5 leading-relaxed text-foreground" content={entity.content ?? ""} />
           </div>
         ) : (
           <div className="py-2">
@@ -179,7 +166,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
               <p className="font-medium text-sm text-foreground">{entity.title}</p>
             )}
             {entity.content && (
-              <ContentHtml className="leading-relaxed text-foreground" content={entity.content} />
+              <RichTextContent className="leading-relaxed text-foreground" content={entity.content} />
             )}
           </div>
         )}
@@ -223,6 +210,8 @@ function ReadingViewport() {
 
   const rootEntity = getEntity(state, focusedId);
 
+  const isContainer = rootEntity?.kind === "container";
+
   return (
     <div className="flex h-full overflow-hidden">
       <main className="flex-1 overflow-y-auto px-6 py-4">
@@ -232,11 +221,19 @@ function ReadingViewport() {
             children.map((child) => (
               <SegmentCard key={child.id} entity={child} />
             ))
-          ) : (
-            rootEntity?.content && (
-              <ContentHtml className="leading-relaxed text-foreground pt-4" content={rootEntity.content} />
-            )
-          )}
+          ) : isContainer ? (
+            <div className="pt-4">
+              <RichTextContent
+                editable
+                content={rootEntity?.content ?? ""}
+                onUpdate={(html) => {
+                  if (rootEntity) {
+                    useGraphStore.getState().updateEntity(rootEntity.id, { content: html })
+                  }
+                }}
+              />
+            </div>
+          ) : null}
         </div>
       </main>
       <RelationSidebar />

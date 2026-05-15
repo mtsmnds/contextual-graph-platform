@@ -248,16 +248,18 @@ function SidebarPopover() {
   );
 }
 
-function getViewParams(): { focused: string | null; anchor: string | null } {
+function getViewParams(): { view: string | null; focused: string | null; anchor: string | null } {
   const params = new URLSearchParams(window.location.search);
   return {
+    view: params.get("view"),
     focused: params.get("focused"),
     anchor: params.get("anchor"),
   };
 }
 
-function updateUrl(focused: string | null, anchor: string | null) {
+function updateUrl(view: string | null, focused: string | null, anchor: string | null) {
   const params = new URLSearchParams();
+  if (view) params.set("view", view);
   if (focused) params.set("focused", focused);
   if (anchor) params.set("anchor", anchor);
   const search = params.toString();
@@ -283,8 +285,10 @@ function App() {
     if (!directoryHandle || hasRestoredFromUrl.current) return;
     hasRestoredFromUrl.current = true;
 
-    const { focused, anchor } = getViewParams();
-    if (focused) {
+    const { view, focused, anchor } = getViewParams();
+    if (view === "graph") {
+      focusEntity(null);
+    } else if (focused) {
       const state = useGraphStore.getState();
       const entity = getEntity(state, focused);
       if (entity) {
@@ -296,8 +300,9 @@ function App() {
   useEffect(() => {
     if (!directoryHandle) return;
 
+    const view = focusedEntityId ? "page" : "graph";
     const timer = setTimeout(() => {
-      updateUrl(focusedEntityId, anchorEntityId);
+      updateUrl(view, focusedEntityId, anchorEntityId);
     }, 200);
 
     return () => clearTimeout(timer);

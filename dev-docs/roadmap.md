@@ -77,29 +77,23 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — Handle Persistence & URL Navigation (PRD0011): feature-flagged IndexedDB handle persistence (skip folder picker on reload), URL-based view state sync (reloads restore focused entity)
 - 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
 - 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.html`.
+- 2026-05-15 — TipTap + page navigation (PRD0013): TipTap integration, root containers (playground/books/roadmap), URL view param, editable empty containers. See `archive/2026-05-14-tiptap-page-navigation.md`.
 
-## Now (Current Sprint) — TipTap + page navigation
+## Now (Current Sprint) — TipTap exploration + canvas basics
 
-### 1. Three root containers
-Create three root-level entities in the graph, each with a permanent URL:
-- **`playground`** — empty workspace for experimentation (no seed data)
-- **`books`** — seeded with Hamlet (and future texts)
-- **`roadmap`** — the project roadmap as self-referential graph data (future)
+### 1. TipTap document model exploration
+- **ProseMirror JSON vs HTML** — run the test scenarios from `dev-docs/plans/tiptap-graph-mapping-test-plan.md`. Decide storage format.
+- **Model A vs Model B** — per-entity instances vs. per-container document. Which feels better for reading and editing?
+- **Annotation mapping** — how do ProseMirror marks map to `annotates` relations?
 
-Navigation model: selecting a container shows its children (folder/Notion page model). URL encodes the focused entity (`?view=page&entity=playground`). Reload restores the exact view.
+### 2. Canvas mode-switcher
+- Sidebar "Canvas View" button works today (sets `focusedEntityId: null`)
+- Mode indicator in URL (`?view=graph`)
+- Clean up the canvas adapter bridge — the `assignLayout`/`toReactFlowNodes` adapter works but is rudimentary
 
-### 2. TipTap integration
-- Install `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`
-- Wire TipTap into the reading viewport as the `view=page` renderer for `Entity.content` (HTML storage format)
-- **Test with Hamlet** — rich content, many segments, real-world edge cases
-- **Test with empty page** — playground root, blank slate startup, create-from-nothing UX
-- Map TipTap's node/mark model to our Entity/Relation graph — evaluate alignment (e.g. does a TipTap `mention` node become a `references` relation?)
-- Style TipTap UI with shadcn components (toolbar, menus, popovers)
-- Test TipTap rendering inside SegmentCard components
-- Test TipTap in annotation/comment flows (depends on annotation creation — downstream)
-
-### 3. Canvas mode-switcher
-- Canvas accessible via sidebar action, no longer the default first page
+### 3. shadcn TipTap toolbar
+- Style TipTap's UI with shadcn components (toolbar with bold/italic/heading/quote controls)
+- Follow-up from PRD0013
 
 ## Next — Navigation modes (Phases 2–4)
 

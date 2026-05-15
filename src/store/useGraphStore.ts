@@ -88,7 +88,6 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     let final = { ...data };
 
     if (current.kind === "segment") delete final.title;
-    if (current.kind === "container") delete final.content;
 
     if (final.id && final.id !== id) {
       const oldId = id;
@@ -200,12 +199,6 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
         directoryHandle: handle,
         folderName: handle.name,
         saveStatus: "saved",
-        view: {
-          focusedEntityId: null,
-          anchorEntityId: null,
-          visibleEntityIds: [],
-          expandedPanels: [],
-        },
       });
 
       _hydrated = true;
@@ -220,6 +213,11 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     if (!window.showDirectoryPicker) return;
     try {
       const handle = await window.showDirectoryPicker();
+      const permission = await handle.requestPermission({ mode: "readwrite" });
+      if (permission !== "granted") {
+        console.warn("Folder permission not granted");
+        return;
+      }
       const folderName = handle.name;
 
       let entities: Entity[] = [];

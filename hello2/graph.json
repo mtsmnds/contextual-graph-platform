@@ -12403,6 +12403,31 @@
         "type": "scene",
         "source": "hamlet"
       }
+    },
+    {
+      "id": "playground",
+      "kind": "container",
+      "title": "Playground",
+      "metadata": {
+        "type": "playground"
+      },
+      "content": "<p>parabolic test sample test <strong>bold <em>italic </em></strong><em><u>underlineeee etc</u> </em>testing ok 2? its dup</p>"
+    },
+    {
+      "id": "books",
+      "kind": "container",
+      "title": "Books",
+      "metadata": {
+        "type": "workspace"
+      }
+    },
+    {
+      "id": "roadmap",
+      "kind": "container",
+      "title": "Roadmap",
+      "metadata": {
+        "type": "roadmap"
+      }
     }
   ],
   "relations": [
@@ -31296,6 +31321,13 @@
       "id": "rel_scene_3491_contains_content",
       "source": "scene_3491",
       "target": "scene_3491_content",
+      "type": "contains",
+      "metadata": {}
+    },
+    {
+      "id": "rel_4018",
+      "source": "books",
+      "target": "hamlet",
       "type": "contains",
       "metadata": {}
     }

@@ -11,6 +11,26 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-15
+
+### TipTap + page navigation — PRD0013
+- **What:** Integrated TipTap into the reading viewport as the content renderer, replacing `dangerouslySetInnerHTML`. Created `RichTextContent` component supporting both read-only and editable modes. Added three root containers (`playground`, `books`, `roadmap`) to `hello2/graph.json`. Added `view` param to URL sync (`?view=page|graph`). Fixed URL restore race condition where React 19 strict mode double-effects caused the second `restoreFolder()` call to overwrite the focused entity. Relaxed container content model — containers can now hold content directly (Playground is an editable page). Created TipTap–graph mapping test plan for ProseMirror JSON vs HTML exploration.
+- **Reason:** The reading viewport rendered content via raw `dangerouslySetInnerHTML` with no rich text model. TipTap was the chosen editor and needed integration before annotation creation and inline editing. URL navigation needed `view` param for mode switching. The container content guard blocked the Playground editing test.
+- **Files changed:**
+  - `src/renderers/RichTextContent.tsx`: Created — TipTap-based content renderer (read-only + editable, onUpdate support)
+  - `src/renderers/ReadingViewport.tsx`: Replaced `ContentHtml` with `RichTextContent`. Added editable content area for empty containers. Removed `dangerouslySetInnerHTML`.
+  - `src/store/useGraphStore.ts`: Removed `if (kind === "container") delete final.content` guard. Added `requestPermission` in `openFolder()`. Removed `view` reset in `restoreFolder()` (fixes URL restore race).
+  - `src/App.tsx`: Added `view` param to URL sync and restore logic.
+  - `hello2/graph.json`: Added `playground`, `books`, `roadmap` root containers. Added `books → hamlet` contains relation.
+  - `dev-docs/roadmap.md`: Updated Now section with TipTap plan.
+  - `dev-docs/archive/2026-05-14-tiptap-page-navigation.md`: Created — PRD0013 plan.
+  - `dev-docs/plans/tiptap-graph-mapping-test-plan.md`: Created — test plan for ProseMirror JSON vs HTML and per-entity vs per-container document models.
+- **Impact:** Content renders through TipTap with proper ProseMirror model. `dangerouslySetInnerHTML` eliminated. Empty containers (Playground, Roadmap) are editable pages. URL navigation includes view mode. Three root containers provide navigation entry points. URL restore works reliably. Foundation for editable TipTap, annotation creation, and ProseMirror JSON exploration.
+- **ADR:** `dev-docs/plans/tiptap-graph-mapping-test-plan.md` (deferred — test plan)
+- **Archive:** `archive/2026-05-14-tiptap-page-navigation.md`
+
+---
+
 ## 2026-05-14
 
 ### Popover sidebar navigation — M2 Phase 1 (PRD0012)
