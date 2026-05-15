@@ -135,30 +135,87 @@ The `/` command menu is a Start plan feature. Options:
 
 ---
 
-## Phase 3 — Schema Alignment
+## Phase 3 — Multi-Document Test (Two Files + Mentions) (In Progress)
 
-**Goal:** Use TipTap's full schema to decide our content model. Keep our own schema "in the freezer" — test TipTap's built-in nodes/marks before building custom ones.
+**Goal:** Validate the architecture split by creating two real TipTap documents, linking them with mentions, and inspecting the raw data.
 
-### 3.1 Map our entities to TipTap schema
+~~Old Phase 3 goal (abstract schema alignment) superseded. Architecture split is clear: Graph handles document inventory + cross-doc relations. TipTap handles document internals.~~
 
-Current state:
-- Each entity has `content?: string` (HTML or plain text)
-- TipTap renders each entity's content as a separate editor instance
-- Entities are sequential but independent (Model A from test plan)
+### 3.1 Create two TipTap documents ✅
 
-Schema exploration questions (from `dev-docs/plans/tiptap-graph-mapping-test-plan.md`):
-- Can a container's full content be stored as a single ProseMirror JSON document?
-- Can entity `id` be stored as `node.attrs.entityId` in ProseMirror?
-- How does an `annotates` relation map to a ProseMirror `mark`?
+- Storage switched to `JSON.stringify(editor.getJSON())` — content stores as TipTap JSON in `Entity.content`
+- Legacy HTML handled via `parseContent()` fallback in both `TiptapEditor` and `RichTextContent`
+- `graph.json` inspected — each entity's `content` is a TipTap JSON blob, graph never parses it
 
-### 3.2 Test with both outputs
+### 3.2 Install Mention extension ✅
 
-Run the CLI alongside Schema tests:
-- `editor.getHTML()` → store as `Entity.content` (current)
-- `editor.getJSON()` → store as ProseMirror JSON (experimental)
-- Compare round-trip fidelity, file size, edit performance
+- `@tiptap/extension-mention` + `@tiptap/suggestion` installed
+- Configured with `suggestion.items` querying `getRootContainers` from the graph store
+- `TitleDocument` extension: custom Document node with `content: "heading block+"` — first block is always a heading (the title)
+- Title auto-syncs to `entity.title` on edit
+- Drag handle hidden on the title heading
 
-### 3.3 Default schema (StarterKit + Phase 2 extensions)
+### 3.3 Build suggestion popup (current step)
+
+The render function is a stub — need a proper suggestion popup that:
+1. Shows when user types `@`
+2. Lists matching root containers
+3. On click/Enter, inserts a mention node with `attrs.id` and `attrs.label`
+4. Inspect the resulting JSON structure
+```
+
+### 3.3 Link documents with mentions
+
+1. In document A, type `@Meeting Notes` → the Mention extension creates an inline node
+2. In document B, type `@Projects Overview` → same
+3. Inspect the resulting content:
+
+```
+editor.getJSON() → shows mention nodes with entity IDs:
+{
+  "type": "doc",
+  "content": [{
+    "type": "paragraph",
+    "content": [
+      { "type": "text", "text": "See " },
+      {
+        "type": "mention",
+        "attrs": {
+          "id": "container-meeting-notes",
+          "label": "Meeting Notes"
+        }
+      },
+      { "type": "text", "text": " for details." }
+    ]
+  }]
+}
+```
+
+```
+editor.getHTML() → mention rendered as a <span> with data attributes:
+<p>See <span data-type="mention" data-id="container-meeting-notes">@Meeting Notes</span> for details.</p>
+```
+
+### 3.4 Decide: JSON vs HTML storage
+
+Based on the mention output:
+- **ProseMirror JSON** preserves `attrs.id` and `attrs.label` as typed attributes — lossless round-trip
+- **HTML** stores them as `data-*` attributes — survives round-trip but is fragile (custom parser needed on re-import)
+- **Verdict:** If mentions (and future custom nodes like annotations) need reliable attributes → use JSON. If simpler content with just standard marks → HTML is fine.
+
+### 3.5 Default schema per container (Model A confirmed)
+
+Each container entity gets its own TipTap editor instance with its own content. This is Model A from the test plan — confirmed by the architecture split.
+
+```ts
+// One TipTap editor instance per container entity
+<EditorContent editor={editor} />  // container A
+<EditorContent editor={editor} />  // container B
+```
+
+No shared document, no position-based cross-references between containers. Cross-doc links happen via the Mention extension (which stores entity IDs in `attrs`), and the graph handles the navigation when clicked.
+
+### 3.6 Lock in default extensions
 
 ```ts
 extensions: [
@@ -175,10 +232,11 @@ extensions: [
   Typography,
   BubbleMenu,
   DragHandle,
+  Mention.configure({
+    suggestion: { /* graph-backed items */ },
+  }),
 ]
 ```
-
-This is our "full TipTap schema" for testing. Custom extensions (mention → references, highlight → annotation) come after we validate this baseline.
 
 ---
 
@@ -228,17 +286,20 @@ Phase 2 (Free Notion delta)
   ├── 2.3 Additional extensions
   └── 2.4 Slash commands decision gate
 
-Phase 3 (Schema alignment)
-  ├── 3.1 Map entities to ProseMirror
-  ├── 3.2 Test HTML vs JSON output
-  └── 3.3 Lock in default extensions
+Phase 3 (Multi-document test)
+  ├── 3.1 Create two TipTap documents ✅
+  ├── 3.2 Install Mention extension ✅
+  ├── 3.3 Build suggestion popup (in progress)
+  ├── 3.4 Decide: JSON vs HTML storage ✅ (JSON wins)
+  ├── 3.5 Confirm Model A (per-container editors) ✅
+  └── 3.6 Lock in default extensions ✅
 
 Phase 4 (Performance)
   ├── 4.1 Isolate editor component
   └── 4.2 useEditorState optimizations
 ```
 
-Phases 1 and 2 are pure UI — they don't affect the storage format or entity model. Schema testing (Phase 3) is separated so the editor experience is good before we make format decisions.
+Phases 1 and 2 are pure UI — they don't affect the storage format or entity model. Phase 3 validates the architecture split (graph ↔ TipTap) with a concrete cross-document test.
 
 ---
 
@@ -249,3 +310,6 @@ Phases 1 and 2 are pure UI — they don't affect the storage format or entity mo
 | 1 | Slash commands: pay for Start plan or build basic version with SuggestionMenu? | TBD after Phase 1 |
 | 2 | Image upload: needs a server endpoint. Use local file storage or skip? | TBD |
 | 3 | Do we replace `RichTextContent` everywhere (including read-only Hamlet) with the new editor, or keep `RichTextContent` for read-only and use the new editor only for editable containers? | Probably keep both: `RichTextContent` for read-only display (lighter), full editor for editing. |
+| 4 | Mention extension: does `@` trigger search across all entities or only root containers? | TBD — test both in Phase 3.3 |
+| 5 | Mention navigation: clicking a mention in read-only mode should navigate to the referenced entity? | Likely yes — needs `onClick` handler on mention NodeView |
+| 6 | Storage format: JSON or HTML for entity content? | Phase 3.4 decides based on mention attribute fidelity |

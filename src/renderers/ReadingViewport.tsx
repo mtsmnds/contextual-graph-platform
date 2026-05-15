@@ -218,10 +218,17 @@ function ReadingViewport() {
     return (
       <div className="h-full overflow-y-auto">
         <TiptapEditor
+          key={rootEntity?.id ?? "new"}
           content={rootEntity?.content ?? ""}
-          onSave={(html) => {
+          title={rootEntity?.title}
+          onSave={(json) => {
             if (rootEntity) {
-              useGraphStore.getState().updateEntity(rootEntity.id, { content: html })
+              useGraphStore.getState().updateEntity(rootEntity.id, { content: json })
+            }
+          }}
+          onTitleChange={(val) => {
+            if (rootEntity) {
+              useGraphStore.getState().updateEntity(rootEntity.id, { title: val })
             }
           }}
         />

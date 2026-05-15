@@ -1,6 +1,7 @@
 import { useEditor, EditorContent, EditorContext } from "@tiptap/react"
 import { BubbleMenu } from "@tiptap/react/menus"
 import { StarterKit } from "@tiptap/starter-kit"
+import Document from "@tiptap/extension-document"
 import { Image } from "@tiptap/extension-image"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { TextAlign } from "@tiptap/extension-text-align"
@@ -15,6 +16,10 @@ import DragHandle from "@tiptap/extension-drag-handle-react"
 import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension"
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
+
+const TitleDocument = Document.extend({
+  content: "heading block+",
+})
 
 import { Spacer } from "@/components/tiptap-ui-primitive/spacer"
 import {
@@ -60,25 +65,72 @@ import "@/components/tiptap-templates/simple/simple-editor.scss"
 
 import { Button } from "@/components/tiptap-ui-primitive/button"
 import { useState, useEffect, useRef } from "react"
+import Mention from "@tiptap/extension-mention"
+import { useGraphStore } from "@/store/useGraphStore"
+import { getRootContainers } from "@/engine/queries"
 
-function toHtml(input: string): string {
-  if (input.includes("<")) return input
-  return `<p>${input.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`
+function parseContent(input: string, title?: string): string | Record<string, unknown> {
+  if (!input) {
+    return {
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          attrs: { level: 1 },
+          content: title ? [{ type: "text", text: title }] : [],
+        },
+      ],
+    }
+  }
+  try {
+    return JSON.parse(input) as Record<string, unknown>
+  } catch {
+    return {
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          attrs: { level: 1 },
+          content: title ? [{ type: "text", text: title }] : [],
+        },
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: input }],
+        },
+      ],
+    }
+  }
+}
+
+function extractTitle(doc: Record<string, unknown> | null): string {
+  if (!doc) return ""
+  const content = (doc as { content?: Record<string, unknown>[] }).content
+  if (content?.[0]?.type === "heading") {
+    const textContent = (content[0] as { content?: Record<string, unknown>[] }).content
+    return textContent?.map((n) => (n as { text?: string }).text ?? "").join("") ?? ""
+  }
+  return ""
 }
 
 interface TiptapEditorProps {
   content: string
-  onSave?: (html: string) => void
+  title?: string
+  onSave?: (json: string) => void
+  onTitleChange?: (title: string) => void
 }
 
-function TiptapEditor({ content, onSave }: TiptapEditorProps) {
+function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorProps) {
   const isMobile = useIsBreakpoint()
   const { height } = useWindowSize()
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">("main")
+  const [showDragHandle, setShowDragHandle] = useState(true)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const onSaveRef = useRef(onSave)
+  const onTitleChangeRef = useRef(onTitleChange)
   onSaveRef.current = onSave
+  onTitleChangeRef.current = onTitleChange
 
+  const lastTitleRef = useRef(title ?? "")
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
 
@@ -95,19 +147,30 @@ function TiptapEditor({ content, onSave }: TiptapEditorProps) {
       handleDOMEvents: {
         blur: () => {
           if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-          onSaveRef.current?.(editorRef.current?.getHTML() ?? "")
+          const ed = editorRef.current
+          if (ed) {
+            const data = ed.getJSON()
+            const currentTitle = extractTitle(data as Record<string, unknown>)
+            if (currentTitle !== lastTitleRef.current) {
+              lastTitleRef.current = currentTitle
+              onTitleChangeRef.current?.(currentTitle)
+            }
+            onSaveRef.current?.(JSON.stringify(data))
+          }
           return false
         },
       },
     },
     extensions: [
       StarterKit.configure({
+        document: false,
         horizontalRule: false,
         link: {
           openOnClick: false,
           enableClickSelection: true,
         },
       }),
+      TitleDocument,
       HorizontalRule,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TaskList,
@@ -127,12 +190,49 @@ function TiptapEditor({ content, onSave }: TiptapEditorProps) {
       }),
       Placeholder.configure({ placeholder: "Start writing..." }),
       Emoji,
+      Mention.configure({
+        HTMLAttributes: { class: "text-primary font-medium" },
+        suggestion: {
+          items: ({ query }) => {
+            const state = useGraphStore.getState()
+            return getRootContainers(state)
+              .filter((e) => e.title?.toLowerCase().includes(query.toLowerCase()))
+              .slice(0, 5)
+          },
+          render: () => {
+            let dom: HTMLDivElement | null = null
+
+            return {
+              onStart: () => {
+                dom = document.createElement("div")
+                dom.className = "mention-suggestion"
+                dom.textContent = "Loading..."
+                document.body.appendChild(dom)
+              },
+              onUpdate: () => {},
+              onExit: () => {
+                if (dom) {
+                  dom.remove()
+                  dom = null
+                }
+              },
+            }
+          },
+        },
+      }),
     ],
-    content: toHtml(content),
-    onUpdate: () => {
+    content: parseContent(content, title),
+    onUpdate: ({ editor }) => {
+      const data = editor.getJSON()
+      const currentTitle = extractTitle(data as Record<string, unknown>)
+      if (currentTitle !== lastTitleRef.current) {
+        lastTitleRef.current = currentTitle
+        onTitleChangeRef.current?.(currentTitle)
+      }
+
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
       saveTimerRef.current = setTimeout(() => {
-        onSaveRef.current?.(editorRef.current?.getHTML() ?? "")
+        onSaveRef.current?.(JSON.stringify(data))
       }, 1500)
     },
   })
@@ -142,9 +242,15 @@ function TiptapEditor({ content, onSave }: TiptapEditorProps) {
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-      const html = editorRef.current?.getHTML()
-      if (html && onSaveRef.current) {
-        onSaveRef.current(html)
+      const ed = editorRef.current
+      if (ed) {
+        const data = ed.getJSON()
+        const currentTitle = extractTitle(data as Record<string, unknown>)
+        if (currentTitle !== lastTitleRef.current) {
+          lastTitleRef.current = currentTitle
+          onTitleChangeRef.current?.(currentTitle)
+        }
+        onSaveRef.current?.(JSON.stringify(data))
       }
     }
   }, [])
@@ -276,10 +382,18 @@ function TiptapEditor({ content, onSave }: TiptapEditorProps) {
         )}
 
         {editor && (
-          <DragHandle editor={editor}>
-            <div className="drag-handle flex items-center justify-center w-4 cursor-grab text-muted-foreground hover:text-foreground">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-            </div>
+          <DragHandle
+            editor={editor}
+            onNodeChange={({ node, editor: ed }) => {
+              const isTitle = node?.type.name === "heading" && ed?.state.doc.firstChild === node
+              setShowDragHandle(!isTitle)
+            }}
+          >
+            {showDragHandle && (
+              <div className="drag-handle flex items-center justify-center w-4 cursor-grab text-muted-foreground hover:text-foreground">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+            )}
           </DragHandle>
         )}
 

@@ -6,12 +6,17 @@ interface RichTextContentProps {
   content: string
   className?: string
   editable?: boolean
-  onUpdate?: (html: string) => void
+  onUpdate?: (json: string) => void
 }
 
-function toHtml(content: string): string {
-  if (content.includes("<")) return content
-  return `<p>${content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`
+function parseContent(input: string): string | Record<string, unknown> {
+  if (!input) return ""
+  try {
+    return JSON.parse(input) as Record<string, unknown>
+  } catch {
+    if (input.includes("<")) return input
+    return `<p>${input.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`
+  }
 }
 
 function RichTextContent({ content, className, editable = false, onUpdate }: RichTextContentProps) {
@@ -20,9 +25,9 @@ function RichTextContent({ content, className, editable = false, onUpdate }: Ric
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content: toHtml(content),
+    content: parseContent(content),
     editable,
-    onUpdate: ({ editor }) => onUpdateRef.current?.(editor.getHTML()),
+    onUpdate: ({ editor }) => onUpdateRef.current?.(JSON.stringify(editor.getJSON())),
   })
 
   if (!editor) return null

@@ -88,15 +88,20 @@ The domain model (Entity/Relation) is decoupled from view state. Content is nati
 - **Emoji autocomplete** — `:smile:` → 😄 works but is basic. Needs a proper emoji picker UI later.
 - **Slash commands** — TBD. Look at open-source projects (Notion clones, BlockNote, Novel) for inspiration before building.
 
-### 2. TipTap document model exploration
-- **ProseMirror JSON vs HTML** — run the test scenarios from `dev-docs/plans/tiptap-graph-mapping-test-plan.md`. Decide storage format.
-- **Model A vs Model B** — per-entity instances vs. per-container document. Which feels better for reading and editing?
-- **Annotation mapping** — how do ProseMirror marks map to `annotates` relations?
+### 2. Storage format + Title schema
+- **ProseMirror JSON as storage** ✅ — switched from `getHTML()` to `JSON.stringify(getJSON())`. Content stored as TipTap JSON in `Entity.content`. Legacy HTML content handled via `parseContent()` fallback.
+- **Title as first heading** ✅ — custom `TitleDocument` extension enforces `content: "heading block+"`. First block is always a heading. Title syncs to `entity.title` on every edit. No drag handle on the title block.
+- **Model A confirmed** — per-container editor instances, not shared documents.
+- **Annotation mapping** — still open, deferred.
 
-### 3. Page UX polish
-- Page renaming (editable title in ReadingViewport)
-- Sidebar shows child hierarchy (expandable tree via `contains`)
-- Delete / rename pages from sidebar
+### 3. Cross-doc mentions (Phase 3.3) — current step
+- **Build suggestion popup render** — `@` triggers a popover listing root containers, selecting one inserts a mention node with the entity ID. Extension installed, items wired to graph store, need the UI.
+- **Inspect JSON structure** — once mentions work, confirm `attrs.id` and `attrs.label` survive round-trip.
+- **Click navigation** — clicking a mention navigates to the referenced entity.
+
+### 4. Page UX polish
+- ~~Sidebar shows child hierarchy (expandable tree via `contains`)~~ — deferred
+- ~~Delete / rename pages from sidebar~~ — deferred
 
 ## Next — Columns, annotations, navigation modes
 
