@@ -223,6 +223,13 @@ editor.getHTML() → mention rendered as a <span> with data attributes:
 <p>See <span data-type="mention" data-id="container-meeting-notes">@Meeting Notes</span> for details.</p>
 ```
 
+### local storage but good now - prd0020
+
+
+
+
+
+
 ### 3.4 Decide: JSON vs HTML storage
 
 Based on the mention output:

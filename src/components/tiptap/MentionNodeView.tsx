@@ -2,10 +2,13 @@ import { NodeViewWrapper } from "@tiptap/react"
 import { ReactNodeViewRenderer } from "@tiptap/react"
 import type { NodeViewProps } from "@tiptap/react"
 import Mention from "@tiptap/extension-mention"
+import { useGraphStore } from "@/store/useGraphStore"
 
 export function MentionNodeView({ node, editor }: NodeViewProps) {
   const entityId = node.attrs.id as string
-  const label = node.attrs.label as string
+  const state = useGraphStore.getState()
+  const entity = state.entities.find((e) => e.id === entityId)
+  const label = entity?.title ?? (node.attrs.label as string)
 
   const handleClick = (e: React.MouseEvent) => {
     if (editor.isEditable && !e.metaKey && !e.ctrlKey) return
