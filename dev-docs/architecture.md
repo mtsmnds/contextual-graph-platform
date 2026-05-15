@@ -11,7 +11,7 @@ Entity Graph → Projection Layer → Renderer
 
 The core is a **Relation-Native Content Engine**. Entities carry content directly. Relations carry typed links. Projections interpret the graph for a specific use case. Renderers display projections.
 
-React Flow is one renderer among many (graph visualization), introduced in Phase 4. It is NOT the core runtime.
+React Flow will be reintroduced as one renderer among many (graph visualization) in Phase 4. It is NOT the core runtime.
 
 Guiding principle: *The graph is infrastructure. The viewport is the product. Renderers are interchangeable. Contextual reading is the core interaction.*
 
@@ -23,7 +23,7 @@ Guiding principle: *The graph is infrastructure. The viewport is the product. Re
 ## Tech Stack
 - Vite 8 + React 19 + TypeScript
 - Zustand 5 — global state
-- @xyflow/react (React Flow) — optional graph renderer (Phase 4+)
+- @xyflow/react (React Flow) — optional graph renderer (Phase 4+, installed but not imported)
 - @phosphor-icons/react — icon library
 - Native CSS nesting (no preprocessor)
 - TipTap — rich text editor (future)
@@ -129,7 +129,7 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 - **Scope**: When the user clicks any entity on the canvas, `resolveContainer` finds the root work. `getContainerChildren` flattens all descendants into a single scrollable list. The root entity (work) renders first as SegmentCard, then all children in order.
 - **Navigation**: Free scrolling is the primary interaction. The breadcrumb shows position in the hierarchy. Clicking a breadcrumb item refocuses the root with that item as anchor (same view, scrolled position).
 - **SegmentCard variants**: Act, scene, title-page, front-matter, stage-direction, character speech, end-matter, dramatis-personae — each renders with appropriate typography and spacing.
-- **Canvas bridge**: A temporary adapter in `App.tsx` transforms Entity/Relation data into React Flow nodes/edges for the overview canvas.
+- **Navigation**: The app is a single-mode reading workspace. `focusedEntityId === null` shows the HomePage (root container listing). `focusedEntityId !== null` shows the ReadingViewport with TipTap editing. Sidebar (`AppSidebar`) provides persistent page navigation.
 
 ### Feature Flags (`src/config.ts`)
 - `FEATURES.PERSIST_HANDLE` — reads from `import.meta.env.VITE_PERSIST_HANDLE !== "false"` (default `true`). When enabled, the folder handle is stored in IndexedDB and restored on startup, skipping the folder picker. Set `VITE_PERSIST_HANDLE=false` to opt out.
@@ -144,14 +144,16 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 | Path | Role |
 |------|------|
 | `src/main.tsx` | App entrypoint |
-| `src/App.tsx` | Root component — routes between canvas and reading viewport |
+| `src/App.tsx` | Root component — SidebarProvider + AppSidebar + HomePage/ReadingViewport routing |
+| `src/components/AppSidebar.tsx` | Permanent shadcn sidebar — page list, home link, new page button |
+| `src/components/HomePage.tsx` | Home page — root container cards, new page CTA, save status |
 | `src/types/graph.ts` | Entity/Relation/ViewState type definitions |
 | `src/store/useGraphStore.ts` | Zustand store (domain + view state + persistence) |
 | `src/engine/` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
 | `src/config.ts` | Feature flags (`PERSIST_HANDLE` from env var) |
 | `src/persistence.ts` | IndexedDB helpers for directory handle persistence |
-| `src/components/ui/` | shadcn/ui components (Button) |
+| `src/components/ui/` | shadcn/ui components (sidebar, button, etc.) |
 | `src/lib/utils.ts` | cn() utility for Tailwind class merging |
 | `src/data/hamlet.json` | Hamlet snapshot (reference only, no longer bundled) |
 | `src/index.css` | Global styles, Tailwind theme, shadcn CSS variables, dark mode |

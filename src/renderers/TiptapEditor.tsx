@@ -1,4 +1,5 @@
 import { useEditor, EditorContent, EditorContext } from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
 import { StarterKit } from "@tiptap/starter-kit"
 import { Image } from "@tiptap/extension-image"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
@@ -8,6 +9,9 @@ import { Highlight } from "@tiptap/extension-highlight"
 import { Subscript } from "@tiptap/extension-subscript"
 import { Superscript } from "@tiptap/extension-superscript"
 import { Selection } from "@tiptap/extensions"
+import Placeholder from "@tiptap/extension-placeholder"
+import { Emoji } from "@tiptap/extension-emoji"
+import DragHandle from "@tiptap/extension-drag-handle-react"
 import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension"
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
@@ -121,6 +125,8 @@ function TiptapEditor({ content, onSave }: TiptapEditorProps) {
         upload: handleImageUpload,
         onError: (error) => console.error("Upload failed:", error),
       }),
+      Placeholder.configure({ placeholder: "Start writing..." }),
+      Emoji,
     ],
     content: toHtml(content),
     onUpdate: () => {
@@ -253,6 +259,29 @@ function TiptapEditor({ content, onSave }: TiptapEditorProps) {
             </>
           )}
         </Toolbar>
+
+        {editor && (
+          <BubbleMenu editor={editor}>
+            <div className="flex items-center gap-0.5 rounded-lg border bg-background px-1 py-0.5 shadow-sm">
+              <MarkButton type="bold" />
+              <MarkButton type="italic" />
+              <MarkButton type="strike" />
+              <MarkButton type="underline" />
+              <ToolbarSeparator />
+              <MarkButton type="code" />
+              <ColorHighlightPopover />
+              <LinkPopover />
+            </div>
+          </BubbleMenu>
+        )}
+
+        {editor && (
+          <DragHandle editor={editor}>
+            <div className="drag-handle flex items-center justify-center w-4 cursor-grab text-muted-foreground hover:text-foreground">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+            </div>
+          </DragHandle>
+        )}
 
         <EditorContent
           editor={editor}

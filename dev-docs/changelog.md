@@ -13,6 +13,52 @@ Use this to recover context after breaks.
 
 ## 2026-05-15
 
+### Sidebar home navigation — PRD0015
+- **What:** Stripped React Flow from the app entirely. Replaced the floating popover sidebar with a permanent shadcn `Sidebar` containing Home link, page list, and "New page" button. Created a `HomePage` view showing root containers as clickable cards with save status. Page creation is now one-click from sidebar or home page. Removed `CanvasView`, `assignLayout`, `toReactFlowNodes`, `toReactFlowEdges`. Layout changed from conditional canvas/viewport to `SidebarProvider + AppSidebar + SidebarInset + HomePage/ReadingViewport`.
+- **Reason:** The dual-mode app (canvas vs. reading viewport) was fragile — changes to one path destabilized the other. React Flow was a distraction while the core reading + editing experience still needs validation. The popover sidebar was a two-click detour for the most common action (page navigation).
+- **Files changed:**
+  - `src/App.tsx`: Removed React Flow imports/CSS, `CanvasView`, `assignLayout`, `toReactFlowNodes`, `toReactFlowEdges`, `SidebarPopover`, `?view=graph` URL branch. New layout: `SidebarProvider → AppSidebar + SidebarInset → HomePage or ReadingViewport`.
+  - `src/components/AppSidebar.tsx`: Created — permanent shadcn sidebar with Home link, root container list, "New page" button, folder name footer.
+  - `src/components/HomePage.tsx`: Created — root container cards, new page CTA, save status bar.
+  - `dev-docs/roadmap.md`: Moved canvas items to Later, added PRD0015 to Recently Completed, reordered Now/Next/Later.
+  - `dev-docs/architecture.md`: Updated module map (removed canvas adapters, added AppSidebar/HomePage).
+- **Impact:** App is now the reading workspace. No canvas mode-switching. Sidebar is always visible. Page creation and selection are single-click. React Flow dependency remains in package.json but is no longer imported/bundled — ready for Phase 5 reintroduction.
+- **Archive:** `archive/2026-05-15-prd0015-sidebar-home-navigation.md`
+
+---
+
+## 2026-05-15
+
+### TipTap UI Phase 1: Simple Editor scaffold — PRD0014
+- **What:** Scaffolded TipTap's Simple Editor template (MIT) for the Playground editing experience. Created `TiptapEditor` wrapper with full toolbar (formatting, headings, lists, alignment, blockquote, code, link, image upload, undo/redo). Implemented debounced save strategy (onBlur + 1.5s idle + onUnmount) to prevent ProseMirror/Zustand transaction collisions that caused blank-screen crashes on complex operations. Empty containers now render full-width editor with no duplicate content and no empty sidebar.
+- **Reason:** The bare contenteditable editing experience had no toolbar or formatting controls. The `onUpdate`-driven Zustand sync caused crashes on complex ProseMirror operations (blockquote toggle) due to synchronous state updates during transaction cycles.
+- **Files changed:**
+  - `src/renderers/TiptapEditor.tsx`: Created — full editor wrapper with toolbar, debounced save
+  - `src/renderers/ReadingViewport.tsx`: Empty containers get full-width editor (no sidebar, no duplicate SegmentCard)
+  - `package.json`: Added `sass`
+  - `src/index.css`: Added TipTap UI SCSS imports
+  - 144 TipTap UI component files scaffolded by CLI
+- **Impact:** Full editing experience on Playground with toolbar. Blockquote and other complex operations no longer crash. Content auto-saves on blur, after 1.5s idle, and on unmount. Hamlet layout unchanged. Phase 1 complete — ready for BubbleMenu, Drag Handle, and additional extensions.
+- **ADR:** Included in archive file.
+- **Archive:** `archive/2026-05-15-prd0014-tiptap-ui-p1.md`
+
+---
+
+## 2026-05-15
+
+### TipTap UI Phase 2: Free Notion-like delta — PRD0016
+- **What:** Added BubbleMenu (floating toolbar on text selection), Drag Handle (block drag-and-drop), Placeholder extension, and Emoji autocomplete to the editor. All features are free/MIT, no paid subscription.
+- **Reason:** Phase 1 delivered the toolbar; Phase 2 adds the hallmark block editor interactions (floating menu, drag reorder) that make the editor feel modern.
+- **Files changed:**
+  - `package.json`: Added `@tiptap/extension-placeholder`, `@tiptap/extension-emoji`, `@tiptap/extension-drag-handle-react`, `@tiptap/extension-drag-handle`, `@tiptap/extension-node-range`
+  - `src/renderers/TiptapEditor.tsx`: Added BubbleMenu, DragHandle, Placeholder, Emoji
+- **Impact:** Full block-editing experience on Playground. Drag handle needs polish (alignment/sizing). Emoji is basic (`:code:` only). Slash commands deferred — pending research on open-source alternatives.
+- **Archive:** `archive/2026-05-15-prd0016-tiptap-ui-p2.md`
+
+---
+
+## 2026-05-15
+
 ### TipTap + page navigation — PRD0013
 - **What:** Integrated TipTap into the reading viewport as the content renderer, replacing `dangerouslySetInnerHTML`. Created `RichTextContent` component supporting both read-only and editable modes. Added three root containers (`playground`, `books`, `roadmap`) to `hello2/graph.json`. Added `view` param to URL sync (`?view=page|graph`). Fixed URL restore race condition where React 19 strict mode double-effects caused the second `restoreFolder()` call to overwrite the focused entity. Relaxed container content model — containers can now hold content directly (Playground is an editable page). Created TipTap–graph mapping test plan for ProseMirror JSON vs HTML exploration.
 - **Reason:** The reading viewport rendered content via raw `dangerouslySetInnerHTML` with no rich text model. TipTap was the chosen editor and needed integration before annotation creation and inline editing. URL navigation needed `view` param for mode switching. The container content guard blocked the Playground editing test.

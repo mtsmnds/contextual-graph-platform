@@ -11,22 +11,17 @@ Completed work goes in `changelog.md`.
 
 ---
 
-## Architectural Direction (Established 2026-05-13, updated 2026-05-14)
+## Architectural Direction (Established 2026-05-13, updated 2026-05-15)
 
-The current codebase tightly couples domain entities to React Flow nodes. Per the architecture review, this is being corrected:
+The system follows an Entity Graph → Projection Layer → Renderer model. React Flow is deferred to Phase 5 — the current app is a single-mode reading workspace with a persistent sidebar for page navigation.
 
 ```
-Entity Graph → Projection Layer → Renderer
+Entity Graph → Projection Layer → Reading Workspace (renderer)
 ```
 
-React Flow becomes one renderer among many, not the core runtime. The domain model (Entity/Relation) is decoupled from view state. Content is native to entities, not a separate `docId` pointer. Behaviors belong to the interaction layer, not the graph store.
+The domain model (Entity/Relation) is decoupled from view state. Content is native to entities. The app has one navigation mode: a permanent shadcn Sidebar (collapsible to icon-only) on the left, with a HomePage showing root containers and a ReadingViewport for content. `focusedEntityId === null` means home, not canvas.
 
-**Navigation modes:** The app no longer defaults to the React Flow canvas. Three navigation modes replace it, each URL-addressable:
-- **Page view** (default) — root-level containers listed on a home page. Navigate through the graph by clicking linked entities.
-- **Tree sidebar** — collapsible `contains` hierarchy for quick structural navigation.
-- **Graph viz** — the React Flow canvas, improved and accessible via switcher.
-
-This shift reorders the roadmap significantly: **validate contextual reading first, graph visualization last. Page navigation first, tree sidebar second, graph viz third.**
+**Priority:** Validate contextual reading + rich text editing first. Graph visualization comes last.
 
 ---
 
@@ -43,14 +38,16 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - ~~Full text import + work entity~~ ✅ (PRD0006)
 - ~~Side-panel contextual expansion~~ ✅ (PRD0007)
 
-### M2 — Reading Workspace
-- **Home page + page view as default** — current sprint. Root containers listed on launch. Page view is the primary navigation surface. Canvas accessible via mode switcher.
-- **Tree sidebar** — collapsible `contains` hierarchy for quick structural navigation.
-- **Node component design** — segment and container node types with action icons in border area. Building block for all renderers.
-- **Context columns v1** — horizontal navigation through related context (work → author → reference). Start with 3 columns.
-- **TipTap integration** — rich text rendering, editing model exploration, HTML content support. Evaluate `metadata.type` rules.
-- **Annotation creation** — depends on TipTap. Selection → annotation entity + `annotates` relation.
-- **Multi-column reading workspace** — column reordering, horizontal sync.
+### M2 — Reading Workspace ✅
+- ~~Home page + page view as default~~ ✅ (PRD0015)
+- ~~Sidebar + page navigation~~ ✅ (PRD0015: permanent shadcn Sidebar with page list, home link, new page)
+- ~~TipTap integration~~ ✅ (PRD0013: rich text rendering, editable containers, toolbar)
+- Page renaming/delete — next
+- Tree sidebar (expandable `contains` hierarchy) — next
+- Node component design — segment and container node types with action icons in border area.
+- Context columns v1 — horizontal navigation through related context (work → author → reference).
+- Annotation creation — depends on TipTap. Selection → annotation entity + `annotates` relation.
+- Multi-column reading workspace — column reordering, horizontal sync.
 
 ### M3 — Navigation & Projection Layer
 - Mode switcher (page / tree / graph) — each URL-addressable
@@ -78,47 +75,49 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
 - 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.md`.
 - 2026-05-15 — TipTap + page navigation (PRD0013): TipTap integration, root containers (playground/books/roadmap), URL view param, editable empty containers. See `archive/2026-05-14-tiptap-page-navigation.md`.
+- 2026-05-15 — Sidebar home navigation (PRD0015): Stripped React Flow, replaced popover sidebar with permanent shadcn Sidebar, added HomePage view, one-click page creation and selection. See `archive/2026-05-15-prd0015-sidebar-home-navigation.md`.
+- 2026-05-15 — TipTap UI Phase 1 (PRD0014): Simple Editor scaffold, full toolbar, debounced save strategy, Playground full-width layout. See `archive/2026-05-15-prd0014-tiptap-ui-p1.md`.
+- 2026-05-15 — TipTap UI Phase 2 (PRD0016): BubbleMenu, Drag Handle, Placeholder, Emoji, additional free extensions. See `archive/2026-05-15-prd0016-tiptap-ui-p2.md`.
 
-## Now (Current Sprint) — TipTap exploration + canvas basics
+## Now (Current Sprint) — Reading workspace UX
 
-### 1. TipTap document model exploration
-- **ProseMirror JSON vs HTML** — run the test scenarios from `dev-docs/plans/prd0013-tiptap-graph-mapping.md`. Decide storage format.
+### 1. TipTap UI Phase 2 — Free Notion-like delta (shipped, see PRD0016)
+- **BubbleMenu** — floating toolbar on text selection (bold, italic, link, highlight)
+- **Drag Handle** — block drag-and-drop reordering (needs size/alignment fix — polish later)
+- **Additional extensions** — Underline, Highlight, TextAlign, TaskList, Placeholder, Emoji, Typography
+- **Emoji autocomplete** — `:smile:` → 😄 works but is basic. Needs a proper emoji picker UI later.
+- **Slash commands** — TBD. Look at open-source projects (Notion clones, BlockNote, Novel) for inspiration before building.
+
+### 2. TipTap document model exploration
+- **ProseMirror JSON vs HTML** — run the test scenarios from `dev-docs/plans/tiptap-graph-mapping-test-plan.md`. Decide storage format.
 - **Model A vs Model B** — per-entity instances vs. per-container document. Which feels better for reading and editing?
 - **Annotation mapping** — how do ProseMirror marks map to `annotates` relations?
 
-### 2. Canvas mode-switcher
-- Sidebar "Canvas View" button works today (sets `focusedEntityId: null`)
-- Mode indicator in URL (`?view=graph`)
-- Clean up the canvas adapter bridge — the `assignLayout`/`toReactFlowNodes` adapter works but is rudimentary
+### 3. Page UX polish
+- Page renaming (editable title in ReadingViewport)
+- Sidebar shows child hierarchy (expandable tree via `contains`)
+- Delete / rename pages from sidebar
 
-### 3. shadcn TipTap toolbar
-- Style TipTap's UI with shadcn components (toolbar with bold/italic/heading/quote controls)
-- Follow-up from PRD0013
+## Next — Columns, annotations, navigation modes
 
-## Next — Navigation modes (Phases 2–4)
-
-The canvas is no longer the default first page. The app is about choosing how you navigate your graph. Three modes, each URL-addressable (`?view=page`, `?view=tree`, `?view=graph`).
-
-### Phase 2 — Home page + page view default
-- **Home page** — on launch, show a page listing root-level containers
-- **Page view as default** — reading viewport is the primary navigation surface. Containers render their title and children. Linked entities navigate to their page.
-- **Canvas mode-switcher** — canvas accessible via sidebar action, no longer the default first page
-
-### Phase 3 — Node component + columns
-- **Node component design** — segment and container node types with action icons in the border area
-- **Context columns v1** — start with 3 columns for horizontal navigation (work → author → reference). Column layout designed for long-term scaling.
+### Phase 3 — Context columns + dev tools
+- **Context columns v1** — start with 3 columns for horizontal navigation (work → author → reference)
 - **Dev tools panel** — button showing the focused node's full JSON data
 
 ### Phase 4 — Annotation creation
-- **Annotation creation** — selection → annotation entity + `annotates` relation. Depends on TipTap (now in active sprint).
+- **Annotation creation** — selection → annotation entity + `annotates` relation. Depends on TipTap.
+
+### Phase 5 — Graph visualization (React Flow)
+- React Flow reintroduction: layout algorithms, filtering, node grouping, search
+- Self-hosting roadmap — the roadmap itself expressed as entities and relations in the graph
 
 ## Later (Backlog)
+- Page reordering in sidebar
+- Drag-and-drop page reorder in sidebar
 - Column reordering, horizontal cross-column sync
 - Sample data re-import (Gutenberg parser with new ID scheme)
 - "Talmud mode" — show all annotations at once
 - Projection layer abstractions
-- React Flow canvas features (layout algorithms, filtering, node grouping)
-- Self-hosting roadmap — the roadmap itself expressed as entities and relations in the graph (separate PRD)
 - Tauri packaging
 - Undo/redo
 - Keyboard shortcuts and accessibility
@@ -126,5 +125,4 @@ The canvas is no longer the default first page. The app is about choosing how yo
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.
 - Speculative ideas: one bullet, move on.
-- Canvas improvements wait until the page and tree navigation modes are solid.
-- React Flow stays dormant until Phase 4 — resist the urge to build graph UI early.
+- React Flow stays dormant until Phase 5 — resist the urge to build graph UI early.
