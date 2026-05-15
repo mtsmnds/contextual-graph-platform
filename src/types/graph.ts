@@ -19,7 +19,8 @@ type RelationType =
   | "references"
   | "annotates"
   | "summarizes"
-  | "related_to";
+  | "related_to"
+  | "quote";
 
 type Relation = {
   id: string;

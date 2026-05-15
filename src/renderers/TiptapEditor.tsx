@@ -17,6 +17,7 @@ import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/ho
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
 import { PassageAnchor } from "@/components/tiptap/PassageAnchor"
+import { PassageLinkDialog } from "@/components/tiptap/PassageLinkDialog"
 
 const TitleDocument = Document.extend({
   content: "heading block+",
@@ -128,6 +129,7 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
   const { height } = useWindowSize()
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">("main")
   const [showDragHandle, setShowDragHandle] = useState(true)
+  const [linkingPassageId, setLinkingPassageId] = useState<string | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   // Separate refs for interactive use (blur, update) vs cleanup
@@ -168,6 +170,18 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
           }
           return false
         },
+      },
+      handleClickOn: (_view, _pos, _node, _nodePos, event) => {
+        const target = event.target as HTMLElement
+        const anchor = target.closest("[data-passage-anchor]")
+        if (anchor) {
+          const segmentId = anchor.getAttribute("data-passage-anchor")
+          if (segmentId) {
+            setLinkingPassageId(segmentId)
+            return true
+          }
+        }
+        return false
       },
     },
     extensions: [
@@ -370,7 +384,8 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
               <MarkButton type="code" />
               <ToolbarSeparator />
               <button
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault()
                   const { from, to } = editor.state.selection
                   const text = editor.state.doc.textBetween(from, to)
                   if (!text.trim()) return
@@ -409,10 +424,35 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
           </DragHandle>
         )}
 
+        <style>{`
+          .passage-anchor {
+            cursor: pointer;
+          }
+          .passage-anchor::after {
+            content: '\\2197';
+            display: inline-block;
+            font-size: 10px;
+            margin-left: 2px;
+            vertical-align: super;
+            opacity: 0.5;
+            color: inherit;
+            pointer-events: none;
+          }
+          .passage-anchor:hover::after {
+            opacity: 1;
+          }
+        `}</style>
+
         <EditorContent
           editor={editor}
           role="presentation"
           className="simple-editor-content"
+        />
+
+        <PassageLinkDialog
+          open={linkingPassageId !== null}
+          sourceSegmentId={linkingPassageId ?? ""}
+          onClose={() => setLinkingPassageId(null)}
         />
       </EditorContext.Provider>
     </div>

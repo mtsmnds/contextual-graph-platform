@@ -52,6 +52,11 @@ Entity Graph → Projection Layer → Reading Workspace. The domain model (Entit
 - Undo/redo
 - Keyboard shortcuts and accessibility
 
+## Known Issues
+
+- **Duplicate relations** — `addRelation` doesn't deduplicate. If the user clicks "Link" twice (or the dialog fires twice), two identical relations are created between the same source and target. Fix: check for existing relation before creating, or add a dedup step.
+- **Annotation entities have no titles** — Labels are derived at render time via `getPassageLabel()`, which extracts anchored text from the source document. This means labels can't be searched or displayed in entity lists without loading the source document. Fix: store a derived label on `metadata.label` at creation time (truncated anchored text).
+
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.
 - Speculative ideas: one bullet, move on.

@@ -21,7 +21,7 @@ interface GraphStore {
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
-  addRelation: (source: string, target: string, type: RelationType) => string;
+  addRelation: (source: string, target: string, type: RelationType, metadata?: Record<string, unknown>) => string;
   removeRelation: (id: string) => void;
 
   focusEntity: (id: string | null, anchorId?: string | null) => void;
@@ -157,9 +157,9 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     }));
   },
 
-  addRelation: (source: string, target: string, type: RelationType) => {
+  addRelation: (source: string, target: string, type: RelationType, metadata?: Record<string, unknown>) => {
     const id = `r_${Date.now()}`;
-    const relation: Relation = { id, source, target, type, metadata: {} };
+    const relation: Relation = { id, source, target, type, metadata: metadata ?? {} };
     set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
     return id;
   },
@@ -213,12 +213,12 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     });
 
     // Reconciliation: sync annotation entities with passageAnchor marks in the document
-    const foundIds = new Set<string>();
+    const found = new Map<string, string>();
     function walk(node: Record<string, unknown>) {
       if (node.marks && Array.isArray(node.marks)) {
         for (const mark of node.marks) {
           if (mark.type === "passageAnchor" && mark.attrs?.segmentId) {
-            foundIds.add(mark.attrs.segmentId as string);
+            found.set(mark.attrs.segmentId as string, (node.text as string) ?? "");
           }
         }
       }
@@ -236,19 +236,20 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         (e) => e.kind === "annotation" && e.metadata?.sourceContainer === id,
       );
 
-      for (const segmentId of foundIds) {
+      for (const [segmentId, text] of found) {
         if (!currentEntities.some((e) => e.id === segmentId)) {
+          const label = text.length > 60 ? text.slice(0, 60) + "..." : text;
           currentEntities.push({
             id: segmentId,
             kind: "annotation",
             content: undefined,
-            metadata: { sourceContainer: id },
+            metadata: { sourceContainer: id, label },
           });
         }
       }
 
       for (const entity of currentContainerEntities) {
-        if (!foundIds.has(entity.id)) {
+        if (!found.has(entity.id)) {
           const idx = currentEntities.findIndex((e) => e.id === entity.id);
           if (idx !== -1) {
             currentEntities[idx] = { ...entity, metadata: { ...entity.metadata, stale: true } };
