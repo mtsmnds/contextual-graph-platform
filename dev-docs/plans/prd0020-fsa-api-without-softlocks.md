@@ -168,13 +168,36 @@ For this project, we already ship `SEED_DATA` (two containers: "About This Works
 
 The folder picker lives in the sidebar menu. On first launch:
 1. Seed content is loaded and displayed
-2. A "Save to Folder" option appears in the sidebar menu
+2. An **"Open Folder…"** action appears in the sidebar menu
 3. User picks a folder via the native directory picker
-4. Seed content is written to that folder, FS Access adapter takes over
+4. If the folder is empty, seed content is written into it and FS Access adapter takes over
+5. If the folder already has workspace data (`graph.json`), it's loaded directly — seed is not written
+
+After a folder is opened, the folder name (basename) is shown in a breadcrumb at the top of the sidebar (via `@shadcn/breadcrumb`). No path, just the folder name — acts as a persistent location indicator.
 
 Subsequent launches with FS Access: the app re-opens the previously picked folder (permission permitting). If permission was revoked, show a reconnect button — never call `requestPermission()` without a user gesture.
 
 Later we can iterate on changing folders mid-session or opening multiple folders, but not in Phase 1.
+
+### User Story: First Launch
+
+**Actor:** A new user opening the app for the first time.
+
+1. App loads in the browser. No prior data exists in any adapter.
+2. `loadWorkspaceOrSeed` detects empty → imports `SEED_DATA` → writes it into IndexedDB (the default adapter when no FS folder is picked).
+3. User sees "About This Workspace" and "Editor Playground" in the graph. Everything works normally.
+4. In the sidebar menu, user sees **"Open Folder…"** — an optional action. They ignore it. App continues on IndexedDB. Data persists across reloads.
+5. Next session, user clicks **"Open Folder…"** → native directory picker opens → user picks `/Documents/my-workspace/`.
+6. Folder is empty → app writes seed graph + documents into it, switches adapter from IndexedDB to FS Access. Folder name appears in a sidebar breadcrumb. IndexedDB data is preserved as a cache/fallback.
+7. User reloads the page. `queryPermission` on the stored handle returns `"granted"` → FS Access reconnects silently. User sees their data.
+8. User reloads again later. This time `queryPermission` returns `"prompt"` (permission was revoked). The sidebar shows a **"Reconnect"** button. App silently falls back to IndexedDB for reads/writes.
+9. User clicks **"Reconnect"** → browser prompts → user grants → FS Access resumes. If user dismisses the prompt (`AbortError`), stays on IndexedDB — no dead end.
+
+**Edge case — User cancels folder picker:** `showDirectoryPicker` throws `AbortError`. Catch it, show a toast "No folder selected — working from IndexedDB", continue on IndexedDB.
+
+**Edge case — Folder has data but is incompatible version:** Prompt user: "This workspace was created by a different version. Open anyway?" If yes, attempt migration. If no, stay on IndexedDB.
+
+**Edge case — IndexedDB write fails:** Catch, show error toast with "Retry" or "Export data" fallback. App remains usable in-memory (Zustand state survives until reload).
 
 ## Write Strategy
 
