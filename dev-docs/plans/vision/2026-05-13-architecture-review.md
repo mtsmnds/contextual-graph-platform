@@ -447,19 +447,19 @@ advanced graph manipulation
 
 ## MUST HAVE
 
-### 1. Entity storage
+### 1. Entity storage :check:
 
 SQLite or JSON persistence.
 
 ---
 
-### 2. Relation storage
+### 2. Relation storage :check:
 
 Typed edges.
 
 ---
 
-### 3. Sequential reading
+### 3. Sequential reading :check:
 
 ```txt
 next / previous

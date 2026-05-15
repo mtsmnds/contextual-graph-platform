@@ -1,3 +1,10 @@
+> **Deprecation note (2026-05-15):** This document's active work was moved to PRD0010-1 (in archive) and implemented. The three postponed items are all deprecated by the subsequent architectural shift to TipTap containers with separate content storage (PRD0018):
+> 1. `metadata.type` rendering — moot since rendering is driven by ProseMirror document structure, not entity metadata.
+> 2. Hamlet ID migration — hamlet data is bundled legacy content, not active data. Migrating its segment IDs adds no value.
+> 3. Container content children naming — `_content` segments were a hamlet-era convention, irrelevant since content separation.
+>
+> The core ID scheme (slugify, generateEntityId, zero-padding, collision handling) shipped in PRD0010-1 and remains in use. These postponed items will not be implemented.
+
 <!DOCTYPE html>
 <html>
 <head>

@@ -1,3 +1,5 @@
+> **Completion note (2026-05-15):** Phases 1-3 fully implemented and shipped (PRD0014, PRD0016, PRD0018, PRD0019, content separation). See `changelog.md` for details. Remaining Phase 4 items (editor isolation, useEditorState) and unresolved open decisions (slash commands, image upload) have been moved to `roadmap.md`. This document is preserved for historical reference — the architecture principles and pricing map remain valid context.
+
 # TipTap UI Plan — Scaffold → Notion-like
 
 ## Principle

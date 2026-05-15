@@ -29,11 +29,13 @@ Entity Graph → Projection Layer → Reading Workspace. The domain model (Entit
 - **Dev tools panel** — button showing focused node's full JSON data
 - **Annotation creation** — selection → annotation entity + `annotates` relation
 - **Mode switcher** — page / tree / graph, each URL-addressable
+- **Editor performance** — isolate TipTap instance in its own component to prevent unrelated renders from rebuilding ProseMirror document; use `useEditorState` for toolbar active states
 - **Page reordering in sidebar**
 
 ## Later
 
 - Multi-column workspace (column reordering, horizontal sync)
+- Image upload — server endpoint or local file storage? (tiptap-ui plan open decision #2)
 - Sample data re-import (Gutenberg parser with new ID scheme)
 - "Talmud mode" — show all annotations at once
 - Graph visualization (React Flow) — layout algorithms, filtering, node grouping, search
