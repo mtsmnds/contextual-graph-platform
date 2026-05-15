@@ -8,6 +8,7 @@ import {
 import { X, ChatCircleText, Link as LinkIcon } from "@phosphor-icons/react";
 import type { Entity } from "@/types/graph";
 import RichTextContent from "./RichTextContent";
+import TiptapEditor from "./TiptapEditor";
 
 function AnnotationCard({
   sourceTitle,
@@ -212,28 +213,30 @@ function ReadingViewport() {
 
   const isContainer = rootEntity?.kind === "container";
 
+  // Empty containers (Playground, Roadmap): full-width editor, no sidebar, no duplicate content
+  if (isContainer && children.length === 0) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <TiptapEditor
+          content={rootEntity?.content ?? ""}
+          onSave={(html) => {
+            if (rootEntity) {
+              useGraphStore.getState().updateEntity(rootEntity.id, { content: html })
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full overflow-hidden">
       <main className="flex-1 overflow-y-auto px-6 py-4">
         <div className="mx-auto max-w-[720px]">
           {rootEntity && <SegmentCard key={rootEntity.id} entity={rootEntity} />}
-          {children.length > 0 ? (
-            children.map((child) => (
-              <SegmentCard key={child.id} entity={child} />
-            ))
-          ) : isContainer ? (
-            <div className="pt-4">
-              <RichTextContent
-                editable
-                content={rootEntity?.content ?? ""}
-                onUpdate={(html) => {
-                  if (rootEntity) {
-                    useGraphStore.getState().updateEntity(rootEntity.id, { content: html })
-                  }
-                }}
-              />
-            </div>
-          ) : null}
+          {children.map((child) => (
+            <SegmentCard key={child.id} entity={child} />
+          ))}
         </div>
       </main>
       <RelationSidebar />
