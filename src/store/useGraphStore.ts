@@ -4,13 +4,19 @@ import { generateUniqueId } from "../engine/ids";
 import { SEED_DATA } from "../data/seed";
 
 const STORAGE_KEY = "react-roadmap:graph";
+const CONTENT_PREFIX = "react-roadmap:content:";
 
 let _hydrated = false;
+
+function getContentKey(id: string): string {
+  return `${CONTENT_PREFIX}${id}`;
+}
 
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
   view: ViewState;
+  contentLoaded: Record<string, boolean>;
 
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
@@ -21,6 +27,10 @@ interface GraphStore {
   focusEntity: (id: string | null, anchorId?: string | null) => void;
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
+
+  getContent: (id: string) => Record<string, unknown> | null;
+  saveContent: (id: string, data: Record<string, unknown>) => void;
+  clearContent: (id: string) => void;
 }
 
 export const useGraphStore = create<GraphStore>((set, get) => ({
@@ -32,6 +42,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     visibleEntityIds: [],
     expandedPanels: [],
   },
+  contentLoaded: {},
 
   addEntity: (kind, data = {}, parentId = null) => {
     const existingIds: Set<string> = new Set(get().entities.map((e) => e.id));
@@ -59,6 +70,9 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
 
     if (current.kind === "segment") delete final.title;
 
+    // Stripping content via updateEntity is no longer the path for containers
+    if (current.kind === "container") delete final.content;
+
     if (final.id && final.id !== id) {
       const oldId = id;
       const newId = final.id;
@@ -82,6 +96,8 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   },
 
   deleteEntity: (id) => {
+    // Also remove content from storage
+    try { localStorage.removeItem(getContentKey(id)) } catch {}
     set((state) => ({
       entities: state.entities.filter((e) => e.id !== id),
       relations: state.relations.filter((r) => r.source !== id && r.target !== id),
@@ -129,6 +145,34 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       },
     }));
   },
+
+  getContent: (id) => {
+    try {
+      const stored = localStorage.getItem(getContentKey(id));
+      if (stored) return JSON.parse(stored) as Record<string, unknown>;
+    } catch {}
+    return null;
+  },
+
+  saveContent: (id, data) => {
+    try {
+      localStorage.setItem(getContentKey(id), JSON.stringify(data));
+    } catch (err) {
+      console.error("Failed to save content:", err);
+    }
+    set((state) => ({
+      contentLoaded: { ...state.contentLoaded, [id]: true },
+    }));
+  },
+
+  clearContent: (id) => {
+    try { localStorage.removeItem(getContentKey(id)) } catch {}
+    set((state) => {
+      const next = { ...state.contentLoaded };
+      delete next[id];
+      return { contentLoaded: next };
+    });
+  },
 }));
 
 // Auto-save: debounced write to localStorage on every domain state change
@@ -151,23 +195,52 @@ useGraphStore.subscribe((state, prevState) => {
   }, 300);
 });
 
+// Migrate seed data: extract inline content to separate content store keys
+function migrateSeedContent(entities: Entity[]): void {
+  for (const entity of entities) {
+    if (entity.content) {
+      const key = getContentKey(entity.id);
+      if (!localStorage.getItem(key)) {
+        try {
+          localStorage.setItem(key, entity.content);
+        } catch {}
+      }
+    }
+  }
+}
+
 // Initialize: load from localStorage or seed data
 try {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
     const data = JSON.parse(stored) as GraphSnapshot;
     if (data.version === 1) {
-      useGraphStore.setState({ entities: data.entities ?? [], relations: data.relations ?? [] });
+      // Migrate any existing inline content to the content store
+      const entities = data.entities ?? [];
+      migrateSeedContent(entities);
+      // Strip inline content from entities in-memory (keeps graph lightweight)
+      const cleanEntities = entities.map((e) =>
+        e.kind === "container" ? { ...e, content: undefined } : e,
+      );
+      useGraphStore.setState({ entities: cleanEntities, relations: data.relations ?? [] });
     } else {
       throw new Error("Unknown version");
     }
   } else {
-    useGraphStore.setState({ entities: SEED_DATA.entities, relations: SEED_DATA.relations });
+    migrateSeedContent(SEED_DATA.entities);
+    const cleanSeed = SEED_DATA.entities.map((e) =>
+      e.kind === "container" ? { ...e, content: undefined } : e,
+    ) as Entity[];
+    useGraphStore.setState({ entities: cleanSeed, relations: SEED_DATA.relations });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
   }
 } catch (err) {
   console.warn("Failed to load stored data, falling back to seed:", err);
-  useGraphStore.setState({ entities: SEED_DATA.entities, relations: SEED_DATA.relations });
+  migrateSeedContent(SEED_DATA.entities);
+  const cleanSeed = SEED_DATA.entities.map((e) =>
+    e.kind === "container" ? { ...e, content: undefined } : e,
+  ) as Entity[];
+  useGraphStore.setState({ entities: cleanSeed, relations: SEED_DATA.relations });
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
   } catch {

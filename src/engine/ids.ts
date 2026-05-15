@@ -15,6 +15,10 @@ export function slugify(title: string): string {
     || "untitled";
 }
 
+export function generateDocId(): string {
+  return `doc_${Date.now()}`;
+}
+
 const SEG_PREFIX_RE = /_seg-\d+$/;
 
 export function generateEntityId(
@@ -24,6 +28,7 @@ export function generateEntityId(
   siblingCount: number,
 ): string {
   if (!parentId) {
+    if (kind === "container") return generateDocId();
     return title ? slugify(title) : kind;
   }
 
@@ -35,7 +40,6 @@ export function generateEntityId(
   const slug = title ? slugify(title) : kind;
   let base = `${parentId}_${slug}`;
 
-  // If parent already uses _seg-N, strip it for cleaner container IDs
   base = base.replace(SEG_PREFIX_RE, "");
 
   return base;

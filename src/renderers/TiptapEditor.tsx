@@ -125,10 +125,15 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">("main")
   const [showDragHandle, setShowDragHandle] = useState(true)
   const toolbarRef = useRef<HTMLDivElement>(null)
+
+  // Separate refs for interactive use (blur, update) vs cleanup
   const onSaveRef = useRef(onSave)
   const onTitleChangeRef = useRef(onTitleChange)
+  const mountOnSaveRef = useRef(onSave)
+  const mountOnTitleChangeRef = useRef(onTitleChange)
   onSaveRef.current = onSave
   onTitleChangeRef.current = onTitleChange
+  // mount refs are set once when component first mounts, never updated
 
   const lastTitleRef = useRef(title ?? "")
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -248,9 +253,9 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
         const currentTitle = extractTitle(data as Record<string, unknown>)
         if (currentTitle !== lastTitleRef.current) {
           lastTitleRef.current = currentTitle
-          onTitleChangeRef.current?.(currentTitle)
+          mountOnTitleChangeRef.current?.(currentTitle)
         }
-        onSaveRef.current?.(JSON.stringify(data))
+        mountOnSaveRef.current?.(JSON.stringify(data))
       }
     }
   }, [])

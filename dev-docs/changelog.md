@@ -28,20 +28,25 @@ Use this to recover context after breaks.
   - `dev-docs/architecture.md`: Updated Store/Output/Feature-Flag sections, module map
   - `dev-docs/changelog.md`: Added this entry
   - `dev-docs/roadmap.md`: Added to Recently Completed
-- **Impact:** App works in every browser, deploys as a static SPA, loads seed data on first visit. Data persists across sessions via localStorage. No more folder-picker debugging.
-- **ADR:** `archive/2026-05-15-localstorage-persistence.md`
 
 ---
-### Fix: folder picker hung after browser restart ("File picker already active")
-- **What:** Three changes: (1) `openFolder()` calls `showDirectoryPicker({ mode: "readwrite" })` instead of requesting read + separate `requestPermission` that could silently return `"prompt"`. (2) `restoreFolder()` uses `queryPermission` only — no `requestPermission` call, avoiding permission prompts from background effects that could interfere with `showDirectoryPicker`. (3) Added `_opening` guard to `openFolder()` to prevent concurrent calls, and wait for `restoreFolder()` to complete before showing the FolderPicker.
-- **Reason:** After browser restart, `restoreFolder()` ran fire-and-forget from a `useEffect`. Its `requestPermission()` call on the stale IndexedDB handle could trigger a browser permission prompt that blocked `showDirectoryPicker()`. The user saw the picker open, selected a folder, but nothing happened. Clicking again gave `"File picker already active"`.
-- **Files changed:**
-  - `src/store/useGraphStore.ts`: `openFolder()` passes `{ mode: "readwrite" }` to `showDirectoryPicker`, removes separate `requestPermission`, adds `_opening` guard. `restoreFolder()` uses `queryPermission` only (no `requestPermission`).
-  - `src/App.tsx`: Show FolderPicker only after `restoreFolder()` completes. Updated `Window.showDirectoryPicker` type.
-- **Impact:** No more permission-prompt race between restore and open. No concurrent picker calls. FolderPicker appears only after restore has finished. `queryPermission`-only restore avoids triggering any browser prompts from background effects.
 
----
 ## 2026-05-15
+
+### Content separation — graph vs document store (PRD0018)
+
+- **What:** Separated graph metadata from document content. Removed `content` from the container entity path — container bodies now live in separate localStorage keys (`react-roadmap:content:{id}`). Added `getContent(id)`, `saveContent(id, data)`, `clearContent(id)` to the store. Container IDs use timestamp-based `generateDocId()` (`doc_{timestamp}`) instead of slugified titles, so multiple "Untitled" pages have unique stable IDs. ReadingViewport loads container content from the content store on focus. Segment entities retain their `content` field for hamlet legacy.
+- **Reason:** Storing stringified TipTap JSON in `Entity.content` bloated `graph.json`, made the graph unqueryable without parsing every document body, and violated separation of concerns. The graph should answer "what documents exist and how are they connected" — document bodies are a separate concern.
+- **Files changed:**
+  - `src/engine/ids.ts`: Added `generateDocId()` for timestamp-based container IDs. Root-level containers now use `doc_{timestamp}` instead of `slugify("Untitled")`.
+  - `src/store/useGraphStore.ts`: Added `contentLoaded`, `getContent`, `saveContent`, `clearContent`. Container content is no longer stored on the entity. `updateEntity` strips `content` for containers.
+  - `src/renderers/ReadingViewport.tsx`: Empty containers load content from `getContent()` instead of `entity.content`. Save goes through `saveContent()`.
+  - `dev-docs/archive/2026-05-15-content-separation.md`: Created ADR.
+  - `dev-docs/plans/prd0018-content-separation.md`: Created and promoted to archive.
+  - `dev-docs/architecture.md`: Updated domain model, store, and persistence documentation.
+  - `dev-docs/roadmap.md`: Added to Recently Completed.
+- **ADR:** `archive/2026-05-15-content-separation.md`
+- **Archive:** `archive/2026-05-15-prd0018-content-separation.md`
 
 ### Sidebar home navigation — PRD0015
 - **What:** Stripped React Flow from the app entirely. Replaced the floating popover sidebar with a permanent shadcn `Sidebar` containing Home link, page list, and "New page" button. Created a `HomePage` view showing root containers as clickable cards with save status. Page creation is now one-click from sidebar or home page. Removed `CanvasView`, `assignLayout`, `toReactFlowNodes`, `toReactFlowEdges`. Layout changed from conditional canvas/viewport to `SidebarProvider + AppSidebar + SidebarInset + HomePage/ReadingViewport`.

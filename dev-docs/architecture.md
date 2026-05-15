@@ -42,8 +42,8 @@ Entrypoint: `npm run build` → `vite build`
 #### Entity
 The atomic semantic object. Two roles:
 
-- **Containers** (`kind: "container"`) — structural labels. They have `title` (section heading) but no `content`. Body text comes from child segments. Examples: work ("Hamlet"), act ("Act I"), scene ("SCENE I...").
-- **Segments** (`kind: "segment"`) — content carriers. They have both `title` and `content` with the actual text. Examples: title page, speech, stage direction, annotation.
+- **Containers** (`kind: "container"`) — structural labels with `title`. Their body content lives in a separate content store (`react-roadmap:content:{id}` in localStorage), not inline on the entity. This keeps the graph lightweight and queryable without parsing document bodies. Examples: work ("Hamlet"), note ("Meeting Notes").
+- **Segments** (`kind: "segment"`) — legacy content carriers from the hamlet import. They have both `title` and inline `content` (plain text). New documents use containers with external content storage instead.
 
 ```ts
 type EntityKind = "segment" | "container" | "annotation" | "concept" | "summary"
@@ -52,7 +52,7 @@ type Entity = {
   id: string
   kind: EntityKind
   title?: string         // container heading or segment label
-  content?: string       // body text (segments only; containers don't have content)
+  content?: string       // LEGACY: body text for hamlet segments only. Containers store content externally via getContent/saveContent.
   metadata: Record<string, unknown>   // type-specific data (e.g. character name, work type)
 }
 ```
@@ -91,11 +91,14 @@ type ViewState = {
 ```
 
 ### Store (`src/store/useGraphStore.ts`)
-- `entities: Entity[]` — domain graph entities.
+- `entities: Entity[]` — domain graph entities (lightweight: no inline content for containers).
 - `relations: Relation[]` — typed edges.
 - `view: ViewState` — UI-only state, separate from domain.
+- `contentLoaded: Record<string, boolean>` — tracks which container contents have been loaded from storage.
 - Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `removeRelation`.
 - View actions: `focusEntity(id, anchorId?)`, `expandPanel`, `closePanel`.
+- Content actions: `getContent(id)` — reads from localStorage key `react-roadmap:content:{id}` and caches; `saveContent(id, data)` — writes to localStorage; `clearContent(id)` — removes from localStorage. Container document bodies are NOT stored on the entity.
+- ID scheme: New containers use `generateDocId()` (timestamp-based `doc_{timestamp}`); segments use `{parent}_seg-{counter}`; root entities use slugified title.
 - Persistence: localStorage — auto-save is debounced (300ms) to key `react-roadmap:graph` on every entity/relation change.
 - Initialization: On first load (no stored data), seed data is loaded from `src/data/seed.ts` (two containers with Tiptap content) and written to localStorage.
 - URL sync: On view state change, `focusedEntityId` and `anchorEntityId` are synced to URL search params (debounced 200ms, `history.replaceState`). On app load, URL params are read to restore the view.

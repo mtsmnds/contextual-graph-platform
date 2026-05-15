@@ -78,7 +78,7 @@ The domain model (Entity/Relation) is decoupled from view state. Content is nati
 - 2026-05-15 — Sidebar home navigation (PRD0015): Stripped React Flow, replaced popover sidebar with permanent shadcn Sidebar, added HomePage view, one-click page creation and selection. See `archive/2026-05-15-prd0015-sidebar-home-navigation.md`.
 - 2026-05-15 — TipTap UI Phase 1 (PRD0014): Simple Editor scaffold, full toolbar, debounced save strategy, Playground full-width layout. See `archive/2026-05-15-prd0014-tiptap-ui-p1.md`.
 - 2026-05-15 — TipTap UI Phase 2 (PRD0016): BubbleMenu, Drag Handle, Placeholder, Emoji, additional free extensions. See `archive/2026-05-15-prd0016-tiptap-ui-p2.md`.
-- 2026-05-15 — localStorage persistence replaces File System Access API: app is now a self-contained static SPA, works in all browsers, loads seed data on first visit. See `archive/2026-05-15-localstorage-persistence.md`.
+- 2026-05-15 — Content separation (PRD0018): Separated graph metadata from document content. Content lives in `react-roadmap:content:{id}` localStorage keys, not on entities. Container IDs use timestamp-based `generateDocId()`. See `archive/2026-05-15-content-separation.md`.
 
 ## Now (Current Sprint) — Reading workspace UX
 

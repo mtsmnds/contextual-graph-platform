@@ -213,17 +213,30 @@ function ReadingViewport() {
 
   const isContainer = rootEntity?.kind === "container";
 
-  // Empty containers (Playground, Roadmap): full-width editor, no sidebar, no duplicate content
+  // Empty containers: content lives in content store, not on the entity
+  // Load synchronously so TiptapEditor initializes with content on the first render
+  const getContent = useGraphStore((s) => s.getContent);
+  const saveContent = useGraphStore((s) => s.saveContent);
+  const docContent = useMemo(() => {
+    if (!isContainer || !focusedId) return "";
+    const data = getContent(focusedId);
+    return data ? JSON.stringify(data) : "";
+  }, [focusedId, isContainer, getContent]);
+
   if (isContainer && children.length === 0) {
     return (
       <div className="h-full overflow-y-auto">
         <TiptapEditor
           key={rootEntity?.id ?? "new"}
-          content={rootEntity?.content ?? ""}
+          content={docContent}
           title={rootEntity?.title}
           onSave={(json) => {
             if (rootEntity) {
-              useGraphStore.getState().updateEntity(rootEntity.id, { content: json })
+              try {
+                saveContent(rootEntity.id, JSON.parse(json));
+              } catch (e) {
+                console.error("Failed to save content:", e);
+              }
             }
           }}
           onTitleChange={(val) => {
