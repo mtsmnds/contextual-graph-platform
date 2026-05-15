@@ -1,55 +1,251 @@
+# TipTap UI Plan — Scaffold → Notion-like
 
+## Principle
 
-plans for tiptap ui and features
+Use TipTap's full editor and component ecosystem as-is. "Leave our own schema in the freezer" — test and leverage TipTap's natives before building domain-specific extensions. The storage format (HTML vs ProseMirror JSON) is orthogonal to UI; we decide it later.
 
-we want to start with a basic tiptap experience. the intended features and style out of the box, before creating our own.
-first, lets scaffold the starter ui and components. this is the moment to make plans on how to add extensions, components that didn't come with the starter kit. plan for the delta between the starter editing experience and the "notion-like" editing experience (just single-player features)
-second, the schema. lets do things totally like tiptap and prosemirror does. for this lets leave our own schema "in the freezer" its best to test and leverage tiptap's features than try to build parity on our own! this is important and probably needs good planning to separate well and write documentation so any agent can pick it up later.
+## Pricing Map (2026)
 
-# ui and components 
+| Feature | License | Source |
+|---------|---------|--------|
+| **Simple Editor template** | MIT (free) | `npx @tiptap/cli@latest add simple-editor` |
+| **BubbleMenu** | Free | `@tiptap/react` → `@tiptap/react/menus` |
+| **FloatingMenu** | Free | `@tiptap/react` → `@tiptap/react/menus` |
+| **Drag Handle React** | Free | `@tiptap/extension-drag-handle-react` |
+| **All StarterKit extensions** | Free | `@tiptap/starter-kit` |
+| **Underline, Highlight, TextAlign, TaskList, Table, Link, Placeholder, Emoji, Mention** | Free | Individual `@tiptap/extension-*` packages |
+| **Slash dropdown menu** | Start plan (paid) | TipTap Cloud |
+| **Drag context menu** | Start plan (paid) | TipTap Cloud |
+| **Notion Editor template** | Start plan (paid) | TipTap Cloud |
+| **Collaboration, AI** | Start plan (paid) | TipTap Cloud |
 
-0 
-cli tools
-https://tiptap.dev/docs/ui-components/getting-started/cli
-use to scaffold the editor
+The free tier covers everything needed for a single-player notion-like editor. The paid tier adds slash commands UI, drag context menus, collaboration, and AI.
 
-1 
-simple editor
-https://tiptap.dev/docs/ui-components/templates/simple-editor
-use the template
+---
 
-2 
-check which components are in the simple editor and which arent
-https://tiptap.dev/docs/ui-components/components/overview
+## Phase 1 — Simple Editor (free, MIT)
 
-3 
-check which components they offer for free for the "notion" editing experience. i'm not talking about the multiplayer features, just the ui. specially the `/ commands`. and how everything is blocks that drag
+**Goal:** Replace the current bare `RichTextContent` with the full Simple Editor template including toolbar, all standard formatting, image upload, and link popover.
 
-4
-styling
-https://tiptap.dev/docs/ui-components/getting-started/style
-attention to vite instructions
+### Steps
 
-5 
-check the performance guide as well
-https://tiptap.dev/docs/guides/performance
+#### 1.1 Install SCSS support
 
+The TipTap UI Components system uses SCSS. Vite needs the `sass` compiler.
 
-# schema
-we'll use the full tiptap schema as a test
-https://tiptap.dev/docs/editor/core-concepts/schema
+```bash
+npm install -D sass
+```
 
-might wanna check
-https://tiptap.dev/docs/editor/extensions/nodes
-https://tiptap.dev/docs/editor/extensions/marks
+Check: does `npm run dev` compile `.scss` files without errors?
 
+#### 1.2 Scaffold Simple Editor via CLI
 
+```bash
+npx @tiptap/cli@latest add simple-editor
+```
 
-# quality of life, extras
+This creates:
+- `src/components/tiptap-templates/simple/simple-editor.tsx`
+- `src/components/ui/` (all required UI primitives + components)
+- SCSS imports in `src/index.css`
 
-https://tiptap.dev/docs/editor/core-concepts/persistence
+#### 1.3 Verify integration
 
+- Import `SimpleEditor` in a test page or replace `RichTextContent` editing area with it
+- Confirm toolbar renders: bold, italic, underline, heading dropdown, lists, alignment, blockquote, code, link, undo/redo, image upload
+- Confirm dark/light mode matches our theme
 
-# questions
-do i need to send all links one by one or you can "navigate" the web with web fetch, opening links as you see fit to complete your knowledge?
+#### 1.4 Wire into Playground
 
+Replace the current editable `RichTextContent` on Playground with `SimpleEditor`. Content saves via `editor.getHTML()` → `updateEntity()` (same flow as today).
+
+### Deliverables
+
+- Toolbar with formatting controls (no more bare contenteditable)
+- Image upload (via TipTap's image upload node component)
+- Link popover
+- Dark/light mode
+- Undo/redo
+
+---
+
+## Phase 2 — Free Notion-like Delta
+
+**Goal:** Add "block editor" features on top of Simple Editor using free extensions. This is the delta between Simple Editor and a Notion-like editor (single-player features only).
+
+### 2.1 Bubble menu (free)
+
+Add a floating toolbar that appears on text selection (bold, italic, link, highlight).
+
+```tsx
+import { BubbleMenu } from "@tiptap/react/menus"
+
+<BubbleMenu editor={editor}>
+  <button onClick={() => editor.chain().focus().toggleBold().run()}>Bold</button>
+  <button onClick={() => editor.chain().focus().toggleItalic().run()}>Italic</button>
+  <button onClick={() => editor.chain().focus().toggleLink({ href: "" }).run()}>Link</button>
+</BubbleMenu>
+```
+
+### 2.2 Drag handle (free)
+
+Add block drag handles via `@tiptap/extension-drag-handle-react`. Lets users reorder blocks (paragraphs, headings, lists) by dragging.
+
+```bash
+npm install @tiptap/extension-drag-handle-react @tiptap/extension-drag-handle @tiptap/extension-node-range
+```
+
+```tsx
+import DragHandle from "@tiptap/extension-drag-handle-react"
+
+<DragHandle editor={editor}>
+  <div className="drag-handle" />
+</DragHandle>
+<EditorContent editor={editor} />
+```
+
+### 2.3 Additional free extensions
+
+Install and register:
+
+| Extension | Package | What it adds |
+|-----------|---------|-------------|
+| Underline | `@tiptap/extension-underline` | Ctrl+U underline |
+| Highlight | `@tiptap/extension-highlight` | `<mark>` highlighting |
+| TextAlign | `@tiptap/extension-text-align` | Left/center/right/justify |
+| TaskList | `@tiptap/extension-task-list` + `task-item` | Checkbox todo items |
+| Placeholder | `@tiptap/extension-placeholder` | "Start writing..." placeholder text |
+| Emoji | `@tiptap/extension-emoji` | `:smile:` emoji autocomplete |
+| Typography | `@tiptap/extension-typography` | Smart quotes, dashes, ellipsis |
+
+### 2.4 Slash commands (paid — defer decision)
+
+The `/` command menu is a Start plan feature. Options:
+- **Option A (paid):** Use TipTap's `slash-dropdown-menu` component → Start plan subscription needed
+- **Option B (free):** Build a basic slash menu using the free `SuggestionMenu` utility component + custom logic. Less polished, no ongoing cost.
+- **Decision gate:** Try Option B first. If it's too much effort, evaluate paid plan.
+
+### Deliverables
+
+- Floating toolbar on text selection
+- Block drag-and-drop reordering
+- Richer formatting: underline, highlight, text align, task lists, emoji
+- Placeholder text in empty editors
+
+---
+
+## Phase 3 — Schema Alignment
+
+**Goal:** Use TipTap's full schema to decide our content model. Keep our own schema "in the freezer" — test TipTap's built-in nodes/marks before building custom ones.
+
+### 3.1 Map our entities to TipTap schema
+
+Current state:
+- Each entity has `content?: string` (HTML or plain text)
+- TipTap renders each entity's content as a separate editor instance
+- Entities are sequential but independent (Model A from test plan)
+
+Schema exploration questions (from `dev-docs/plans/tiptap-graph-mapping-test-plan.md`):
+- Can a container's full content be stored as a single ProseMirror JSON document?
+- Can entity `id` be stored as `node.attrs.entityId` in ProseMirror?
+- How does an `annotates` relation map to a ProseMirror `mark`?
+
+### 3.2 Test with both outputs
+
+Run the CLI alongside Schema tests:
+- `editor.getHTML()` → store as `Entity.content` (current)
+- `editor.getJSON()` → store as ProseMirror JSON (experimental)
+- Compare round-trip fidelity, file size, edit performance
+
+### 3.3 Default schema (StarterKit + Phase 2 extensions)
+
+```ts
+extensions: [
+  StarterKit.configure({
+    heading: { levels: [1, 2, 3] },
+  }),
+  Underline,
+  Highlight,
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  TaskList,
+  TaskItem,
+  Placeholder.configure({ placeholder: "Start writing..." }),
+  Emoji,
+  Typography,
+  BubbleMenu,
+  DragHandle,
+]
+```
+
+This is our "full TipTap schema" for testing. Custom extensions (mention → references, highlight → annotation) come after we validate this baseline.
+
+---
+
+## Phase 4 — Quality & Performance
+
+### 4.1 Isolate editor component
+
+Per TipTap's performance guide: isolate the editor in a separate component to prevent unrelated renders from rebuilding the ProseMirror document.
+
+**Current problem:** `RichTextContent` is embedded inside `ReadingViewport` which subscribes to `entities` and `relations` — any store change rebuilds all editors.
+
+**Fix:** Move the editable TipTap instance into its own component with minimal subscriptions. Use `React.memo` or separate store slices.
+
+### 4.2 useEditorState for toolbar
+
+Use `useEditorState` for toolbar button active states instead of subscribing to the editor on every transaction:
+
+```tsx
+const isBold = useEditorState({
+  editor,
+  selector: ({ editor }) => editor.isActive("bold"),
+})
+```
+
+### 4.3 Debounced saves
+
+Keep the existing auto-save (300ms debounce in store). The `onUpdate` callback writes to the store via `updateEntity()`, which triggers auto-save. No additional debounce needed.
+
+### 4.4 Bundle size
+
+The Simple Editor + extensions will increase the JS bundle. Monitor via `npm run build` output (currently ~925 KB gzipped to 294 KB). Consider dynamic imports for heavy extensions (e.g., image upload, table) if they're not always needed.
+
+---
+
+## Execution Order
+
+```
+Phase 1 (Simple Editor scaffold)
+  ├── 1.1 Install sass
+  ├── 1.2 CLI add simple-editor
+  ├── 1.3 Verify renders
+  └── 1.4 Wire into Playground
+
+Phase 2 (Free Notion delta)
+  ├── 2.1 BubbleMenu
+  ├── 2.2 Drag Handle
+  ├── 2.3 Additional extensions
+  └── 2.4 Slash commands decision gate
+
+Phase 3 (Schema alignment)
+  ├── 3.1 Map entities to ProseMirror
+  ├── 3.2 Test HTML vs JSON output
+  └── 3.3 Lock in default extensions
+
+Phase 4 (Performance)
+  ├── 4.1 Isolate editor component
+  └── 4.2 useEditorState optimizations
+```
+
+Phases 1 and 2 are pure UI — they don't affect the storage format or entity model. Schema testing (Phase 3) is separated so the editor experience is good before we make format decisions.
+
+---
+
+## Open Decisions
+
+| # | Question | Decision |
+|---|----------|----------|
+| 1 | Slash commands: pay for Start plan or build basic version with SuggestionMenu? | TBD after Phase 1 |
+| 2 | Image upload: needs a server endpoint. Use local file storage or skip? | TBD |
+| 3 | Do we replace `RichTextContent` everywhere (including read-only Hamlet) with the new editor, or keep `RichTextContent` for read-only and use the new editor only for editable containers? | Probably keep both: `RichTextContent` for read-only display (lighter), full editor for editing. |
