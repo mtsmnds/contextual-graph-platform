@@ -9,6 +9,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { resolveAdapter } from "@/store/persistence"
 
 function getViewParams(): { focused: string | null; anchor: string | null } {
   const params = new URLSearchParams(window.location.search)
@@ -31,8 +32,19 @@ function App() {
   const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId)
   const anchorEntityId = useGraphStore((s) => s.view.anchorEntityId)
   const focusEntity = useGraphStore((s) => s.focusEntity)
+  const init = useGraphStore((s) => s.init)
 
+  const hasInitialized = useRef(false)
   const hasRestoredFromUrl = useRef(false)
+
+  useEffect(() => {
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
+    resolveAdapter().then((adapter) => {
+      init(adapter)
+    })
+  }, [init])
 
   useEffect(() => {
     if (hasRestoredFromUrl.current) return

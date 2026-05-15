@@ -2,22 +2,22 @@ import { create } from "zustand";
 import type { Entity, EntityKind, Relation, RelationType, ViewState, GraphSnapshot } from "../types/graph";
 import { generateUniqueId } from "../engine/ids";
 import { SEED_DATA } from "../data/seed";
+import type { PersistenceAdapter } from "./persistence";
 
-const STORAGE_KEY = "react-roadmap:graph";
-const CONTENT_PREFIX = "react-roadmap:content:";
-
+let _adapter: PersistenceAdapter | null = null;
 let _hydrated = false;
 
-function getContentKey(id: string): string {
-  return `${CONTENT_PREFIX}${id}`;
-}
+const contentCache: Record<string, Record<string, unknown>> = {};
 
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
   view: ViewState;
   contentLoaded: Record<string, boolean>;
+  adapterId: string | null;
+  folderName: string | null;
 
+  init: (adapter: PersistenceAdapter) => Promise<void>;
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
@@ -31,9 +31,10 @@ interface GraphStore {
   getContent: (id: string) => Record<string, unknown> | null;
   saveContent: (id: string, data: Record<string, unknown>) => void;
   clearContent: (id: string) => void;
+  refreshFolderName: () => void;
 }
 
-export const useGraphStore = create<GraphStore>((set, get) => ({
+const storeInitializer = (set: any, get: any): GraphStore => ({
   entities: [],
   relations: [],
   view: {
@@ -43,14 +44,68 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     expandedPanels: [],
   },
   contentLoaded: {},
+  adapterId: null,
+  folderName: null,
 
-  addEntity: (kind, data = {}, parentId = null) => {
-    const existingIds: Set<string> = new Set(get().entities.map((e) => e.id));
+  init: async (adapter: PersistenceAdapter) => {
+    _adapter = adapter;
+
+    const workspace = await adapter.loadWorkspace();
+
+    if (workspace) {
+      const containerEntities = workspace.entities.filter((e) => e.kind === "container");
+      for (const entity of containerEntities) {
+        const doc = await adapter.loadDocument(entity.id).catch(() => null);
+        if (doc) contentCache[entity.id] = doc;
+      }
+
+      set({
+        entities: workspace.entities,
+        relations: workspace.relations,
+        contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
+        adapterId: adapter.id,
+        folderName: adapter.getFolderName(),
+      });
+    } else {
+      const cleanEntities = SEED_DATA.entities.map(
+        (e) => (e.kind === "container" ? { ...e, content: undefined } : e),
+      ) as Entity[];
+
+      for (const entity of SEED_DATA.entities) {
+        if (entity.kind === "container" && entity.content) {
+          const parsed = JSON.parse(entity.content) as Record<string, unknown>;
+          contentCache[entity.id] = parsed;
+          adapter.saveDocument(entity.id, parsed).catch(() => {});
+        }
+      }
+
+      const seedSnapshot: GraphSnapshot = {
+        version: 1,
+        entities: cleanEntities,
+        relations: SEED_DATA.relations,
+      };
+      adapter.saveGraph(seedSnapshot).catch(() => {});
+
+      set({
+        entities: cleanEntities,
+        relations: SEED_DATA.relations,
+        contentLoaded: Object.fromEntries(
+          SEED_DATA.entities.filter((e) => e.kind === "container").map((e) => [e.id, true]),
+        ),
+        adapterId: adapter.id,
+        folderName: adapter.getFolderName(),
+      });
+    }
+
+    _hydrated = true;
+  },
+
+  addEntity: (kind: EntityKind, data = {}, parentId = null) => {
+    const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
     const siblingCount = parentId
-      ? get().entities.filter((e) => e.id.startsWith(`${parentId}_seg-`)).length
+      ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
       : 0;
     const id = generateUniqueId(parentId, kind, data.title, existingIds, siblingCount);
-
     const entity: Entity = {
       id,
       kind,
@@ -58,65 +113,63 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       content: kind === "container" ? undefined : data.content,
       metadata: data.metadata ?? {},
     };
-    set((state) => ({ entities: [...state.entities, entity] }));
+    set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
     return id;
   },
 
-  updateEntity: (id, data) => {
-    const current = get().entities.find((e) => e.id === id);
+  updateEntity: (id: string, data: Partial<Entity>) => {
+    const current = get().entities.find((e: Entity) => e.id === id);
     if (!current) return;
 
     let final = { ...data };
 
     if (current.kind === "segment") delete final.title;
-
-    // Stripping content via updateEntity is no longer the path for containers
     if (current.kind === "container") delete final.content;
 
+    let resolvedId = id;
     if (final.id && final.id !== id) {
       const oldId = id;
-      const newId = final.id;
-      set((state) => ({
+      resolvedId = final.id;
+      set((state: GraphStore) => ({
         relations: state.relations.map((r) => ({
           ...r,
-          source: r.source === oldId ? newId : r.source,
-          target: r.target === oldId ? newId : r.target,
+          source: r.source === oldId ? resolvedId : r.source,
+          target: r.target === oldId ? resolvedId : r.target,
         })),
       }));
-      id = newId;
     }
 
-    set((state) => ({
+    set((state: GraphStore) => ({
       entities: state.entities.map((e) =>
-        e.id === id
+        e.id === resolvedId
           ? { ...e, ...final, metadata: { ...e.metadata, ...(final.metadata ?? {}) } }
           : e,
       ),
     }));
   },
 
-  deleteEntity: (id) => {
-    // Also remove content from storage
-    try { localStorage.removeItem(getContentKey(id)) } catch {}
-    set((state) => ({
+  deleteEntity: (id: string) => {
+    delete contentCache[id];
+    _adapter?.deleteDocument(id).catch(() => {});
+    set((state: GraphStore) => ({
       entities: state.entities.filter((e) => e.id !== id),
       relations: state.relations.filter((r) => r.source !== id && r.target !== id),
     }));
   },
 
-  addRelation: (source, target, type) => {
+  addRelation: (source: string, target: string, type: RelationType) => {
     const id = `r_${Date.now()}`;
     const relation: Relation = { id, source, target, type, metadata: {} };
-    set((state) => ({ relations: [...state.relations, relation] }));
+    set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
     return id;
   },
 
-  removeRelation: (id) => {
-    set((state) => ({ relations: state.relations.filter((r) => r.id !== id) }));
+  removeRelation: (id: string) => {
+    set((state: GraphStore) => ({ relations: state.relations.filter((r) => r.id !== id) }));
   },
 
-  focusEntity: (id, anchorId = null) => {
-    set((state) => ({
+  focusEntity: (id: string | null, anchorId = null) => {
+    set((state: GraphStore) => ({
       view: {
         ...state.view,
         focusedEntityId: id,
@@ -126,8 +179,8 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     }));
   },
 
-  expandPanel: (entityId) => {
-    set((state) => ({
+  expandPanel: (entityId: string) => {
+    set((state: GraphStore) => ({
       view: {
         ...state.view,
         expandedPanels: state.view.expandedPanels.includes(entityId)
@@ -137,8 +190,8 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     }));
   },
 
-  closePanel: (entityId) => {
-    set((state) => ({
+  closePanel: (entityId: string) => {
+    set((state: GraphStore) => ({
       view: {
         ...state.view,
         expandedPanels: state.view.expandedPanels.filter((id) => id !== entityId),
@@ -146,106 +199,52 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     }));
   },
 
-  getContent: (id) => {
-    try {
-      const stored = localStorage.getItem(getContentKey(id));
-      if (stored) return JSON.parse(stored) as Record<string, unknown>;
-    } catch {}
-    return null;
+  getContent: (id: string) => {
+    return contentCache[id] ?? null;
   },
 
-  saveContent: (id, data) => {
-    try {
-      localStorage.setItem(getContentKey(id), JSON.stringify(data));
-    } catch (err) {
-      console.error("Failed to save content:", err);
-    }
-    set((state) => ({
+  saveContent: (id: string, data: Record<string, unknown>) => {
+    contentCache[id] = data;
+    set((state: GraphStore) => ({
       contentLoaded: { ...state.contentLoaded, [id]: true },
     }));
+    _adapter?.saveDocument(id, data).catch((err) => {
+      console.error("Failed to save content:", err);
+    });
   },
 
-  clearContent: (id) => {
-    try { localStorage.removeItem(getContentKey(id)) } catch {}
-    set((state) => {
+  clearContent: (id: string) => {
+    delete contentCache[id];
+    set((state: GraphStore) => {
       const next = { ...state.contentLoaded };
       delete next[id];
       return { contentLoaded: next };
     });
+    _adapter?.deleteDocument(id).catch(() => {});
   },
-}));
 
-// Auto-save: debounced write to localStorage on every domain state change
+  refreshFolderName: () => {
+    const name = _adapter?.getFolderName() ?? null;
+    const adapterId = _adapter?.id ?? null;
+    set({ folderName: name, adapterId });
+  },
+});
+
+export const useGraphStore = create<GraphStore>(storeInitializer);
+
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 useGraphStore.subscribe((state, prevState) => {
-  if (!_hydrated) return;
+  if (!_hydrated || !_adapter) return;
   if (state.entities === prevState.entities && state.relations === prevState.relations) return;
 
   if (saveTimer) clearTimeout(saveTimer);
 
   saveTimer = setTimeout(() => {
     const { entities, relations } = useGraphStore.getState();
-    try {
-      const snapshot: GraphSnapshot = { version: 1, entities, relations };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch (err) {
-      console.error("Failed to save to localStorage:", err);
-    }
+    const snapshot: GraphSnapshot = { version: 1, entities, relations };
+    _adapter!.saveGraph(snapshot).catch((err) => {
+      console.error("Failed to save graph:", err);
+    });
   }, 300);
 });
-
-// Migrate seed data: extract inline content to separate content store keys
-function migrateSeedContent(entities: Entity[]): void {
-  for (const entity of entities) {
-    if (entity.content) {
-      const key = getContentKey(entity.id);
-      if (!localStorage.getItem(key)) {
-        try {
-          localStorage.setItem(key, entity.content);
-        } catch {}
-      }
-    }
-  }
-}
-
-// Initialize: load from localStorage or seed data
-try {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    const data = JSON.parse(stored) as GraphSnapshot;
-    if (data.version === 1) {
-      // Migrate any existing inline content to the content store
-      const entities = data.entities ?? [];
-      migrateSeedContent(entities);
-      // Strip inline content from entities in-memory (keeps graph lightweight)
-      const cleanEntities = entities.map((e) =>
-        e.kind === "container" ? { ...e, content: undefined } : e,
-      );
-      useGraphStore.setState({ entities: cleanEntities, relations: data.relations ?? [] });
-    } else {
-      throw new Error("Unknown version");
-    }
-  } else {
-    migrateSeedContent(SEED_DATA.entities);
-    const cleanSeed = SEED_DATA.entities.map((e) =>
-      e.kind === "container" ? { ...e, content: undefined } : e,
-    ) as Entity[];
-    useGraphStore.setState({ entities: cleanSeed, relations: SEED_DATA.relations });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
-  }
-} catch (err) {
-  console.warn("Failed to load stored data, falling back to seed:", err);
-  migrateSeedContent(SEED_DATA.entities);
-  const cleanSeed = SEED_DATA.entities.map((e) =>
-    e.kind === "container" ? { ...e, content: undefined } : e,
-  ) as Entity[];
-  useGraphStore.setState({ entities: cleanSeed, relations: SEED_DATA.relations });
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
-  } catch {
-    // localStorage may be unavailable (e.g. Safari private browsing)
-  }
-}
-
-_hydrated = true;

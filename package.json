@@ -42,6 +42,7 @@
     "chrome-devtools-mcp": "^0.26.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dexie": "^4.4.2",
     "lodash.throttle": "^4.1.1",
     "lucide-react": "^1.14.0",
     "node-html-parser": "^7.1.0",

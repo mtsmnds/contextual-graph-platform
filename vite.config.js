@@ -10,7 +10,7 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored: ["dev-docs/**"],
+      ignored: ["dev-docs/**", "hello2/**"],
     },
   },
 })

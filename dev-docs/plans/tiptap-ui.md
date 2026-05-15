@@ -225,17 +225,10 @@ editor.getHTML() → mention rendered as a <span> with data attributes:
 
 ### local storage but good now - prd0020
 
+### 3.4 decision: json storage
+- leverage prosemirror and tiptap advantages instead of wasing time building parity
 
 
-
-
-
-### 3.4 Decide: JSON vs HTML storage
-
-Based on the mention output:
-- **ProseMirror JSON** preserves `attrs.id` and `attrs.label` as typed attributes — lossless round-trip
-- **HTML** stores them as `data-*` attributes — survives round-trip but is fragile (custom parser needed on re-import)
-- **Verdict:** If mentions (and future custom nodes like annotations) need reliable attributes → use JSON. If simpler content with just standard marks → HTML is fine.
 
 ### 3.5 Default schema per container (Model A confirmed)
 
