@@ -1,15 +1,16 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { useGraphStore } from "@/store/useGraphStore"
 import { getRootContainers } from "@/engine/queries"
-import { FileText, Quotes, MagnifyingGlass, X, LinkBreak } from "@phosphor-icons/react"
+import { FileTextIcon, QuotesIcon, MagnifyingGlassIcon, XIcon, LinkBreakIcon, TrashIcon } from "@phosphor-icons/react"
 
 interface PassageLinkPopoverProps {
   segmentId: string
-  anchorEl: HTMLElement | null
+  anchorRect: { bottom: number; right: number; left: number } | null
   onClose: () => void
+  onDeletePassage?: (segmentId: string) => void
 }
 
-export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLinkPopoverProps) {
+export function PassageLinkPopover({ segmentId, anchorRect, onClose, onDeletePassage }: PassageLinkPopoverProps) {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
   const addRelation = useGraphStore((s) => s.addRelation)
@@ -20,7 +21,6 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
   const [comment, setComment] = useState("")
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const anchorRect = anchorEl?.getBoundingClientRect()
   const posY = anchorRect ? anchorRect.bottom + 24 : 24
   const popoverWidth = 320
   const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1024
@@ -53,7 +53,7 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
     return () => document.removeEventListener("mousedown", handleClick)
   }, [onClose])
 
-  // Root containers (exclude self)
+  // Root containers
   const rootContainers = useMemo(
     () => getRootContainers({ entities, relations }),
     [entities, relations],
@@ -79,6 +79,7 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
         ? entities.filter(
             (e) =>
               e.kind === "annotation" &&
+              !e.metadata?.stale &&
               e.metadata?.sourceContainer === selectedDocId &&
               e.id !== segmentId &&
               !linkedTargetIds.has(e.id),
@@ -107,7 +108,7 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
           {step === "pick-passage" && "Select passage"}
         </span>
         <button onClick={onClose} className="rounded p-0.5 text-muted-foreground hover:text-foreground">
-          <X size={14} />
+          <XIcon size={14} />
         </button>
       </div>
 
@@ -120,17 +121,24 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
               {existingLinks.map((link) => (
                 <div
                   key={link.relation.id}
-                  className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5"
+                  className="group flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5"
                 >
-                  <Quotes size={14} className="shrink-0 text-muted-foreground" />
-                    <span className="truncate text-xs">
+                  <QuotesIcon size={14} className="shrink-0 text-muted-foreground" />
+                  <span className="truncate text-xs">
                     {String(link.target?.metadata?.label ?? link.target?.id ?? link.relation.target)}
                   </span>
                   {link.relation.metadata?.comment ? (
-                    <span className="ml-auto text-[10px] text-muted-foreground italic truncate max-w-[100px]">
+                    <span className="text-[10px] text-muted-foreground italic truncate max-w-[100px]">
                       {String(link.relation.metadata.comment)}
                     </span>
                   ) : null}
+                  <button
+                    onClick={() => useGraphStore.getState().removeRelation(link.relation.id)}
+                    className="ml-auto shrink-0 rounded p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+                    title="Remove link"
+                  >
+                    <TrashIcon size={12} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -153,16 +161,29 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
             }}
             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors"
           >
-            <LinkBreak size={14} />
+            <LinkBreakIcon size={14} />
             <span>Link to another passage…</span>
           </button>
+
+          <div className="mt-3 border-t pt-3">
+            <button
+              onClick={() => {
+                onDeletePassage?.(segmentId)
+                onClose()
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            >
+              <TrashIcon size={14} />
+              <span>Delete passage</span>
+            </button>
+          </div>
         </div>
       )}
 
       {step === "pick-doc" && (
         <div className="p-2">
           <div className="relative mb-2">
-            <MagnifyingGlass className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
             <input
               className="w-full rounded-md border bg-background py-1.5 pl-7 pr-2 text-xs outline-hidden focus:border-ring"
               placeholder="Search documents…"
@@ -184,7 +205,7 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
                   }}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors"
                 >
-                  <FileText size={14} className="shrink-0 text-muted-foreground" />
+                  <FileTextIcon size={14} className="shrink-0 text-muted-foreground" />
                   <span className="truncate">{doc.title ?? doc.id}</span>
                 </button>
               ))
@@ -214,7 +235,7 @@ export function PassageLinkPopover({ segmentId, anchorEl, onClose }: PassageLink
                   onClick={() => handleLink(psg.id)}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors"
                 >
-                  <Quotes size={14} className="shrink-0 text-muted-foreground" />
+                  <QuotesIcon size={14} className="shrink-0 text-muted-foreground" />
                     <span className="truncate">
                     {String(psg.metadata?.label ?? psg.id)}
                   </span>

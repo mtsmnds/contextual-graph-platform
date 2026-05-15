@@ -1,6 +1,39 @@
+# 2026-05-15: Passage Anchor Marks — PRD0021
+
+## Context
+- The graph stores entities and relations, but text inside TipTap documents had no identity. A user could write "comme dans Lolita de Nabokov" in a document, but that text was just text — it could not receive relations or be referenced by other documents.
+- The only way to make text graph-addressable was to create separate `segment` entities duplicating content, which was not viable for user-created content.
+- TipTap's Highlight extension demonstrated that custom marks with attributes survive save/load round-trips, providing a proven mechanism for attaching metadata to text ranges.
+
+## Decision
+Bridge the gap between TipTap documents and the Entity/Relation graph using a custom PassageAnchor mark that assigns a stable `segmentId` to any selected text range. Annotation entities in the graph record `sourceContainer` and `segmentId`, but the text itself stays in the TipTap document — never duplicated.
+
+**In scope:**
+- Custom `PassageAnchor` mark extension (copied from Highlight, `color` → `segmentId`)
+- "Create passage" button in BubbleMenu when text is selected
+- Save-time reconciliation: walks document for marks, creates annotation entities lazily, marks stale ones
+- `transformPasted` plugin strips marks from pasted content to prevent duplicate entity references
+- Deleted passages get `metadata.stale: true` (entity preserved for cross-doc references)
+- No title field on annotation entities — labels derived at render time
+
+**Out of scope:**
+- Cross-document linking (Phase 2)
+- Gutter indicators (added in Phase 2)
+- Stale entity garbage collection
+
+## Alternatives Considered
+- **Separate segment entities per passage:** Would duplicate TipTap content in the graph, violating separation of concerns. User would need to manage entity creation manually. Rejected.
+- **ProseMirror position-based references:** Fragile — positions shift on every edit. No stable identity. Rejected.
+- **Eager entity creation on mark apply:** Cmd+Z would leave orphan entities. Rejected in favor of save-time reconciliation.
+
+## Consequences
+- **Positive:** Text in any TipTap document is now graph-addressable. No content duplication. Undo-safe (mark is undoable, entity created lazily on save). Paste-safe (marks stripped on paste). Deleted passages preserve relations.
+- **Trade-offs:** Reconciliation adds O(n) scan on every save (negligible at current scale). Annotation entities are invisible to queries without loading the source document (mitigated by storing truncated labels in Phase 2).
+- **Risks:** Copy-paste of marked text outside the app (non-TipTap paste) may carry the `data-passage-anchor` attribute. Mitigated by `transformPasted` handling TipTap-internal paste; external paste is a lower-risk edge case.
+
 # PRD0021: Passage Anchor Marks (Phase 1 — The Bridge)
 
-**Status:** Draft
+**Status:** Completed
 
 ---
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react"
-import { FileText } from "@phosphor-icons/react"
+import { FileTextIcon } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 export interface MentionItem {
@@ -87,7 +87,7 @@ export function MentionPopup({ items, command, onKeyDownRef }: MentionPopupProps
                   : "text-muted-foreground",
               )}
             >
-              <FileText className="size-4 shrink-0" />
+              <FileTextIcon className="size-4 shrink-0" />
               <span className="truncate">{item.label}</span>
             </button>
           ))

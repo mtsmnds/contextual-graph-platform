@@ -67,7 +67,7 @@ import "@/components/tiptap-templates/simple/simple-editor.scss"
 
 import { Button } from "@/components/tiptap-ui-primitive/button"
 import { useState, useEffect, useRef } from "react"
-import { DotsSixVertical } from "@phosphor-icons/react"
+import { DotsSixVerticalIcon } from "@phosphor-icons/react"
 import { CustomMention } from "@/components/tiptap/MentionNodeView"
 import { useGraphStore } from "@/store/useGraphStore"
 import { getRootContainers } from "@/engine/queries"
@@ -129,7 +129,7 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
   const { height } = useWindowSize()
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">("main")
   const [showDragHandle, setShowDragHandle] = useState(true)
-  const [linkingPassage, setLinkingPassage] = useState<{ segmentId: string; anchorEl: HTMLElement } | null>(null)
+  const [linkingPassage, setLinkingPassage] = useState<{ segmentId: string; rect: { bottom: number; right: number; left: number } } | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   // Separate refs for interactive use (blur, update) vs cleanup
@@ -242,7 +242,8 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
     function handler(e: Event) {
       const detail = (e as CustomEvent).detail as { segmentId: string } | undefined
       if (detail?.segmentId) {
-        setLinkingPassage({ segmentId: detail.segmentId, anchorEl: e.target as HTMLElement })
+        const rect = (e.target as HTMLElement).getBoundingClientRect()
+        setLinkingPassage({ segmentId: detail.segmentId, rect: { bottom: rect.bottom, right: rect.right, left: rect.left } })
       }
     }
     el.addEventListener("passage-link-click", handler)
@@ -422,7 +423,7 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
                 pointerEvents: showDragHandle ? "auto" : "none",
               }}
             >
-              <DotsSixVertical size={16} weight="bold" />
+              <DotsSixVerticalIcon size={16} weight="bold" />
             </div>
           </DragHandle>
         )}
@@ -468,8 +469,28 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
         {linkingPassage && (
           <PassageLinkPopover
             segmentId={linkingPassage.segmentId}
-            anchorEl={linkingPassage.anchorEl}
+            anchorRect={linkingPassage.rect}
             onClose={() => setLinkingPassage(null)}
+            onDeletePassage={(id: string) => {
+              const ed = editorRef.current
+              if (!ed) return
+              // Remove the passageAnchor mark from the document
+              const { doc, tr } = ed.state
+              doc.descendants((node, pos) => {
+                if (
+                  node.isText &&
+                  node.marks.some((m) => m.type.name === "passageAnchor" && m.attrs.segmentId === id)
+                ) {
+                  const markType = ed.state.schema.marks.passageAnchor
+                  tr.removeMark(pos, pos + node.nodeSize, markType)
+                }
+              })
+              if (tr.steps.length > 0) {
+                ed.view.dispatch(tr)
+              }
+              // Remove the entity + all its relations from the graph store
+              useGraphStore.getState().deleteEntity(id)
+            }}
           />
         )}
       </EditorContext.Provider>

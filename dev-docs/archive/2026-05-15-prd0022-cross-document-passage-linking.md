@@ -1,6 +1,42 @@
+# 2026-05-15: Cross-Document Passage Linking — PRD0022
+
+## Context
+- Phase 1 made text addressable via `passageAnchor` marks, but those annotation entities sat alone with no relations. Users could create passage A in document 1 and passage B in document 2, but had no way to link them.
+- Cross-document linking is the mechanism behind the core use case: "Sinno references Nabokov" — connecting a passage in one document to a passage in another.
+- The existing `RelationType` union ("contains", "next", "references", "annotates", "summarizes", "related_to") had no type specific enough for verbatim passage-level cross-references.
+
+## Decision
+Add `"quote"` to the `RelationType` union and build a gutter-based interaction model: 24x24 chain-link icon widget (ProseMirror decoration) for each passage, clickable to open an inline popover for creating/managing quote relations.
+
+**In scope:**
+- `"quote"` relation type added to `RelationType` (semantically specific — a deliberate verbatim cross-reference)
+- `addRelation` accepts optional `metadata` (for user comments on relations)
+- ProseMirror `decorations` plugin renders 24x24 gutter buttons with chain-link SVG; click dispatches custom event
+- Inline popover (floating card, same pattern as mention popup) showing existing links, document/passage picker, comment field
+- Popover positions 24px right+down from gutter button, flips left on viewport overflow
+- Human-readable `metadata.label` stored on annotation entities at creation time
+- Delete flow: removes relations + removes ProseMirror mark + deletes entity from store atomically
+- Passage text rendered with subtle underline (`text-decoration-color: currentColor 75%`)
+- `TrashIcon` on each link row (hidden, appears on hover, turns red)
+
+**Out of scope:**
+- Multi-column layout (Phase 3)
+- Drag-to-link between columns (Phase 4)
+- Metadata display / blockquote rendering (Phase 5)
+
+## Alternatives Considered
+- **BubbleMenu button for linking:** Would require the editor to be focused and text selected. Gutter icon is always visible, works in any state. Rejected.
+- **Modal dialog for link picker:** Centered modal loses context with the passage. Inline popover (mention pattern) feels connected to the interaction. Rejected.
+- **`"references"` type instead of `"quote":` Semantically too broad — a quote is a specific kind of reference. `"quote"` distinguishes verbatim passage links from general work references. Chosen.
+
+## Consequences
+- **Positive:** Users can now link passages across documents in a few clicks. The gutter icon is always visible — no need to select text first. Popover shows existing links, document/passage picker, and comment field in one place. Delete flow is atomic — no loose relations or orphan entities.
+- **Trade-offs:** Gutter buttons are ProseMirror decoration widgets — their DOM elements are ephemeral and get destroyed/recreated on every editor state change. Storing the button element for popover positioning fails when the element is recreated (fixed by capturing coordinates at click time instead).
+- **Risks:** Multiple columns (Phase 3) may affect gutter button positioning. The decorations plugin runs on every state change — performance impact should be minimal since decoration computation is O(n) in paragraph count.
+
 # PRD0022: Cross-Document Passage Linking (Phase 2)
 
-**Status:** Draft
+**Status:** Completed
 
 ---
 

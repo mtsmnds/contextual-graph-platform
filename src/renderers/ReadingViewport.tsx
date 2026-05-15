@@ -5,7 +5,7 @@ import {
   getContainerChildren,
   getLinkedContext,
 } from "@/engine/queries";
-import { X, ChatCircleText, Link as LinkIcon } from "@phosphor-icons/react";
+import { XIcon, ChatCircleTextIcon, LinkIcon } from "@phosphor-icons/react";
 import type { Entity } from "@/types/graph";
 import RichTextContent from "./RichTextContent";
 import TiptapEditor from "./TiptapEditor";
@@ -35,7 +35,7 @@ function AnnotationCard({
           className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
           onClick={onClose}
         >
-          <X size={12} />
+          <XIcon size={12} />
         </button>
       </div>
       <p className="text-sm font-medium text-foreground mt-2">
@@ -181,7 +181,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
           {linkedContext.some((c) => c.relation.type === "references") ? (
             <LinkIcon size={16} />
           ) : (
-            <ChatCircleText size={16} />
+            <ChatCircleTextIcon size={16} />
           )}
         </button>
       )}
