@@ -96,11 +96,9 @@ type ViewState = {
 - `view: ViewState` — UI-only state, separate from domain.
 - Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `removeRelation`.
 - View actions: `focusEntity(id, anchorId?)`, `expandPanel`, `closePanel`.
-- Persistence: File System Access API — user picks a folder, app reads/writes `graph.json` inside it.
-- Auto-save: debounced (300ms) write to `graph.json` on every entity/relation change. No hidden storage.
-- Actions: `openFolder()` opens folder picker, reads or creates `graph.json`.
-- Handle persistence: `restoreFolder()` (behind `FEATURES.PERSIST_HANDLE`) restores the last-used folder handle from IndexedDB on startup. `openFolder()` persists the handle after successful pick.
-- URL sync: On view state change, `focusedEntityId` and `anchorEntityId` are synced to URL search params (debounced 200ms, `history.replaceState`). On app load, after folder is resolved, URL params are read to restore the view.
+- Persistence: localStorage — auto-save is debounced (300ms) to key `react-roadmap:graph` on every entity/relation change.
+- Initialization: On first load (no stored data), seed data is loaded from `src/data/seed.ts` (two containers with Tiptap content) and written to localStorage.
+- URL sync: On view state change, `focusedEntityId` and `anchorEntityId` are synced to URL search params (debounced 200ms, `history.replaceState`). On app load, URL params are read to restore the view.
 
 ### Query Engine (`src/engine/queries.ts`)
 Pure functions over store state — no hooks, no components:
@@ -131,13 +129,9 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 - **SegmentCard variants**: Act, scene, title-page, front-matter, stage-direction, character speech, end-matter, dramatis-personae — each renders with appropriate typography and spacing.
 - **Navigation**: The app is a single-mode reading workspace. `focusedEntityId === null` shows the HomePage (root container listing). `focusedEntityId !== null` shows the ReadingViewport with TipTap editing. Sidebar (`AppSidebar`) provides persistent page navigation.
 
-### Feature Flags (`src/config.ts`)
-- `FEATURES.PERSIST_HANDLE` — reads from `import.meta.env.VITE_PERSIST_HANDLE !== "false"` (default `true`). When enabled, the folder handle is stored in IndexedDB and restored on startup, skipping the folder picker. Set `VITE_PERSIST_HANDLE=false` to opt out.
-- All feature flags are `as const` for dead-code elimination by bundlers in production builds.
-
 ### Output / State
 - `dist/` — production build.
-- Store reads/writes `graph.json` in the user's chosen folder via the File System Access API. No bundled seed data.
+- Store persists to `localStorage` under key `react-roadmap:graph`. On first visit (no stored data), seed data from `src/data/seed.ts` is loaded automatically.
 
 ## Module Map
 
@@ -151,11 +145,9 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 | `src/store/useGraphStore.ts` | Zustand store (domain + view state + persistence) |
 | `src/engine/` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
-| `src/config.ts` | Feature flags (`PERSIST_HANDLE` from env var) |
-| `src/persistence.ts` | IndexedDB helpers for directory handle persistence |
+| `src/data/seed.ts` | Seed data (2 containers with Tiptap content, loaded on first visit) |
 | `src/components/ui/` | shadcn/ui components (sidebar, button, etc.) |
 | `src/lib/utils.ts` | cn() utility for Tailwind class merging |
-| `src/data/hamlet.json` | Hamlet snapshot (reference only, no longer bundled) |
 | `src/index.css` | Global styles, Tailwind theme, shadcn CSS variables, dark mode |
 | `scripts/import-gutenberg.ts` | Gutenberg HTML → JSON converter |
 | `dist/` | Build output (gitignored) |

@@ -1,30 +1,9 @@
 import { create } from "zustand";
-import type {
-  Entity,
-  EntityKind,
-  Relation,
-  RelationType,
-  ViewState,
-  GraphSnapshot,
-} from "../types/graph";
-import { FEATURES } from "../config";
-import { saveHandle, loadHandle } from "../persistence";
+import type { Entity, EntityKind, Relation, RelationType, ViewState, GraphSnapshot } from "../types/graph";
 import { generateUniqueId } from "../engine/ids";
+import { SEED_DATA } from "../data/seed";
 
-declare global {
-  interface Window {
-    showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
-  }
-
-  interface FileSystemHandle {
-    requestPermission(descriptor?: { mode: "read" | "readwrite" }): Promise<PermissionState>;
-    queryPermission(descriptor?: { mode: "read" | "readwrite" }): Promise<PermissionState>;
-  }
-}
-
-type SaveStatus = "saved" | "unsaved" | "saving" | "error";
-
-const FILE_NAME = "graph.json";
+const STORAGE_KEY = "react-roadmap:graph";
 
 let _hydrated = false;
 
@@ -32,9 +11,6 @@ interface GraphStore {
   entities: Entity[];
   relations: Relation[];
   view: ViewState;
-  directoryHandle: FileSystemDirectoryHandle | null;
-  folderName: string | null;
-  saveStatus: SaveStatus;
 
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
@@ -45,9 +21,6 @@ interface GraphStore {
   focusEntity: (id: string | null, anchorId?: string | null) => void;
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
-
-  openFolder: () => Promise<void>;
-  restoreFolder: () => Promise<boolean>;
 }
 
 export const useGraphStore = create<GraphStore>((set, get) => ({
@@ -59,14 +32,11 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     visibleEntityIds: [],
     expandedPanels: [],
   },
-  directoryHandle: null,
-  folderName: null,
-  saveStatus: "saved",
 
   addEntity: (kind, data = {}, parentId = null) => {
-    const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
+    const existingIds: Set<string> = new Set(get().entities.map((e) => e.id));
     const siblingCount = parentId
-      ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
+      ? get().entities.filter((e) => e.id.startsWith(`${parentId}_seg-`)).length
       : 0;
     const id = generateUniqueId(parentId, kind, data.title, existingIds, siblingCount);
 
@@ -114,9 +84,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   deleteEntity: (id) => {
     set((state) => ({
       entities: state.entities.filter((e) => e.id !== id),
-      relations: state.relations.filter(
-        (r) => r.source !== id && r.target !== id,
-      ),
+      relations: state.relations.filter((r) => r.source !== id && r.target !== id),
     }));
   },
 
@@ -128,9 +96,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   },
 
   removeRelation: (id) => {
-    set((state) => ({
-      relations: state.relations.filter((r) => r.id !== id),
-    }));
+    set((state) => ({ relations: state.relations.filter((r) => r.id !== id) }));
   },
 
   focusEntity: (id, anchorId = null) => {
@@ -163,139 +129,50 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       },
     }));
   },
-
-  restoreFolder: async () => {
-    if (!FEATURES.PERSIST_HANDLE) return false;
-    if (!window.showDirectoryPicker) return false;
-    try {
-      const handle = await loadHandle();
-      if (!handle) return false;
-      const permission = await handle.requestPermission({ mode: "readwrite" });
-      if (permission !== "granted") return false;
-
-      let entities: Entity[] = [];
-      let relations: Relation[] = [];
-
-      try {
-        const fileHandle = await handle.getFileHandle(FILE_NAME);
-        const file = await fileHandle.getFile();
-        const text = await file.text();
-        const data: GraphSnapshot = JSON.parse(text);
-        if (data.version === 1) {
-          entities = data.entities ?? [];
-          relations = data.relations ?? [];
-        }
-      } catch {
-        const fileHandle = await handle.getFileHandle(FILE_NAME, { create: true });
-        const writable = await fileHandle.createWritable();
-        const snapshot: GraphSnapshot = { version: 1, entities: [], relations: [] };
-        await writable.write(JSON.stringify(snapshot, null, 2));
-        await writable.close();
-      }
-
-      set({
-        entities,
-        relations,
-        directoryHandle: handle,
-        folderName: handle.name,
-        saveStatus: "saved",
-      });
-
-      _hydrated = true;
-      return true;
-    } catch (err) {
-      console.error("Failed to restore folder:", err);
-      return false;
-    }
-  },
-
-  openFolder: async () => {
-    if (!window.showDirectoryPicker) return;
-    try {
-      const handle = await window.showDirectoryPicker();
-      const permission = await handle.requestPermission({ mode: "readwrite" });
-      if (permission !== "granted") {
-        console.warn("Folder permission not granted");
-        return;
-      }
-      const folderName = handle.name;
-
-      let entities: Entity[] = [];
-      let relations: Relation[] = [];
-
-      try {
-        const fileHandle = await handle.getFileHandle(FILE_NAME);
-        const file = await fileHandle.getFile();
-        const text = await file.text();
-        const data: GraphSnapshot = JSON.parse(text);
-        if (data.version === 1) {
-          entities = data.entities ?? [];
-          relations = data.relations ?? [];
-        }
-      } catch {
-        const fileHandle = await handle.getFileHandle(FILE_NAME, { create: true });
-        const writable = await fileHandle.createWritable();
-        const snapshot: GraphSnapshot = { version: 1, entities: [], relations: [] };
-        await writable.write(JSON.stringify(snapshot, null, 2));
-        await writable.close();
-      }
-
-      set({
-        entities,
-        relations,
-        directoryHandle: handle,
-        folderName,
-        saveStatus: "saved",
-        view: {
-          focusedEntityId: null,
-          anchorEntityId: null,
-          visibleEntityIds: [],
-          expandedPanels: [],
-        },
-      });
-
-      _hydrated = true;
-
-      if (FEATURES.PERSIST_HANDLE) {
-        saveHandle(handle).catch((err) =>
-          console.error("Failed to persist directory handle:", err),
-        );
-      }
-    } catch (err) {
-      if ((err as DOMException)?.name === "AbortError") return;
-      console.error("Failed to open folder:", err);
-    }
-  },
 }));
 
-// Auto-save: debounced write to graph.json on every domain state change
+// Auto-save: debounced write to localStorage on every domain state change
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 useGraphStore.subscribe((state, prevState) => {
   if (!_hydrated) return;
   if (state.entities === prevState.entities && state.relations === prevState.relations) return;
-  if (!state.directoryHandle) return;
 
   if (saveTimer) clearTimeout(saveTimer);
 
-  const store = useGraphStore;
-
-  store.setState({ saveStatus: "unsaved" });
-
-  saveTimer = setTimeout(async () => {
-    const { directoryHandle, entities, relations } = store.getState();
-    if (!directoryHandle) return;
-
+  saveTimer = setTimeout(() => {
+    const { entities, relations } = useGraphStore.getState();
     try {
-      store.setState({ saveStatus: "saving" });
-      const fileHandle = await directoryHandle.getFileHandle(FILE_NAME, { create: true });
-      const writable = await fileHandle.createWritable();
       const snapshot: GraphSnapshot = { version: 1, entities, relations };
-      await writable.write(JSON.stringify(snapshot, null, 2));
-      await writable.close();
-      store.setState({ saveStatus: "saved" });
-    } catch {
-      store.setState({ saveStatus: "error" });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    } catch (err) {
+      console.error("Failed to save to localStorage:", err);
     }
   }, 300);
 });
+
+// Initialize: load from localStorage or seed data
+try {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    const data = JSON.parse(stored) as GraphSnapshot;
+    if (data.version === 1) {
+      useGraphStore.setState({ entities: data.entities ?? [], relations: data.relations ?? [] });
+    } else {
+      throw new Error("Unknown version");
+    }
+  } else {
+    useGraphStore.setState({ entities: SEED_DATA.entities, relations: SEED_DATA.relations });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
+  }
+} catch (err) {
+  console.warn("Failed to load stored data, falling back to seed:", err);
+  useGraphStore.setState({ entities: SEED_DATA.entities, relations: SEED_DATA.relations });
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
+  } catch {
+    // localStorage may be unavailable (e.g. Safari private browsing)
+  }
+}
+
+_hydrated = true;

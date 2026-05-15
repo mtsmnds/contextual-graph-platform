@@ -10,42 +10,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-declare global {
-  interface Window {
-    showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>
-  }
-}
-
-function FolderPicker({ onOpen }: { onOpen: () => Promise<void> }) {
-  const isSupported = typeof window.showDirectoryPicker === "function"
-
-  if (!isSupported) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center max-w-md px-6">
-          <p className="text-muted-foreground mb-2">
-            Your browser does not support the File System Access API.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Please use Chrome or Edge to open a project folder.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <button
-        className="px-6 py-3 rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors text-sm font-medium"
-        onClick={onOpen}
-      >
-        Open a project folder
-      </button>
-    </div>
-  )
-}
-
 function getViewParams(): { focused: string | null; anchor: string | null } {
   const params = new URLSearchParams(window.location.search)
   return {
@@ -66,19 +30,12 @@ function updateUrl(focused: string | null, anchor: string | null) {
 function App() {
   const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId)
   const anchorEntityId = useGraphStore((s) => s.view.anchorEntityId)
-  const directoryHandle = useGraphStore((s) => s.directoryHandle)
-  const openFolder = useGraphStore((s) => s.openFolder)
-  const restoreFolder = useGraphStore((s) => s.restoreFolder)
   const focusEntity = useGraphStore((s) => s.focusEntity)
 
   const hasRestoredFromUrl = useRef(false)
 
   useEffect(() => {
-    restoreFolder()
-  }, [restoreFolder])
-
-  useEffect(() => {
-    if (!directoryHandle || hasRestoredFromUrl.current) return
+    if (hasRestoredFromUrl.current) return
     hasRestoredFromUrl.current = true
 
     const { focused, anchor } = getViewParams()
@@ -89,21 +46,15 @@ function App() {
         focusEntity(focused, anchor ?? focused)
       }
     }
-  }, [directoryHandle, focusEntity])
+  }, [focusEntity])
 
   useEffect(() => {
-    if (!directoryHandle) return
-
     const timer = setTimeout(() => {
       updateUrl(focusedEntityId, anchorEntityId)
     }, 200)
 
     return () => clearTimeout(timer)
-  }, [focusedEntityId, anchorEntityId, directoryHandle])
-
-  if (!directoryHandle) {
-    return <FolderPicker onOpen={openFolder} />
-  }
+  }, [focusedEntityId, anchorEntityId])
 
   return (
     <SidebarProvider defaultOpen={true}>

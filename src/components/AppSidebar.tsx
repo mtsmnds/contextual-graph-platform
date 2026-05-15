@@ -14,12 +14,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { House, BookOpen, MapIcon, StickyNote, Plus, Folder } from "lucide-react"
+import { House, BookOpen, MapIcon, StickyNote, Plus } from "lucide-react"
 
 export function AppSidebar() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
-  const folderName = useGraphStore((s) => s.folderName)
   const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId)
   const focusEntity = useGraphStore((s) => s.focusEntity)
   const addEntity = useGraphStore((s) => s.addEntity)
@@ -85,14 +84,6 @@ export function AppSidebar() {
               <span>New page</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {folderName && (
-            <SidebarMenuItem>
-              <SidebarMenuButton className="text-xs text-muted-foreground pointer-events-none">
-                <Folder />
-                <span className="truncate">{folderName}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
         </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />

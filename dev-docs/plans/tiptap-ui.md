@@ -310,6 +310,6 @@ Phases 1 and 2 are pure UI — they don't affect the storage format or entity mo
 | 1 | Slash commands: pay for Start plan or build basic version with SuggestionMenu? | TBD after Phase 1 |
 | 2 | Image upload: needs a server endpoint. Use local file storage or skip? | TBD |
 | 3 | Do we replace `RichTextContent` everywhere (including read-only Hamlet) with the new editor, or keep `RichTextContent` for read-only and use the new editor only for editable containers? | Probably keep both: `RichTextContent` for read-only display (lighter), full editor for editing. |
-| 4 | Mention extension: does `@` trigger search across all entities or only root containers? | TBD — test both in Phase 3.3 |
-| 5 | Mention navigation: clicking a mention in read-only mode should navigate to the referenced entity? | Likely yes — needs `onClick` handler on mention NodeView |
-| 6 | Storage format: JSON or HTML for entity content? | Phase 3.4 decides based on mention attribute fidelity |
+| 4 | Mention extension: does `@` trigger search across all entities or only root containers? | Only root containers for now — TBD if we expand |
+| 5 | Mention navigation: clicking a mention in read-only mode should navigate to the referenced entity? | Yes — needs `onClick` handler on mention NodeView (Phase 3.3 follow-up) |
+| 6 | Storage format: JSON or HTML for entity content? | **JSON** — switched in Phase 3.1. HTML fallback for legacy data via `parseContent()` |

@@ -21,7 +21,7 @@ No test framework is configured. No pre-commit hooks.
 
 React 19 + TypeScript (strict) Vite SPA. Graph canvas via `@xyflow/react`, state via Zustand 5, icons via `@phosphor-icons/react`. Native CSS nesting — no preprocessor. Dark mode via `prefers-color-scheme` in `index.css`.
 
-Store is pre-seeded with sample data (one phase + two task nodes with a dependency edge).
+Store is pre-seeded with sample data (two Tiptap containers: "About This Workspace" and "Editor Playground").
 
 ## Before Implementing
 
@@ -37,9 +37,10 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-docs` skill (`ski
 | Path | Role |
 |------|------|
 | `src/main.tsx` | App entrypoint |
-| `src/App.tsx` | React Flow canvas mount |
-| `src/types/graph.ts` | TypeScript types: NodeKind, EdgeKind, EdgeBehavior, AppNode, AppEdge |
-| `src/store/useGraphStore.ts` | Zustand store: nodes, edges, documents + mutation actions |
+| `src/App.tsx` | Root component — sidebar + HomePage/ReadingViewport routing |
+| `src/types/graph.ts` | TypeScript types: Entity, Relation, ViewState, GraphSnapshot |
+| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + localStorage persistence |
+| `src/data/seed.ts` | Seed data (2 containers with Tiptap content) |
 | `src/index.css` | Global styles (dark/light vars) |
 | `dist/` | Build output (gitignored — never patch manually) |
 | `dev-docs/` | Requirements, architecture, roadmap, changelog, ADR archive |

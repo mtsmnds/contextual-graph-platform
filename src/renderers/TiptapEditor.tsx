@@ -311,11 +311,11 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
                 <MarkButton type="code" />
                 <MarkButton type="underline" />
                 {!isMobile ? (
-                  <ColorHighlightPopover />
+                  <ColorHighlightPopover editor={editor} />
                 ) : (
                   <ColorHighlightPopoverButton onClick={() => setMobileView("highlighter")} />
                 )}
-                {!isMobile ? <LinkPopover /> : <LinkButton onClick={() => setMobileView("link")} />}
+                {!isMobile ? <LinkPopover editor={editor} /> : <LinkButton onClick={() => setMobileView("link")} />}
               </ToolbarGroup>
 
               <ToolbarSeparator />
@@ -358,9 +358,9 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
               <ToolbarSeparator />
 
               {mobileView === "highlighter" ? (
-                <ColorHighlightPopoverContent />
+                <ColorHighlightPopoverContent editor={editor} />
               ) : (
-                <LinkContent />
+                <LinkContent editor={editor} />
               )}
             </>
           )}
@@ -375,8 +375,6 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
               <MarkButton type="underline" />
               <ToolbarSeparator />
               <MarkButton type="code" />
-              <ColorHighlightPopover />
-              <LinkPopover />
             </div>
           </BubbleMenu>
         )}
