@@ -1,5 +1,7 @@
 # PRD0019: Live Mention NodeView (Resolve Title from Graph Store)
 
+> **Completion note:** This feature was fully implemented and integrated as part of the live mention nodeview work in PRD0019. The system now reactively resolves entity titles, supports click-to-navigate, and renders mentions in read-only mode.
+
 **Status:** Completed
 
 ---

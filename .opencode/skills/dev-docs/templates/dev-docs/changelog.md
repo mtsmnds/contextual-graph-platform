@@ -8,6 +8,7 @@ Use this to recover context after breaks.
 - Completed, meaningful changes only (not tentative ideas).
 - Short entries: what changed, why, impact.
 - Significant design/process changes need a paired ADR in `archive/`.
+- **Most recent on top** — entries sorted newest-to-oldest, grouped by `## YYYY-MM-DD`. Purpose/Rules section stays at the very top. No duplicate date headings.
 
 ---
 

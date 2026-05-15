@@ -1,3 +1,5 @@
+> **Completion note (2026-05-15):** All test scenarios resolved. Model A (per-container editors) confirmed and implemented. ProseMirror JSON chosen as storage format — HTML fallback via `parseContent()` for legacy data. Mention extension implemented with graph-backed `@` suggestions (PRD0018). Cross-doc linking works via `attrs.id` with live title resolution (PRD0019). Custom `TitleDocument` extension enforces first-block-as-heading convention. See `archive/2026-05-15-prd0018-content-separation.md` and `archive/2026-05-15-prd0019-live-mention-nodeview.md` for implementation details. Test plan conclusions are fully absorbed into the codebase — no open questions remain.
+
 # TipTap–Graph Mapping Test Plan
 
 **Status:** Draft (defines open questions to be answered through testing)

@@ -16,7 +16,7 @@ This skill manages a structured documentation suite: `dev-docs/` folder at proje
 | `AGENTS.md` | Project overview, build/test commands, conventions — operative guide |
 | `dev-docs/requirements.md` | Feature intent, user stories, acceptance criteria |
 | `dev-docs/architecture.md` | System design, contracts, build flow |
-| `dev-docs/roadmap.md` | Active priorities (Now/Next/Later) |
+| `dev-docs/roadmap.md` | Active priorities — flat Now/Next/Later lists. No milestones, no completed items (those go in changelog). |
 | `dev-docs/changelog.md` | Completed significant changes with rationale |
 | `dev-docs/archive/` | ADR files + **completed PRDs** (plans promoted here after execution) |
 | `dev-docs/plans/` | **Future/present plans only** — vision docs, design blueprints for work not yet started or in progress. Once a plan is executed, it moves to `archive/`. |
@@ -88,9 +88,16 @@ Determine which category the completed work falls into:
 | Feature behavior or capability | `requirements.md` — update or add user stories, adjust acceptance criteria |
 | System design, contracts, pipeline | `architecture.md` + `changelog.md` + create ADR in `archive/` |
 | Onboarding, quickstart, commands | `AGENTS.md` — update Build, Test, Secrets, or Conventions sections |
-| Priority, sequencing, future intent | `roadmap.md` — move items, update milestone status |
+| Priority, sequencing, future intent | `roadmap.md` — move items between Now/Next/Later. Remove completed items (they go in changelog). |
 | Significant completed change | `changelog.md` — add entry with what/why/impact/files |
 | Quick reference / operational note | `reminders.md` — add informal note |
+
+**Roadmap structure rules:**
+- Flat lists only — no milestones, phases, or numbered subsections.
+- Three sections: `## Now`, `## Next`, `## Later`.
+- No completed items — those belong in `changelog.md` only.
+- Items should be concrete enough for an agent to pick up and implement.
+- The "Architectural Direction" section is optional — if present, keep it to 1-2 sentences.
 
 A change can fall into multiple categories (e.g. an architecture change is also significant → update both `architecture.md` and `changelog.md` + ADR).
 
@@ -109,6 +116,12 @@ When adding to `changelog.md`:
 - **Impact:** observable effects, risks, follow-ups
 - **ADR:** `archive/YYYY-MM-DD-short-title.md` (if applicable)
 ```
+
+**Ordering rules:**
+- **Most recent on top** — entries sorted newest-to-oldest by date.
+- **One `## YYYY-MM-DD` per day** — group all entries from the same day under one date heading. No duplicate date headings.
+- **Purpose/Rules section stays at the very top** — before any dated entries.
+- Within a single day, entries can be in any order (chronological or significance).
 
 #### 4. ADR — when to create one
 
@@ -157,7 +170,7 @@ Once a plan in `dev-docs/plans/` is fully executed, it MUST be moved to `archive
 
 1. Move the plan file from `plans/` to `archive/YYYY-MM-DD-short-title.md`.
 2. Prepend a completion note. Use a **full ADR** (Context/Decision/Alternatives/Consequences) for architecture-changing decisions (schema changes, renderer contracts, build pipeline). Use a **short completion note** (`> **Completion note:** ...`) for straightforward feature work.
-3. Update `roadmap.md` — move the item from Now/Next to Recently Completed.
+3. Remove the item from `roadmap.md` (if it was listed there) — completed items go in changelog only.
 4. Add a `changelog.md` entry referencing the archive path: `- **Archive:** archive/YYYY-MM-DD-short-title.md`
 5. Remove the plan from `plans/` directory.
 

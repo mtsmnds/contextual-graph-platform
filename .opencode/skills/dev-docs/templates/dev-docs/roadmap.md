@@ -1,32 +1,24 @@
 # Roadmap
 
 ## Purpose
-Forward-looking work: milestones, current priorities, backlog.
+Forward-looking work: what we're doing now, next, and later.
 Completed work goes in `changelog.md`.
 
 ## Usage Rules
 - `roadmap.md` = planned work (Now/Next/Later).
-- `changelog.md` = completed work.
-- Rolling "Recently Completed" section (max 7 days), then promote to `changelog.md`.
+- `changelog.md` = completed work — the source of truth for what's done.
+- When a task is finished, move it from roadmap to changelog. Don't keep completed items in roadmap.
 
 ---
 
-## Milestones
+## Now
+- <!-- active task — concrete enough for an agent to pick up -->
 
-### M1 - <!-- title (status) -->
-- <!-- goals -->
-
-## Now (Current Sprint)
-- <!-- active task -->
-
-## Next (Near-Term)
+## Next
 - <!-- upcoming task -->
 
-## Later (Backlog)
+## Later
 - <!-- deferred idea -->
-
-## Recently Completed (Rolling)
-- <!-- item with brief description -->
 
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.

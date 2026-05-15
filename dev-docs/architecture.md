@@ -95,13 +95,39 @@ type ViewState = {
 - `relations: Relation[]` — typed edges.
 - `view: ViewState` — UI-only state, separate from domain.
 - `contentLoaded: Record<string, boolean>` — tracks which container contents have been loaded from storage.
+- `adapterId: string | null` — which persistence adapter is active (`"indexeddb"` or `"fs-access"`).
+- `folderName: string | null` — folder name when FS Access adapter is active.
+- Initialization: `init(adapter)` — injects a `PersistenceAdapter` at startup, calls `loadWorkspace()`, loads container content docs. Falls back to seed data if the adapter returns no workspace.
 - Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `removeRelation`.
 - View actions: `focusEntity(id, anchorId?)`, `expandPanel`, `closePanel`.
-- Content actions: `getContent(id)` — reads from localStorage key `react-roadmap:content:{id}` and caches; `saveContent(id, data)` — writes to localStorage; `clearContent(id)` — removes from localStorage. Container document bodies are NOT stored on the entity.
+- Content actions: `getContent(id)` — reads from in-memory content cache; `saveContent(id, data)` — writes to cache + adapter's `saveDocument()`; `clearContent(id)` — removes from cache + adapter's `deleteDocument()`. Container document bodies are NOT stored on the entity. `refreshFolderName()` — syncs `folderName` from the active adapter.
 - ID scheme: New containers use `generateDocId()` (timestamp-based `doc_{timestamp}`); segments use `{parent}_seg-{counter}`; root entities use slugified title.
-- Persistence: localStorage — auto-save is debounced (300ms) to key `react-roadmap:graph` on every entity/relation change.
-- Initialization: On first load (no stored data), seed data is loaded from `src/data/seed.ts` (two containers with Tiptap content) and written to localStorage.
+- Persistence: Auto-save is debounced (300ms) — writes `GraphSnapshot` (entities + relations) to the active adapter's `saveGraph()` on every entity/relation change. Content docs go through `saveDocument()`.
 - URL sync: On view state change, `focusedEntityId` and `anchorEntityId` are synced to URL search params (debounced 200ms, `history.replaceState`). On app load, URL params are read to restore the view.
+
+### Persistence Adapter Layer (`src/store/persistence/`)
+Pluggable persistence backends behind a uniform interface. The store never touches persistence directly.
+
+```ts
+interface PersistenceAdapter {
+  readonly id: AdapterType  // "indexeddb" | "fs-access"
+  loadWorkspace(): Promise<WorkspaceSnapshot | null>
+  saveGraph(snapshot: WorkspaceSnapshot): Promise<void>
+  loadDocument(id: string): Promise<Record<string, unknown> | null>
+  saveDocument(id: string, data: Record<string, unknown>): Promise<void>
+  deleteDocument(id: string): Promise<void>
+  getFolderName(): string | null
+}
+```
+
+Implementations:
+- **IndexedDBAdapter** — default adapter. Uses Dexie.js for IndexedDB access (async, unlimited quota for current scale). Table `graph` stores the workspace snapshot; table `documents` stores per-container content docs. No user interaction needed.
+- **FSAccessAdapter** — optional, Chromium-only. Reads/writes `graph.json` in a user-picked folder. Per-container content stored as `documents/{id}.json`. Handle persisted in IndexedDB (`react-roadmap-fs` database) so the folder reconnects silently on reload without re-prompting. Shows a "Reconnect" button if permission was revoked — never calls `requestPermission()` without a user gesture.
+
+Resolver (`src/store/persistence/resolver.ts`):
+- Auto-detection: tries FS Access reconnection first, falls back to IndexedDB.
+- Overridable via `VITE_PERSISTENCE_ADAPTER` env var or `?adapter=` URL param for testing.
+- `App.tsx` calls `resolveAdapter().then(init)` once on mount.
 
 ### Query Engine (`src/engine/queries.ts`)
 Pure functions over store state — no hooks, no components:
@@ -134,7 +160,7 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 
 ### Output / State
 - `dist/` — production build.
-- Store persists to `localStorage` under key `react-roadmap:graph`. On first visit (no stored data), seed data from `src/data/seed.ts` is loaded automatically.
+- Store persists through the active `PersistenceAdapter`. Default adapter is IndexedDB (`react-roadmap` database). Optional FS Access adapter writes `graph.json` + `documents/` folder to a user-picked directory. On first visit (no stored data), seed data from `src/data/seed.ts` is loaded automatically.
 
 ## Module Map
 
@@ -145,7 +171,13 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the primary render
 | `src/components/AppSidebar.tsx` | Permanent shadcn sidebar — page list, home link, new page button |
 | `src/components/HomePage.tsx` | Home page — root container cards, new page CTA, save status |
 | `src/types/graph.ts` | Entity/Relation/ViewState type definitions |
-| `src/store/useGraphStore.ts` | Zustand store (domain + view state + persistence) |
+| `src/store/useGraphStore.ts` | Zustand store (domain + view state + adapter-based persistence) |
+| `src/store/persistence/types.ts` | PersistenceAdapter interface, WorkspaceSnapshot, AdapterType |
+| `src/store/persistence/indexeddb-adapter.ts` | IndexedDB adapter (Dexie) — default backend |
+| `src/store/persistence/fs-access-adapter.ts` | FS Access adapter — optional, Chromium-only |
+| `src/store/persistence/resolver.ts` | Adapter auto-detection, env/URL override |
+| `src/store/persistence/index.ts` | Re-exports all persistence modules |
+| `src/types/fs-access.d.ts` | File System Access API type declarations |
 | `src/engine/` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content, loaded on first visit) |

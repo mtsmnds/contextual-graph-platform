@@ -1,130 +1,43 @@
 # Roadmap
 
 ## Purpose
-Forward-looking work: milestones, current priorities, backlog.
+Forward-looking work: what we're doing now, next, and later.
 Completed work goes in `changelog.md`.
 
 ## Usage Rules
 - `roadmap.md` = planned work (Now/Next/Later).
-- `changelog.md` = completed work.
-- Rolling "Recently Completed" section (max 7 days), then promote to `changelog.md`.
+- `changelog.md` = completed work — the source of truth for what's done.
+- When a task is finished, move it from roadmap to changelog. Don't keep completed items in roadmap.
 
 ---
 
-## Architectural Direction (Established 2026-05-13, updated 2026-05-15)
+## Architectural Direction
 
-The system follows an Entity Graph → Projection Layer → Renderer model. React Flow is deferred to Phase 5 — the current app is a single-mode reading workspace with a persistent sidebar for page navigation.
-
-```
-Entity Graph → Projection Layer → Reading Workspace (renderer)
-```
-
-The domain model (Entity/Relation) is decoupled from view state. Content is native to entities. The app has one navigation mode: a permanent shadcn Sidebar (collapsible to icon-only) on the left, with a HomePage showing root containers and a ReadingViewport for content. `focusedEntityId === null` means home, not canvas.
-
-**Priority:** Validate contextual reading + rich text editing first. Graph visualization comes last.
+Entity Graph → Projection Layer → Reading Workspace. The domain model (Entity/Relation) is decoupled from view state. Content is native to entities. App is a single-mode reading workspace with a permanent sidebar. Graph visualization (React Flow) is deferred — validate reading + editing first.
 
 ---
 
-## Milestones
+## Now
 
-### M1 — Domain Engine ✅
-- ~~Entity/Relation schema (decoupled from React Flow)~~ ✅
-- ~~Persistence layer~~ ✅ (localStorage, replaced PRD0009 File System Access API)
-- ~~Query engine~~ ✅
-- ~~Seed content for validation~~ ✅
-- ~~Entity ID scheme + model rules~~ ✅ (PRD0010-1)
-- ~~Entity viewport with sequential traversal~~ ✅ (PRD0004)
-- ~~Continuous scroll with container flattening~~ ✅ (PRD0005)
-- ~~Full text import + work entity~~ ✅ (PRD0006)
-- ~~Side-panel contextual expansion~~ ✅ (PRD0007)
+- **Slash commands / toolbar overhaul** — replace persistent toolbar with `/` command menu and floating menubar (PRD0017 draft). Slash commands still TBD.
+- **Sidebar child hierarchy** — expandable tree via `contains` relations
+- **Delete / rename pages from sidebar**
 
-### M2 — Reading Workspace ✅
-- ~~Home page + page view as default~~ ✅ (PRD0015)
-- ~~Sidebar + page navigation~~ ✅ (PRD0015: permanent shadcn Sidebar with page list, home link, new page)
-- ~~TipTap integration~~ ✅ (PRD0013: rich text rendering, editable containers, toolbar)
-- Page renaming/delete — next
-- Tree sidebar (expandable `contains` hierarchy) — next
-- Node component design — segment and container node types with action icons in border area.
-- Context columns v1 — horizontal navigation through related context (work → author → reference).
-- Annotation creation — depends on TipTap. Selection → annotation entity + `annotates` relation.
-- Multi-column reading workspace — column reordering, horizontal sync.
+## Next
 
-### M3 — Navigation & Projection Layer
-- Mode switcher (page / tree / graph) — each URL-addressable
-- Renderer abstraction
-- Dev tools panel (node JSON inspector)
+- **Context columns v1** — horizontal navigation through related context (work → author → reference), 3 columns
+- **Dev tools panel** — button showing focused node's full JSON data
+- **Annotation creation** — selection → annotation entity + `annotates` relation
+- **Mode switcher** — page / tree / graph, each URL-addressable
+- **Page reordering in sidebar**
 
-### M4 — Graph Visualization
-- React Flow improvements: layout algorithms, filtering, node grouping, search
-- Self-hosting roadmap — the roadmap expressed as entities and relations in the graph
+## Later
 
----
-
-## Recently Completed (Rolling)
-- 2026-05-13 — Typed data layer + Zustand store + React Flow canvas (tightly-coupled; refactored in PRD0002)
-- 2026-05-13 — Domain engine refactor (PRD0002): Entity/Relation schema, query engine, fresh seed data. See `archive/2026-05-13-domain-engine-refactor.md`
-- 2026-05-13 — Persistence layer (PRD0003): localStorage auto-save, hydration, export/import
-- 2026-05-13 — Reading viewport (PRD0004): focused entity display, prev/next navigation, mode-switch rendering, shadcn/ui + Tailwind foundation
-- 2026-05-13 — Continuous scroll viewport (PRD0005): container-aware rendering, segment variants, breadcrumb nav, canvas-to-container resolution
-- 2026-05-13 — Full text import (PRD0006): Gutenberg parser, 1342 entities / 2634 relations, first-run seed data
-- 2026-05-13 — Work entity + full-play scrolling: `hamlet--william-shakespeare` as root container, recursive flattening, canvas shows work node, all 1,349 entities scrollable in one view
-- 2026-05-13 — Contextual expansion (PRD0007): inline annotation cards, relation indicators, seed data enrichment
-- 2026-05-14 — Pure Domain Loader (PRD0008): stripped all runtime merging/detection from `loadInitialState()` — each data source is self-contained
-- 2026-05-14 — File System Persistence (PRD0009): user picks a folder, app reads/writes `graph.json` directly, no seed data, no localStorage
-- 2026-05-14 — Handle Persistence & URL Navigation (PRD0011): feature-flagged IndexedDB handle persistence (skip folder picker on reload), URL-based view state sync (reloads restore focused entity)
-- 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
-- 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.md`.
-- 2026-05-15 — TipTap + page navigation (PRD0013): TipTap integration, root containers (playground/books/roadmap), URL view param, editable empty containers. See `archive/2026-05-14-tiptap-page-navigation.md`.
-- 2026-05-15 — Sidebar home navigation (PRD0015): Stripped React Flow, replaced popover sidebar with permanent shadcn Sidebar, added HomePage view, one-click page creation and selection. See `archive/2026-05-15-prd0015-sidebar-home-navigation.md`.
-- 2026-05-15 — TipTap UI Phase 1 (PRD0014): Simple Editor scaffold, full toolbar, debounced save strategy, Playground full-width layout. See `archive/2026-05-15-prd0014-tiptap-ui-p1.md`.
-- 2026-05-15 — TipTap UI Phase 2 (PRD0016): BubbleMenu, Drag Handle, Placeholder, Emoji, additional free extensions. See `archive/2026-05-15-prd0016-tiptap-ui-p2.md`.
-- 2026-05-15 — Content separation (PRD0018): Separated graph metadata from document content. Content lives in `react-roadmap:content:{id}` localStorage keys, not on entities. Container IDs use timestamp-based `generateDocId()`. See `archive/2026-05-15-content-separation.md`.
-- 2026-05-15 — Live Mention NodeView (PRD0019): Custom React NodeView resolving entity titles from graph store via `attrs.id`, replaces static `attrs.label`. Click-to-navigate with modifier-key support in editable mode. Mentions now render in read-only RichTextContent. See `dev-docs/plans/prd0019-live-mention-nodeview.md`.
-
-## Now (Current Sprint) — Reading workspace UX
-
-### 1. TipTap UI Phase 2 — Free Notion-like delta (shipped, see PRD0016)
-- **BubbleMenu** — floating toolbar on text selection (bold, italic, link, highlight)
-- **Drag Handle** — block drag-and-drop reordering (needs size/alignment fix — polish later)
-- **Additional extensions** — Underline, Highlight, TextAlign, TaskList, Placeholder, Emoji, Typography
-- **Emoji autocomplete** — `:smile:` → 😄 works but is basic. Needs a proper emoji picker UI later.
-- **Slash commands** — TBD. Look at open-source projects (Notion clones, BlockNote, Novel) for inspiration before building.
-
-### 2. Storage format + Title schema
-- **ProseMirror JSON as storage** ✅ — switched from `getHTML()` to `JSON.stringify(getJSON())`. Content stored as TipTap JSON in `Entity.content`. Legacy HTML content handled via `parseContent()` fallback.
-- **Title as first heading** ✅ — custom `TitleDocument` extension enforces `content: "heading block+"`. First block is always a heading. Title syncs to `entity.title` on every edit. No drag handle on the title block.
-- **Model A confirmed** — per-container editor instances, not shared documents.
-- **Annotation mapping** — still open, deferred.
-
-### 3. Cross-doc mentions (Phase 3.3) ✅
-- ~~**Build suggestion popup render** — `@` triggers a popover listing root containers, selecting one inserts a mention node with the entity ID. Done in PRD0018: shadcn Command popup with keyboard nav, live filtering, click selection.~~ ✅
-- ~~**Inspect JSON structure** — confirmed: `attrs.id` and `attrs.label` survive round-trip.~~ ✅
-- ~~**Click navigation** — clicking a mention navigates to the referenced entity.~~ ✅
-- ~~**Live title resolution** — custom NodeView resolves entity title from graph store via `attrs.id`, falls back to `attrs.label` if deleted. Done in PRD0019.~~ ✅
-
-### 4. Page UX polish
-- ~~Sidebar shows child hierarchy (expandable tree via `contains`)~~ — deferred
-- ~~Delete / rename pages from sidebar~~ — deferred
-
-## Next — Columns, annotations, navigation modes
-
-### Phase 3 — Context columns + dev tools
-- **Context columns v1** — start with 3 columns for horizontal navigation (work → author → reference)
-- **Dev tools panel** — button showing the focused node's full JSON data
-
-### Phase 4 — Annotation creation
-- **Annotation creation** — selection → annotation entity + `annotates` relation. Depends on TipTap.
-
-### Phase 5 — Graph visualization (React Flow)
-- React Flow reintroduction: layout algorithms, filtering, node grouping, search
-- Self-hosting roadmap — the roadmap itself expressed as entities and relations in the graph
-
-## Later (Backlog)
-- Page reordering in sidebar
-- Drag-and-drop page reorder in sidebar
-- Column reordering, horizontal cross-column sync
+- Multi-column workspace (column reordering, horizontal sync)
 - Sample data re-import (Gutenberg parser with new ID scheme)
 - "Talmud mode" — show all annotations at once
+- Graph visualization (React Flow) — layout algorithms, filtering, node grouping, search
+- Self-hosting roadmap — the roadmap as entities and relations in the graph
 - Projection layer abstractions
 - Tauri packaging
 - Undo/redo
@@ -133,4 +46,4 @@ The domain model (Entity/Relation) is decoupled from view state. Content is nati
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.
 - Speculative ideas: one bullet, move on.
-- React Flow stays dormant until Phase 5 — resist the urge to build graph UI early.
+- React Flow stays dormant until promoted to Now — resist the urge to build graph UI early.

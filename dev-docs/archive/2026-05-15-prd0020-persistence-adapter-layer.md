@@ -1,3 +1,5 @@
+> **Completion note (2026-05-15):** PRD0020 fully implemented. See ADR at `archive/2026-05-15-persistence-adapter-layer.md` for architecture rationale, and `changelog.md` for the complete change log. The adapter layer (IndexedDB default + FS Access opt-in) replaces the localStorage-only approach from 2026-05-15.
+
 # PRD: User Data Management & Persistence Layer
 
 ## Problem
@@ -58,7 +60,7 @@ interface PersistenceConfig {
 }
 ```
 
-**Resolution order for `"auto"`:**
+**Resolution order for `"auto":`**
 
 ```ts
 function resolveAdapter(config: PersistenceConfig): PersistenceAdapter {

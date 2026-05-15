@@ -39,7 +39,8 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-docs` skill (`ski
 | `src/main.tsx` | App entrypoint |
 | `src/App.tsx` | Root component — sidebar + HomePage/ReadingViewport routing |
 | `src/types/graph.ts` | TypeScript types: Entity, Relation, ViewState, GraphSnapshot |
-| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + localStorage persistence |
+| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + adapter-based persistence |
+| `src/store/persistence/` | Pluggable persistence adapters (IndexedDB default, FS Access opt-in) |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content) |
 | `src/index.css` | Global styles (dark/light vars) |
 | `dist/` | Build output (gitignored — never patch manually) |
@@ -49,3 +50,5 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-docs` skill (`ski
 
 - **`dist/` is generated** — never edit manually.
 - **ESLint ignores `.ts`/`.tsx`** — use `npx tsc --noEmit` for type checking.
+- **Changelog: most recent on top** — entries sorted newest-to-oldest, grouped by `## YYYY-MM-DD`. Purpose/Rules section stays at the very top. No duplicate date headings.
+- **Roadmap: flat lists only** — three sections (Now/Next/Later), no milestones or phases. Completed items go in changelog, not roadmap.

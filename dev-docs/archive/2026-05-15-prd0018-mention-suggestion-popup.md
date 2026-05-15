@@ -1,6 +1,8 @@
 # PRD0018: Mention Suggestion Popup (Phase 3.3)
 
-**Status:** Draft
+> **Completion note:** This feature was fully implemented. The stub suggestion renderer was replaced with a proper shadcn Command-based popup (`MentionPopup.tsx`, `mentionSuggestionRenderer.tsx`). `@` triggers live-filtered entity search with keyboard nav, click selection, and viewport-aware positioning. See changelog 2026-05-15 "Mention suggestion popup (PRD0018)".
+
+**Status:** Completed
 
 ---
 

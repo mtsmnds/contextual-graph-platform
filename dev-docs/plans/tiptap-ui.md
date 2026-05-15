@@ -223,10 +223,11 @@ editor.getHTML() → mention rendered as a <span> with data attributes:
 <p>See <span data-type="mention" data-id="container-meeting-notes">@Meeting Notes</span> for details.</p>
 ```
 
-### local storage but good now - prd0020
+### local storage but good now - prd0020 ✅
 
-### 3.4 decision: json storage
+### 3.4 decision: json storage ✅
 - leverage prosemirror and tiptap advantages instead of wasing time building parity
+
 
 
 
