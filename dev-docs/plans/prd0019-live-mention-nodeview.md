@@ -1,6 +1,6 @@
 # PRD0019: Live Mention NodeView (Resolve Title from Graph Store)
 
-**Status:** Draft
+**Status:** Completed
 
 ---
 

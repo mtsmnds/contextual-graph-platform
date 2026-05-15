@@ -2,6 +2,16 @@
 
 ## 2026-05-15
 
+### Live Mention NodeView (PRD0019)
+- **What:** Replaced TipTap's default Mention node (which renders static `attrs.label`) with a custom React NodeView that resolves the live entity title from the graph store via `attrs.id`. Created `MentionNodeView.tsx` with a `CustomMention` extension (`Mention.extend({ addNodeView() })`) that renders `@{label}` reactively and supports click-to-navigate (plain click in read-only, Cmd/Ctrl-click in editable mode). Added `CustomMention` to `RichTextContent.tsx` so mention nodes render in read-only mode instead of being stripped by ProseMirror.
+- **Reason:** Renaming an entity left stale mention labels in all documents. `attrs.label` is a snapshot, but `attrs.id` is a permanent reference — the NodeView uses it to query the store for the current title, falling back to `attrs.label` if the entity is deleted.
+- **Files changed:**
+  - `src/components/tiptap/MentionNodeView.tsx`: **New** — React NodeView component (`MentionNodeView`) + `CustomMention` extension wiring (`Mention.extend({ addNodeView() })`)
+  - `src/renderers/TiptapEditor.tsx`: Replaced `Mention` import with `CustomMention`
+  - `src/renderers/RichTextContent.tsx`: Added `CustomMention` to extensions array so mentions render in read-only mode
+- **Impact:** Mentions now show the current entity title everywhere — editable editor and read-only SegmentCards. Navigation click works in read-only mode (opens new tab). Cmd/Ctrl-click navigates from editable mode. Deleted entities show the original label as fallback. JSON round-trip unchanged (`attrs.id` + `attrs.label` still preserved).
+- **Archive:** `dev-docs/plans/prd0019-live-mention-nodeview.md`
+
 ### Fix: drag handle appearance
 - **What:** Fixed the drag handle sizing, alignment, and transition smoothness. Replaced the 12x12 hand-rolled SVG dots with `DotsSixVertical` from `@phosphor-icons/react` (16px, bold weight). Resized the drag handle container to 24x24 — aligned with text line height. Switched from conditional rendering (`{showDragHandle && ...}`) to always-rendered with opacity/pointer-events controlled via inline styles, adding a 200ms ease-in-out CSS transition so the handle fades smoothly instead of snapping in/out of the DOM on scroll.
 - **Reason:** The handle was too small (12px icon in a 16px container), misaligned with the text baseline, and its sudden appearance (entering/leaving the DOM) made it "follow the user around" distractingly during scroll.

@@ -1,6 +1,7 @@
 import { useRef } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+import { CustomMention } from "@/components/tiptap/MentionNodeView"
 
 interface RichTextContentProps {
   content: string
@@ -24,7 +25,7 @@ function RichTextContent({ content, className, editable = false, onUpdate }: Ric
   onUpdateRef.current = onUpdate
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, CustomMention],
     content: parseContent(content),
     editable,
     onUpdate: ({ editor }) => onUpdateRef.current?.(JSON.stringify(editor.getJSON())),

@@ -66,7 +66,7 @@ import "@/components/tiptap-templates/simple/simple-editor.scss"
 import { Button } from "@/components/tiptap-ui-primitive/button"
 import { useState, useEffect, useRef } from "react"
 import { DotsSixVertical } from "@phosphor-icons/react"
-import Mention from "@tiptap/extension-mention"
+import { CustomMention } from "@/components/tiptap/MentionNodeView"
 import { useGraphStore } from "@/store/useGraphStore"
 import { getRootContainers } from "@/engine/queries"
 import { mentionSuggestionRenderer } from "@/components/tiptap/mentionSuggestionRenderer"
@@ -197,7 +197,7 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
       }),
       Placeholder.configure({ placeholder: "Start writing..." }),
       Emoji,
-      Mention.configure({
+      CustomMention.configure({
         HTMLAttributes: { class: "text-primary font-medium" },
         suggestion: {
           items: ({ query }) => {
@@ -255,6 +255,60 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
       setMobileView("main")
     }
   }, [isMobile, mobileView])
+
+  useEffect(() => {
+    if (!editor) return
+
+    const prevTitles = new Map<string, string>()
+
+    const unsub = useGraphStore.subscribe((currentState) => {
+      const mentionedIds = new Set<string>()
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === "mention") mentionedIds.add(node.attrs.id as string)
+      })
+
+      for (const id of mentionedIds) {
+        const entity = currentState.entities.find((e) => e.id === id)
+        const prevTitle = prevTitles.get(id)
+        if (entity && prevTitle !== undefined && entity.title !== prevTitle) {
+          prevTitles.set(id, entity.title ?? "")
+          editor.commands.command(({ tr }) => {
+            let modified = false
+            editor.state.doc.descendants((node, pos) => {
+              if (node.type.name === "mention" && node.attrs.id === id) {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  label: entity.title,
+                })
+                modified = true
+              }
+            })
+            if (modified) tr.setMeta("addToHistory", false)
+            return modified
+          })
+        }
+      }
+
+      if (mentionedIds.size > 0) {
+        const state = useGraphStore.getState()
+        for (const id of mentionedIds) {
+          const entity = state.entities.find((e) => e.id === id)
+          if (entity) prevTitles.set(id, entity.title ?? "")
+        }
+      }
+    })
+
+    // Initialise prevTitles from the current store
+    const state = useGraphStore.getState()
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "mention") {
+        const entity = state.entities.find((e) => e.id === node.attrs.id)
+        if (entity) prevTitles.set(node.attrs.id as string, entity.title ?? "")
+      }
+    })
+
+    return unsub
+  }, [editor])
 
   if (!editor) return null
 

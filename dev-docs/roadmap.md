@@ -79,6 +79,7 @@ The domain model (Entity/Relation) is decoupled from view state. Content is nati
 - 2026-05-15 — TipTap UI Phase 1 (PRD0014): Simple Editor scaffold, full toolbar, debounced save strategy, Playground full-width layout. See `archive/2026-05-15-prd0014-tiptap-ui-p1.md`.
 - 2026-05-15 — TipTap UI Phase 2 (PRD0016): BubbleMenu, Drag Handle, Placeholder, Emoji, additional free extensions. See `archive/2026-05-15-prd0016-tiptap-ui-p2.md`.
 - 2026-05-15 — Content separation (PRD0018): Separated graph metadata from document content. Content lives in `react-roadmap:content:{id}` localStorage keys, not on entities. Container IDs use timestamp-based `generateDocId()`. See `archive/2026-05-15-content-separation.md`.
+- 2026-05-15 — Live Mention NodeView (PRD0019): Custom React NodeView resolving entity titles from graph store via `attrs.id`, replaces static `attrs.label`. Click-to-navigate with modifier-key support in editable mode. Mentions now render in read-only RichTextContent. See `dev-docs/plans/prd0019-live-mention-nodeview.md`.
 
 ## Now (Current Sprint) — Reading workspace UX
 
@@ -97,8 +98,9 @@ The domain model (Entity/Relation) is decoupled from view state. Content is nati
 
 ### 3. Cross-doc mentions (Phase 3.3) ✅
 - ~~**Build suggestion popup render** — `@` triggers a popover listing root containers, selecting one inserts a mention node with the entity ID. Done in PRD0018: shadcn Command popup with keyboard nav, live filtering, click selection.~~ ✅
-- **Inspect JSON structure** — confirmed: `attrs.id` and `attrs.label` survive round-trip.
-- **Click navigation** — clicking a mention navigates to the referenced entity.
+- ~~**Inspect JSON structure** — confirmed: `attrs.id` and `attrs.label` survive round-trip.~~ ✅
+- ~~**Click navigation** — clicking a mention navigates to the referenced entity.~~ ✅
+- ~~**Live title resolution** — custom NodeView resolves entity title from graph store via `attrs.id`, falls back to `attrs.label` if deleted. Done in PRD0019.~~ ✅
 
 ### 4. Page UX polish
 - ~~Sidebar shows child hierarchy (expandable tree via `contains`)~~ — deferred

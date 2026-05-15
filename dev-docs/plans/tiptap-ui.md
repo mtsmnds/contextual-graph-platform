@@ -188,7 +188,10 @@ The `/` command menu is a Start plan feature. Options:
 
 
 
-### 3.3 Link documents with mentions
+### 3.3 Link documents with mentions ✅
+
+- Mention suggestion popup (PRD0018) — `/`trigger popup listing root containers, keyboard nav, live filter, viewport-aware positioning
+- Live title resolution (PRD0019) — custom React NodeView resolves entity title from graph store via `attrs.id` instead of static `attrs.label`. Click navigates to entity (read-only: plain click; editable: Cmd/Ctrl-click). Mentions render in both editable and read-only modes.
 
 1. In document A, type `@Meeting Notes` → the Mention extension creates an inline node
 2. In document B, type `@Projects Overview` → same
