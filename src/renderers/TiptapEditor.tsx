@@ -16,6 +16,7 @@ import DragHandle from "@tiptap/extension-drag-handle-react"
 import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension"
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
+import { PassageAnchor } from "@/components/tiptap/PassageAnchor"
 
 const TitleDocument = Document.extend({
   content: "heading block+",
@@ -198,6 +199,7 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
       }),
       Placeholder.configure({ placeholder: "Start writing..." }),
       Emoji,
+      PassageAnchor,
       CustomMention.configure({
         HTMLAttributes: { class: "text-primary font-medium" },
         suggestion: {
@@ -366,6 +368,23 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
               <MarkButton type="underline" />
               <ToolbarSeparator />
               <MarkButton type="code" />
+              <ToolbarSeparator />
+              <button
+                onClick={() => {
+                  const { from, to } = editor.state.selection
+                  const text = editor.state.doc.textBetween(from, to)
+                  if (!text.trim()) return
+                  const segmentId = `psg_${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+                  editor.chain().focus().setMark("passageAnchor", { segmentId }).run()
+                }}
+                className="flex items-center justify-center rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                title="Create passage"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
             </div>
           </BubbleMenu>
         )}

@@ -211,6 +211,53 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     _adapter?.saveDocument(id, data).catch((err) => {
       console.error("Failed to save content:", err);
     });
+
+    // Reconciliation: sync annotation entities with passageAnchor marks in the document
+    const foundIds = new Set<string>();
+    function walk(node: Record<string, unknown>) {
+      if (node.marks && Array.isArray(node.marks)) {
+        for (const mark of node.marks) {
+          if (mark.type === "passageAnchor" && mark.attrs?.segmentId) {
+            foundIds.add(mark.attrs.segmentId as string);
+          }
+        }
+      }
+      if (node.content && Array.isArray(node.content)) {
+        for (const child of node.content) {
+          walk(child as Record<string, unknown>);
+        }
+      }
+    }
+    walk(data);
+
+    set((state: GraphStore) => {
+      const currentEntities = state.entities;
+      const currentContainerEntities = currentEntities.filter(
+        (e) => e.kind === "annotation" && e.metadata?.sourceContainer === id,
+      );
+
+      for (const segmentId of foundIds) {
+        if (!currentEntities.some((e) => e.id === segmentId)) {
+          currentEntities.push({
+            id: segmentId,
+            kind: "annotation",
+            content: undefined,
+            metadata: { sourceContainer: id },
+          });
+        }
+      }
+
+      for (const entity of currentContainerEntities) {
+        if (!foundIds.has(entity.id)) {
+          const idx = currentEntities.findIndex((e) => e.id === entity.id);
+          if (idx !== -1) {
+            currentEntities[idx] = { ...entity, metadata: { ...entity.metadata, stale: true } };
+          }
+        }
+      }
+
+      return { entities: [...currentEntities] };
+    });
   },
 
   clearContent: (id: string) => {

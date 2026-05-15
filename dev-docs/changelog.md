@@ -14,6 +14,17 @@ Use this to recover context after breaks.
 
 ## 2026-05-15
 
+### m3 - p1 - relations between nodes - passage anchor marks - prd0021
+- * passage anchor marks are custom TipPassageAnchor mark extension (Highlight, swapped color for segmentId)
+- * "Create passage" button in BubbleMenu when text is selected. Creates annotation entity with metadata.segmentId + sourceContainer. Subtle gutter indicator on passages with outgoing links.
+- **What:** Custom TipTap mark extension `PassageAnchor` that assigns a stable `segmentId` to any selected text range via BubbleMenu button. Marks survive save/load round-trip (same mechanism as Highlight). Annotation entities are created lazily via save-time reconciliation — no orphan entities on undo. `transformPasted` plugin strips marks from pasted content to prevent duplicate entity references. Deleted passages get `metadata.stale: true` instead of destroying the entity (preserves cross-doc comment relations).
+- **Files changed:**
+  - `src/components/tiptap/PassageAnchor.ts`: **New** — PassageAnchor mark extension (Mark.create, segmentId attr, transformPasted plugin)
+  - `src/renderers/TiptapEditor.tsx`: Added PassageAnchor to extensions, added "Create passage" pencel button to BubbleMenu
+  - `src/renderers/RichTextContent.tsx`: Added PassageAnchor to extensions array (read-only survival)
+  - `src/store/useGraphStore.ts`: Added reconciliation step in saveContent() — walks document marks, creates missing annotation entities, marks stale ones
+- **Archive:** `dev-docs/plans/prd0021-passage-anchor-marks.md`
+
 ### Pluggable Persistence Adapter Layer (PRD0020)
 - **What:** Replaced the localStorage-only persistence with a pluggable `PersistenceAdapter` interface. Two implementations: `IndexedDBAdapter` (default, uses Dexie.js) and `FSAccessAdapter` (optional, Chromium-only). Auto-detection via `resolveAdapter()` — tries FS Access reconnection first, falls back to IndexedDB. Overridable via `VITE_PERSISTENCE_ADAPTER` env var or `?adapter=` URL param. Store `init(adapter)` replaces `loadInitialState()` — adapter is injected at startup. Sidebar shows folder name breadcrumb when FS Access is active and an "Open Folder&hellip;" button when on IndexedDB with `showDirectoryPicker` available. Seed data fallback unchanged.
 - **Reason:** localStorage is synchronous, size-limited (~5-10MB), and cannot handle binary assets or transactional safety. The previous FS Access approach (2026-05-14) was a non-starter because it gated the entire app on a Chromium-only API. The adapter pattern solves both problems: IndexedDB is the default (works everywhere, async, larger quota) while FS Access is opt-in (power users who want visible files). The adapter interface makes adding Tauri or remote backends a store-free change.

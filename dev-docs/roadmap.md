@@ -13,29 +13,36 @@ Completed work goes in `changelog.md`.
 
 ## Architectural Direction
 
-Entity Graph → Projection Layer → Reading Workspace. The domain model (Entity/Relation) is decoupled from view state. Content is native to entities. App is a single-mode reading workspace with a permanent sidebar. Graph visualization (React Flow) is deferred — validate reading + editing first.
+Entity Graph → Projection Layer → Reading Workspace. The domain model (Entity/Relation) is decoupled from view state. Content is native to entities. App is a single-mode reading workspace with a permanent sidebar. Graph visualization (React Flow) is deferred — validate reading + editing + relational linking first.
 
 ---
 
 ## Now
 
-- **Slash commands / toolbar overhaul** — replace persistent toolbar with `/` command menu and floating menubar (PRD0017 draft). Slash commands still TBD.
-- **Sidebar child hierarchy** — expandable tree via `contains` relations
-- **Delete / rename pages from sidebar**
+* m3 - p2 - cross-document passage linking
+  * extend mention popup to handle passage linking. Select text → create passage → "Link to passage…" → pick target document → browse/search its passages → create Relation
+  * works in single-document view (no columns yet)
+  * a new kind of relation or a new command?
 
 ## Next
 
-- **Context columns v1** — horizontal navigation through related context (work → author → reference), 3 columns
-- **Dev tools panel** — button showing focused node's full JSON data
-- **Annotation creation** — selection → annotation entity + `annotates` relation
-- **Mode switcher** — page / tree / graph, each URL-addressable
-- **Editor performance** — isolate TipTap instance in its own component to prevent unrelated renders from rebuilding ProseMirror document; use `useEditorState` for toolbar active states
-- **Page reordering in sidebar**
+* m3 - p3 - multi-column view
+  * reading viewport becomes multi-column layout
+  * "+ Column" button to add a document (or create new)
+  * each column is an independent editor. Only one focused at a time.
+* mX - dev tools panel — button showing focused node's full JSON data
+* mX - mode switcher — page / tree / graph, each URL-addressable
+* mX - editor performance — isolate TipTap instance in its own component; use `useEditorState` for toolbar active states
 
 ## Later
 
-- Multi-column workspace (column reordering, horizontal sync)
-- Image upload — server endpoint or local file storage? (tiptap-ui plan open decision #2)
+- **Phase 4 — Drag-to-link between columns** — passage blocks get border elevation on hover. Drag arrow from one passage to another across columns. Relation type picker on drop. Creates anchors + entity + relations atomically.
+- **Phase 5 — Metadata display** — outgoing/incoming link indicators ("quoted in [book]", "quoted by [book]"). Blockquote rendering for linked passages.
+- Slash commands / toolbar overhaul — replace persistent toolbar with `/` command menu and floating menubar (PRD0017 draft)
+- Sidebar child hierarchy — expandable tree via `contains` relations
+- Delete / rename pages from sidebar
+- Multi-column workspace polish (column reordering, horizontal sync)
+- Image upload — server endpoint or local file storage?
 - Sample data re-import (Gutenberg parser with new ID scheme)
 - "Talmud mode" — show all annotations at once
 - Graph visualization (React Flow) — layout algorithms, filtering, node grouping, search
