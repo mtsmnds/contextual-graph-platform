@@ -68,6 +68,7 @@ import { useState, useEffect, useRef } from "react"
 import Mention from "@tiptap/extension-mention"
 import { useGraphStore } from "@/store/useGraphStore"
 import { getRootContainers } from "@/engine/queries"
+import { mentionSuggestionRenderer } from "@/components/tiptap/mentionSuggestionRenderer"
 
 function parseContent(input: string, title?: string): string | Record<string, unknown> {
   if (!input) {
@@ -203,26 +204,9 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
             return getRootContainers(state)
               .filter((e) => e.title?.toLowerCase().includes(query.toLowerCase()))
               .slice(0, 5)
+              .map((e) => ({ id: e.id, label: e.title ?? e.id }))
           },
-          render: () => {
-            let dom: HTMLDivElement | null = null
-
-            return {
-              onStart: () => {
-                dom = document.createElement("div")
-                dom.className = "mention-suggestion"
-                dom.textContent = "Loading..."
-                document.body.appendChild(dom)
-              },
-              onUpdate: () => {},
-              onExit: () => {
-                if (dom) {
-                  dom.remove()
-                  dom = null
-                }
-              },
-            }
-          },
+          render: mentionSuggestionRenderer,
         },
       }),
     ],

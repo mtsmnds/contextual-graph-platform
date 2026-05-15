@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-15
+
+### Mention suggestion popup (PRD0018)
+- **What:** Replaced the stub suggestion renderer in `TiptapEditor.tsx` with a proper React-based popup using shadcn's Command component
+- **Reason:** The stub showed static "Loading..." text with no items, no keyboard nav, no click handling. Needed for cross-doc `@` mentions.
+- **Files changed:**
+  - `src/components/tiptap/MentionPopup.tsx`: **New** — React component wrapping shadcn Command with keyboard nav, mouse hover selection, empty state
+  - `src/components/tiptap/mentionSuggestionRenderer.tsx`: **New** — factory bridging TipTap's suggestion plugin lifecycle to React via `createRoot`
+  - `src/renderers/TiptapEditor.tsx`: Replaced inline `render: () => {...}` stub with `render: mentionSuggestionRenderer`
+  - `src/components/ui/command.tsx`: Added via `npx shadcn@latest add command` (plus dialog, input-group, textarea subdeps)
+- **Impact:** `@` now shows a styled popup with live filtering, keyboard navigation (up/down/enter/esc), click selection, and proper cursor positioning. No scaffolding left for Phase 3.3.
+- **PRD:** `dev-docs/plans/prd0018-mention-suggestion-popup.md`
+
 ## Purpose
 Significant completed changes with reasoning and references.
 Use this to recover context after breaks.
@@ -332,6 +345,21 @@ Use this to recover context after breaks.
 - **Files changed:**
   - `dev-docs/roadmap.md`: Full rewrite with 4 new milestones
 - **Impact:** The immediate work shifts from building custom graph nodes to refactoring the domain schema and building a reading workspace. React Flow work deferred to Phase 4.
+
+---
+
+## 2026-05-15
+
+### Fix: content loading race + cleanup effect saving to wrong entity
+- **What:** Two bugs: (1) Content loaded via `useEffect` + `useState` caused a flash of empty editor on every page open, then `setDocContent` would trigger a re-render where TipTap's `setContent()` sometimes applied and sometimes didn't. (2) The cleanup `useEffect` used `onSaveRef.current` which is updated on every render — when navigating from entity A to entity B, the cleanup ran AFTER React had updated `onSaveRef.current` to entity B's callback, causing entity A's content to be saved under entity B's ID in the content store.
+- **Fix:**
+  - ReadingViewport: switched from `useEffect` + `useState` to `useMemo` for content loading — content is synchronous during render, no flash, no race.
+  - TiptapEditor: added `mountOnSaveRef`/`mountOnTitleChangeRef` — captured at mount time and never updated. The cleanup effect uses these mount-time refs instead of the live refs, so it always saves to the correct entity regardless of re-render order.
+- **Impact:** No more empty editors on page load. No more content corruption when navigating between pages (which was causing duplicate "Editor Playground" entries in the sidebar). Fresh `localStorage.clear()` recommended for users with corrupted content store.
+- **Files changed:**
+  - `src/renderers/ReadingViewport.tsx`: `useEffect`/`useState` → `useMemo` for content. Removed `useState`/`useEffect` imports.
+  - `src/renderers/TiptapEditor.tsx`: Added `mountOnSaveRef`/`mountOnTitleChangeRef` for clean cleanup. Cleanup now uses mount-time refs.
+  - `src/store/useGraphStore.ts`: Removed `set()` call from `getContent` (was causing unnecessary re-renders during a read function).
 
 ---
 

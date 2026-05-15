@@ -135,7 +135,7 @@ The `/` command menu is a Start plan feature. Options:
 
 ---
 
-## Phase 3 — Multi-Document Test (Two Files + Mentions) (In Progress)
+## Phase 3 — Multi-Document Test (Two Files + Mentions) ✅
 
 **Goal:** Validate the architecture split by creating two real TipTap documents, linking them with mentions, and inspecting the raw data.
 
@@ -155,14 +155,23 @@ The `/` command menu is a Start plan feature. Options:
 - Title auto-syncs to `entity.title` on edit
 - Drag handle hidden on the title heading
 
-### 3.3 Build suggestion popup (current step)
+### 3.3 suggestion popup ✅ - prd0018
+  - inline char triggers interface. shows when user types `@`.
+  - Uses `@shadcn/command` (cmdk) wrapped in a `MentionPopup` React component, mounted via `createRoot` in the TipTap suggestion plugin's `onStart`/`onUpdate` lifecycle.
 
-The render function is a stub — need a proper suggestion popup that:
-1. Shows when user types `@`
-2. Lists matching root containers
-3. On click/Enter, inserts a mention node with `attrs.id` and `attrs.label`
-4. Inspect the resulting JSON structure
-```
+  - shows when user types `@`
+  - lists matching root containers, live-filtered as user types
+  - inserts mention node with `attrs.id` and `attrs.label`
+  - cursos positioned popup, viewport-aware
+
+
+
+- mention suggestions
+  - inline char triggers interface. as the user types in the editor:
+    - typing "@" will allow mentioning files
+    - typing "/" will show the toolbar popover (notion-like commands menu) 
+
+
 
 ### 3.3 Link documents with mentions
 
@@ -289,7 +298,7 @@ Phase 2 (Free Notion delta)
 Phase 3 (Multi-document test)
   ├── 3.1 Create two TipTap documents ✅
   ├── 3.2 Install Mention extension ✅
-  ├── 3.3 Build suggestion popup (in progress)
+  ├── 3.3 Build suggestion popup ✅ (PRD0018)
   ├── 3.4 Decide: JSON vs HTML storage ✅ (JSON wins)
   ├── 3.5 Confirm Model A (per-container editors) ✅
   └── 3.6 Lock in default extensions ✅
@@ -311,5 +320,5 @@ Phases 1 and 2 are pure UI — they don't affect the storage format or entity mo
 | 2 | Image upload: needs a server endpoint. Use local file storage or skip? | TBD |
 | 3 | Do we replace `RichTextContent` everywhere (including read-only Hamlet) with the new editor, or keep `RichTextContent` for read-only and use the new editor only for editable containers? | Probably keep both: `RichTextContent` for read-only display (lighter), full editor for editing. |
 | 4 | Mention extension: does `@` trigger search across all entities or only root containers? | Only root containers for now — TBD if we expand |
-| 5 | Mention navigation: clicking a mention in read-only mode should navigate to the referenced entity? | Yes — needs `onClick` handler on mention NodeView (Phase 3.3 follow-up) |
+| 5 | Mention navigation: clicking a mention in read-only mode should navigate to the referenced entity? | Yes — needs `onClick` handler on mention NodeView (3.3 follow-up, deferred) |
 | 6 | Storage format: JSON or HTML for entity content? | **JSON** — switched in Phase 3.1. HTML fallback for legacy data via `parseContent()` |

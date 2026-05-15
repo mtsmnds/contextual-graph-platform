@@ -95,9 +95,9 @@ The domain model (Entity/Relation) is decoupled from view state. Content is nati
 - **Model A confirmed** — per-container editor instances, not shared documents.
 - **Annotation mapping** — still open, deferred.
 
-### 3. Cross-doc mentions (Phase 3.3) — current step
-- **Build suggestion popup render** — `@` triggers a popover listing root containers, selecting one inserts a mention node with the entity ID. Extension installed, items wired to graph store, need the UI.
-- **Inspect JSON structure** — once mentions work, confirm `attrs.id` and `attrs.label` survive round-trip.
+### 3. Cross-doc mentions (Phase 3.3) ✅
+- ~~**Build suggestion popup render** — `@` triggers a popover listing root containers, selecting one inserts a mention node with the entity ID. Done in PRD0018: shadcn Command popup with keyboard nav, live filtering, click selection.~~ ✅
+- **Inspect JSON structure** — confirmed: `attrs.id` and `attrs.label` survive round-trip.
 - **Click navigation** — clicking a mention navigates to the referenced entity.
 
 ### 4. Page UX polish
