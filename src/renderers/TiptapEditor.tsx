@@ -17,7 +17,7 @@ import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/ho
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
 import { PassageAnchor } from "@/components/tiptap/PassageAnchor"
-import { PassageLinkDialog } from "@/components/tiptap/PassageLinkDialog"
+import { PassageLinkPopover } from "@/components/tiptap/PassageLinkPopover"
 
 const TitleDocument = Document.extend({
   content: "heading block+",
@@ -129,7 +129,7 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
   const { height } = useWindowSize()
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">("main")
   const [showDragHandle, setShowDragHandle] = useState(true)
-  const [linkingPassageId, setLinkingPassageId] = useState<string | null>(null)
+  const [linkingPassage, setLinkingPassage] = useState<{ segmentId: string; anchorEl: HTMLElement } | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   // Separate refs for interactive use (blur, update) vs cleanup
@@ -170,18 +170,6 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
           }
           return false
         },
-      },
-      handleClickOn: (_view, _pos, _node, _nodePos, event) => {
-        const target = event.target as HTMLElement
-        const anchor = target.closest("[data-passage-anchor]")
-        if (anchor) {
-          const segmentId = anchor.getAttribute("data-passage-anchor")
-          if (segmentId) {
-            setLinkingPassageId(segmentId)
-            return true
-          }
-        }
-        return false
       },
     },
     extensions: [
@@ -245,6 +233,21 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
   })
 
   editorRef.current = editor
+
+  // Listen for custom passage-link-click events from gutter buttons
+  // Depends on editor — attaches once editor becomes available (immediatelyRender: false)
+  useEffect(() => {
+    const el = editor?.view.dom
+    if (!el) return
+    function handler(e: Event) {
+      const detail = (e as CustomEvent).detail as { segmentId: string } | undefined
+      if (detail?.segmentId) {
+        setLinkingPassage({ segmentId: detail.segmentId, anchorEl: e.target as HTMLElement })
+      }
+    }
+    el.addEventListener("passage-link-click", handler)
+    return () => el.removeEventListener("passage-link-click", handler)
+  }, [editor])
 
   useEffect(() => {
     return () => {
@@ -426,20 +429,33 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
 
         <style>{`
           .passage-anchor {
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 2px;
+            text-decoration-color: color-mix(in srgb, currentColor 75%, transparent);
+          }
+
+          .passage-gutter-btn {
+            position: absolute;
+            right: -28px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            color: hsl(var(--muted-foreground) / 0.4);
             cursor: pointer;
+            padding: 0;
+            transition: color 150ms, background 150ms;
           }
-          .passage-anchor::after {
-            content: '\\2197';
-            display: inline-block;
-            font-size: 10px;
-            margin-left: 2px;
-            vertical-align: super;
-            opacity: 0.5;
-            color: inherit;
-            pointer-events: none;
-          }
-          .passage-anchor:hover::after {
-            opacity: 1;
+          .passage-gutter-btn:hover {
+            color: hsl(var(--foreground));
+            background: hsl(var(--accent));
           }
         `}</style>
 
@@ -449,11 +465,13 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
           className="simple-editor-content"
         />
 
-        <PassageLinkDialog
-          open={linkingPassageId !== null}
-          sourceSegmentId={linkingPassageId ?? ""}
-          onClose={() => setLinkingPassageId(null)}
-        />
+        {linkingPassage && (
+          <PassageLinkPopover
+            segmentId={linkingPassage.segmentId}
+            anchorEl={linkingPassage.anchorEl}
+            onClose={() => setLinkingPassage(null)}
+          />
+        )}
       </EditorContext.Provider>
     </div>
   )

@@ -19,25 +19,23 @@ Entity Graph → Projection Layer → Reading Workspace. The domain model (Entit
 
 ## Now
 
-* m3 - p2 - cross-document passage linking
-  * extend mention popup to handle passage linking. Select text → create passage → "Link to passage…" → pick target document → browse/search its passages → create Relation
-  * works in single-document view (no columns yet)
-  * a new kind of relation or a new command?
-
-## Next
-
 * m3 - p3 - multi-column view
   * reading viewport becomes multi-column layout
   * "+ Column" button to add a document (or create new)
   * each column is an independent editor. Only one focused at a time.
-* mX - dev tools panel — button showing focused node's full JSON data
-* mX - mode switcher — page / tree / graph, each URL-addressable
-* mX - editor performance — isolate TipTap instance in its own component; use `useEditorState` for toolbar active states
+
+## Next
+
+* m3 - p4 - drag-to-link between columns
+  * passage blocks get border elevation on hover. Drag arrow from one passage to another across columns. Relation type picker on drop. Creates anchors + entity + relations atomically.
+* m3 - p5 - metadata display
+  * outgoing/incoming link indicators ("quoted in [book]", "quoted by [book]"). Blockquote rendering for linked passages.
 
 ## Later
 
-- **Phase 4 — Drag-to-link between columns** — passage blocks get border elevation on hover. Drag arrow from one passage to another across columns. Relation type picker on drop. Creates anchors + entity + relations atomically.
-- **Phase 5 — Metadata display** — outgoing/incoming link indicators ("quoted in [book]", "quoted by [book]"). Blockquote rendering for linked passages.
+- Dev tools panel — button showing focused node's full JSON data
+- Mode switcher — page / tree / graph, each URL-addressable
+- Editor performance — isolate TipTap instance; use `useEditorState` for toolbar active states
 - Slash commands / toolbar overhaul — replace persistent toolbar with `/` command menu and floating menubar (PRD0017 draft)
 - Sidebar child hierarchy — expandable tree via `contains` relations
 - Delete / rename pages from sidebar
@@ -54,8 +52,7 @@ Entity Graph → Projection Layer → Reading Workspace. The domain model (Entit
 
 ## Known Issues
 
-- **Duplicate relations** — `addRelation` doesn't deduplicate. If the user clicks "Link" twice (or the dialog fires twice), two identical relations are created between the same source and target. Fix: check for existing relation before creating, or add a dedup step.
-- **Annotation entities have no titles** — Labels are derived at render time via `getPassageLabel()`, which extracts anchored text from the source document. This means labels can't be searched or displayed in entity lists without loading the source document. Fix: store a derived label on `metadata.label` at creation time (truncated anchored text).
+- **Duplicate relations** — `addRelation` doesn't deduplicate. If the user clicks "Link" twice, two identical relations are created between the same source and target. Fix: check for existing relation before creating, or dedup on save.
 
 ## Anti-Overengineering Guardrail
 - Don't implement `Later` items unless promoted to `Now`.

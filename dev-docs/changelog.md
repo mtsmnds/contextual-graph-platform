@@ -14,6 +14,24 @@ Use this to recover context after breaks.
 
 ## 2026-05-15
 
+### m3 - p2 - cross-document passage linking - quote type - prd0022
+- * inline popover (mention pattern) to link passages across documents
+- * "quote" relation type links two passage anchors
+- * gutter indicator (24x24 chain-link icon) for each passage, click to open popover
+- * underline decoration at 75% opacity on passage text
+- * human-readable labels stored on annotation entities at creation time
+- * added `"quote"` to `RelationType` in graph.ts. `addRelation` now accepts optional `metadata`. Store reconciliation extracts and stores `metadata.label` (truncated anchored text).
+- * PassageAnchor gains a ProseMirror `decorations` plugin that renders 24x24 gutter buttons. Click dispatches a custom `passage-link-click` event → inline popover opens with existing links, link-to-more, and comment field. PassageLinkDialog replaced by PassageLinkPopover (floating card, same pattern as mention popup). Popover positions 24px right+down from gutter button, flips left if it overflows viewport.
+- **Files changed:**
+  - `src/components/tiptap/PassageAnchor.ts`: Added ProseMirror decorations plugin for gutter widget buttons, relocated transformPasted into a proper Plugin
+  - `src/components/tiptap/PassageLinkDialog.tsx`: Deleted (replaced by PassageLinkPopover)
+  - `src/components/tiptap/PassageLinkPopover.tsx`: **New** — inline popover with existing links, document picker, passage picker, comment field. Positions near gutter button, closes on click outside.
+  - `src/renderers/TiptapEditor.tsx`: Removed handleClickOn, added custom event listener for gutter button clicks, replaced PassageLinkDialog with PassageLinkPopover, updated CSS for underline decoration
+  - `src/renderers/RichTextContent.tsx`: PassageAnchor added to extensions (read-only survival)
+  - `src/types/graph.ts`: Added `"quote"` to RelationType
+  - `src/store/useGraphStore.ts`: `addRelation` accepts optional `metadata`. Reconciliation stores `metadata.label` (first ~60 chars of anchored text).
+- **Archive:** `dev-docs/plans/prd0022-cross-document-passage-linking.md`
+
 ### m3 - p1 - relations between nodes - passage anchor marks - prd0021
 - * passage anchor marks are custom TipPassageAnchor mark extension (Highlight, swapped color for segmentId)
 - * "Create passage" button in BubbleMenu when text is selected. Creates annotation entity with metadata.segmentId + sourceContainer. Subtle gutter indicator on passages with outgoing links.
