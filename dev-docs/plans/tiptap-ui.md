@@ -155,7 +155,7 @@ The `/` command menu is a Start plan feature. Options:
 - Title auto-syncs to `entity.title` on edit
 - Drag handle hidden on the title heading
 
-### 3.3 suggestion popup ✅ - prd0018
+### 3.3 mention suggestion popup ✅ - prd0018
   - inline char triggers interface. shows when user types `@`.
   - Uses `@shadcn/command` (cmdk) wrapped in a `MentionPopup` React component, mounted via `createRoot` in the TipTap suggestion plugin's `onStart`/`onUpdate` lifecycle.
 
@@ -164,6 +164,21 @@ The `/` command menu is a Start plan feature. Options:
   - inserts mention node with `attrs.id` and `attrs.label`
   - cursos positioned popup, viewport-aware
 
+### fix drag handle ✅
+  - drag handle problem: not the right size; not aligned with text line
+  - documentation
+    - https://tiptap.dev/docs/editor/extensions/functionality/drag-handlev
+    - phosphor icon: dots-six-vertical
+
+  - should be correctly sized and aligned with text line
+  - add an ease-in and ease-out so it doesn't "follow the user around" when scrolling
+
+#### solution
+  - swapped custom SVG for `DotsSixVertical` from `@phosphor-icons/react`
+  - resized to 24x24 with flex centering, aligned with text line height
+  - added `opacity` CSS transition (200ms ease-in-out) instead of conditional rendering, so the handle fades in/out smoothly instead of snapping
+  - hidden on title heading via `pointerEvents: "none"` + `opacity: 0`
+  - test with dev tools mcp
 
 
 - mention suggestions

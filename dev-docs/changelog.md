@@ -2,6 +2,13 @@
 
 ## 2026-05-15
 
+### Fix: drag handle appearance
+- **What:** Fixed the drag handle sizing, alignment, and transition smoothness. Replaced the 12x12 hand-rolled SVG dots with `DotsSixVertical` from `@phosphor-icons/react` (16px, bold weight). Resized the drag handle container to 24x24 — aligned with text line height. Switched from conditional rendering (`{showDragHandle && ...}`) to always-rendered with opacity/pointer-events controlled via inline styles, adding a 200ms ease-in-out CSS transition so the handle fades smoothly instead of snapping in/out of the DOM on scroll.
+- **Reason:** The handle was too small (12px icon in a 16px container), misaligned with the text baseline, and its sudden appearance (entering/leaving the DOM) made it "follow the user around" distractingly during scroll.
+- **Files changed:**
+  - `src/renderers/TiptapEditor.tsx`: Imported `DotsSixVertical` from `@phosphor-icons/react`, replaced SVG with icon component, changed conditional rendering to style-controlled opacity
+  - `src/components/tiptap-templates/simple/simple-editor.scss`: Added `.drag-handle` class with 24x24 sizing, centering, color variables, border-radius, `user-select: none`, and `transition: opacity 200ms ease-in-out`
+
 ### Mention suggestion popup (PRD0018)
 - **What:** Replaced the stub suggestion renderer in `TiptapEditor.tsx` with a proper React-based popup using shadcn's Command component
 - **Reason:** The stub showed static "Loading..." text with no items, no keyboard nav, no click handling. Needed for cross-doc `@` mentions.

@@ -65,6 +65,7 @@ import "@/components/tiptap-templates/simple/simple-editor.scss"
 
 import { Button } from "@/components/tiptap-ui-primitive/button"
 import { useState, useEffect, useRef } from "react"
+import { DotsSixVertical } from "@phosphor-icons/react"
 import Mention from "@tiptap/extension-mention"
 import { useGraphStore } from "@/store/useGraphStore"
 import { getRootContainers } from "@/engine/queries"
@@ -376,11 +377,15 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
               setShowDragHandle(!isTitle)
             }}
           >
-            {showDragHandle && (
-              <div className="drag-handle flex items-center justify-center w-4 cursor-grab text-muted-foreground hover:text-foreground">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-              </div>
-            )}
+            <div
+              className="drag-handle"
+              style={{
+                opacity: showDragHandle ? 1 : 0,
+                pointerEvents: showDragHandle ? "auto" : "none",
+              }}
+            >
+              <DotsSixVertical size={16} weight="bold" />
+            </div>
           </DragHandle>
         )}
 

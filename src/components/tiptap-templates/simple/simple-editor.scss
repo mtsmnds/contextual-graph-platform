@@ -80,3 +80,28 @@ body,
     padding: 1rem 1.5rem 30vh;
   }
 }
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: grab;
+  color: var(--tt-gray-light-500);
+  border-radius: 4px;
+  transition: opacity 200ms ease-in-out;
+  user-select: none;
+
+  &:hover {
+    color: var(--tt-gray-light-900);
+  }
+
+  .dark & {
+    color: var(--tt-gray-dark-500);
+
+    &:hover {
+      color: var(--tt-gray-dark-900);
+    }
+  }
+}
