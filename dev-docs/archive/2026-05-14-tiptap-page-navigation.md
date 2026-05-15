@@ -123,13 +123,13 @@ The rendering behavior should be visually identical for Hamlet content since Tip
 
 The PRD currently specifies HTML as the initial format for simplicity. The ProseMirror JSON path is interesting because TipTap nodes (paragraph, heading, etc.) map naturally to our segment entities — a work's full text could be one ProseMirror document with each segment as a node. Annotations in ProseMirror work via `marks` on precise text positions, which is exactly how highlight + annotate should behave.
 
-**Decision deferred.** Both formats will be tested. See the test plan in `dev-docs/plans/tiptap-graph-mapping-test-plan.md` (Test 2, Test 3) for comparison methodology. Until the format is settled, `Entity.content` remains `string` (HTML-compatible text).
+**Decision deferred.** Both formats will be tested. See the test plan in `dev-docs/plans/prd0013-tiptap-graph-mapping.md` (Test 2, Test 3) for comparison methodology. Until the format is settled, `Entity.content` remains `string` (HTML-compatible text).
 
 ---
 
 ### Step 6 — TipTap–graph mapping test plan
 
-**Moved to separate document.** The mapping between TipTap nodes/marks and our Entity/Relation graph needs hands-on testing before conclusions can be drawn. See `dev-docs/plans/tiptap-graph-mapping-test-plan.md` for the full test plan.
+**Moved to separate document.** The mapping between TipTap nodes/marks and our Entity/Relation graph needs hands-on testing before conclusions can be drawn. See `dev-docs/plans/prd0013-tiptap-graph-mapping.md` for the full test plan.
 
 This step is deferred until TipTap is installed and rendering (Steps 2–5 complete). The test plan lives in `dev-docs/plans/` as a living document — updated as tests are run and conclusions are reached. Once mapping rules are settled, an ADR will be produced.
 
@@ -143,7 +143,7 @@ This step is deferred until TipTap is installed and rendering (Steps 2–5 compl
 | `src/App.tsx` | Add `view` param to URL sync (`?view=page&focused=X&anchor=Y`). Default `"page"`. |
 | `src/renderers/ReadingViewport.tsx` | Replace `ContentHtml` usage with `RichTextContent`. Delete `ContentHtml` function. |
 | `src/renderers/RichTextContent.tsx` | **New file** — TipTap-based read-only content renderer |
-| `dev-docs/plans/tiptap-graph-mapping-test-plan.md` | **New file** — Test plan for TipTap↔graph mapping (Step 6, deferred) |
+| `dev-docs/plans/prd0013-tiptap-graph-mapping.md` | **New file** — Test plan for TipTap↔graph mapping (Step 6, deferred) |
 
 ---
 
@@ -167,7 +167,7 @@ Editing mode is a separate concern — add incrementally (double-click to edit, 
 - **Native annotation model** — ProseMirror marks attach to precise text ranges and survive edits via position mapping. This is exactly what highlight + annotate needs.
 - **Single document feeling** — a whole act rendered as one TipTap document instead of 100+ separate instances.
 
-The format decision is deferred to the test plan (`dev-docs/plans/tiptap-graph-mapping-test-plan.md`). TipTap reads both formats, so switching later is low-risk.
+The format decision is deferred to the test plan (`dev-docs/plans/prd0013-tiptap-graph-mapping.md`). TipTap reads both formats, so switching later is low-risk.
 
 ### Three root containers
 

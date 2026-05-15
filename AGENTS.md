@@ -25,7 +25,8 @@ Store is pre-seeded with sample data (one phase + two task nodes with a dependen
 
 ## Before Implementing
 
-Read in order: `README.md` → `dev-docs/requirements.md` → `dev-docs/architecture.md` → `dev-docs/roadmap.md` → `dev-docs/changelog.md` + `dev-docs/archive/`.
+1. Load the `dev-docs` skill (`skill({ name: "dev-docs" })`) to understand naming conventions, file formats, and documentation workflows.
+2. Read in order: `README.md` → `dev-docs/requirements.md` → `dev-docs/architecture.md` → `dev-docs/roadmap.md` → `dev-docs/changelog.md` + `dev-docs/archive/`.
 
 ## After Completing
 

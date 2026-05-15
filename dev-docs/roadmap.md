@@ -76,13 +76,13 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — File System Persistence (PRD0009): user picks a folder, app reads/writes `graph.json` directly, no seed data, no localStorage
 - 2026-05-14 — Handle Persistence & URL Navigation (PRD0011): feature-flagged IndexedDB handle persistence (skip folder picker on reload), URL-based view state sync (reloads restore focused entity)
 - 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
-- 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.html`.
+- 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.md`.
 - 2026-05-15 — TipTap + page navigation (PRD0013): TipTap integration, root containers (playground/books/roadmap), URL view param, editable empty containers. See `archive/2026-05-14-tiptap-page-navigation.md`.
 
 ## Now (Current Sprint) — TipTap exploration + canvas basics
 
 ### 1. TipTap document model exploration
-- **ProseMirror JSON vs HTML** — run the test scenarios from `dev-docs/plans/tiptap-graph-mapping-test-plan.md`. Decide storage format.
+- **ProseMirror JSON vs HTML** — run the test scenarios from `dev-docs/plans/prd0013-tiptap-graph-mapping.md`. Decide storage format.
 - **Model A vs Model B** — per-entity instances vs. per-container document. Which feels better for reading and editing?
 - **Annotation mapping** — how do ProseMirror marks map to `annotates` relations?
 

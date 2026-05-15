@@ -24,9 +24,9 @@ Use this to recover context after breaks.
   - `hello2/graph.json`: Added `playground`, `books`, `roadmap` root containers. Added `books → hamlet` contains relation.
   - `dev-docs/roadmap.md`: Updated Now section with TipTap plan.
   - `dev-docs/archive/2026-05-14-tiptap-page-navigation.md`: Created — PRD0013 plan.
-  - `dev-docs/plans/tiptap-graph-mapping-test-plan.md`: Created — test plan for ProseMirror JSON vs HTML and per-entity vs per-container document models.
+  - `dev-docs/plans/prd0013-tiptap-graph-mapping.md`: Created — test plan for ProseMirror JSON vs HTML and per-entity vs per-container document models.
 - **Impact:** Content renders through TipTap with proper ProseMirror model. `dangerouslySetInnerHTML` eliminated. Empty containers (Playground, Roadmap) are editable pages. URL navigation includes view mode. Three root containers provide navigation entry points. URL restore works reliably. Foundation for editable TipTap, annotation creation, and ProseMirror JSON exploration.
-- **ADR:** `dev-docs/plans/tiptap-graph-mapping-test-plan.md` (deferred — test plan)
+- **ADR:** `dev-docs/plans/prd0013-tiptap-graph-mapping.md` (deferred — test plan)
 - **Archive:** `archive/2026-05-14-tiptap-page-navigation.md`
 
 ---
@@ -43,7 +43,7 @@ Use this to recover context after breaks.
   - `src/components/ui/popover.tsx`: Installed (shadcn Base UI popover)
   - `src/components/ui/sidebar.tsx` + 6 supporting files: Installed (shadcn Base UI sidebar)
 - **Impact:** No header bar — content fills the full viewport. Three-dots button floats in the top-right corner. Opening it shows root containers for navigation. ReadingViewport content scrolls edge-to-edge with card-based rendering. Canvas View access moved into the sidebar popover. Foundation for home page (root container listing) and mode switcher.
-- **Archive:** `archive/2026-05-14-sidebar-navigation.html`
+- **Archive:** `archive/2026-05-14-sidebar-navigation.md`
 
 ### Fix: SidebarProvider wrapping + layout conflict
 - **What:** Two bugs in the initial sidebar implementation: (1) `useSidebar()` threw because no `SidebarProvider` ancestor existed; (2) `SidebarProvider`'s flex layout (`flex min-h-svh w-full`) broke React Flow's parent container sizing. Fixed by importing `SidebarProvider` and wrapping the App return with `className="contents"` to provide context without layout interference.
@@ -51,7 +51,7 @@ Use this to recover context after breaks.
 - **Files changed:**
   - `src/App.tsx`: Imported `SidebarProvider`, wrapped `App` return, added `className="contents"` to prevent flex layout from breaking React Flow's parent container
 - **Impact:** Sidebar opens without errors. React Flow canvas renders at full viewport height. The fix pattern (`SidebarProvider className="contents"`) should be used for any future sidebar-in-popover or sidebar-in-overlay patterns.
-- **ADR:** `archive/2026-05-14-sidebar-navigation.html`
+- **ADR:** `archive/2026-05-14-sidebar-navigation.md`
 
 ---
 
