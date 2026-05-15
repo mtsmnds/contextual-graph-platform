@@ -9,6 +9,14 @@
         "mcp"
       ],
       "enabled": true
+    },
+    "react-flow": {
+      "type": "local",
+      "command": [
+        "npx",
+        "@yeshsurya/react-flow-mcp-server"
+      ],
+      "enabled": true
     }
   }
 }

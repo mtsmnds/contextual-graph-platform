@@ -78,10 +78,28 @@ This shift reorders the roadmap significantly: **validate contextual reading fir
 - 2026-05-14 — Minimal Entity Model (PRD0010-1): ID scheme, slugify, model rules enforced in store, HTML content rendering
 - 2026-05-14 — Popover sidebar navigation (PRD0012): replaced AppHeader with floating three-dots + shadcn Popover/Sidebar for root-level entity navigation. Removed ReadingViewport header. Added `getRootContainers` to query engine. See `archive/2026-05-14-sidebar-navigation.html`.
 
-## Now (Current Sprint) — M2 Phase 1
-- **Home page** — on launch (no folder, no focused entity), show a page listing root-level containers instead of the canvas
-- **Page view becomes the default** — the reading viewport is reframed as the primary navigation surface. Containers render their title and children. Linked entities navigate to their page.
-- **Canvas mode-switcher** — canvas is still accessible via a switcher in the header, but no longer the default
+## Now (Current Sprint) — TipTap + page navigation
+
+### 1. Three root containers
+Create three root-level entities in the graph, each with a permanent URL:
+- **`playground`** — empty workspace for experimentation (no seed data)
+- **`books`** — seeded with Hamlet (and future texts)
+- **`roadmap`** — the project roadmap as self-referential graph data (future)
+
+Navigation model: selecting a container shows its children (folder/Notion page model). URL encodes the focused entity (`?view=page&entity=playground`). Reload restores the exact view.
+
+### 2. TipTap integration
+- Install `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`
+- Wire TipTap into the reading viewport as the `view=page` renderer for `Entity.content` (HTML storage format)
+- **Test with Hamlet** — rich content, many segments, real-world edge cases
+- **Test with empty page** — playground root, blank slate startup, create-from-nothing UX
+- Map TipTap's node/mark model to our Entity/Relation graph — evaluate alignment (e.g. does a TipTap `mention` node become a `references` relation?)
+- Style TipTap UI with shadcn components (toolbar, menus, popovers)
+- Test TipTap rendering inside SegmentCard components
+- Test TipTap in annotation/comment flows (depends on annotation creation — downstream)
+
+### 3. Canvas mode-switcher
+- Canvas accessible via sidebar action, no longer the default first page
 
 ## Next — Navigation modes (Phases 2–4)
 
@@ -97,9 +115,8 @@ The canvas is no longer the default first page. The app is about choosing how yo
 - **Context columns v1** — start with 3 columns for horizontal navigation (work → author → reference). Column layout designed for long-term scaling.
 - **Dev tools panel** — button showing the focused node's full JSON data
 
-### Phase 4 — TipTap + annotation creation
-- **TipTap integration** — explore editing models (per-node vs whole-container). HTML content rendering. Evaluate `metadata.type` rules.
-- **Annotation creation** — depends on TipTap for rich text. Selection → annotation entity + `annotates` relation.
+### Phase 4 — Annotation creation
+- **Annotation creation** — selection → annotation entity + `annotates` relation. Depends on TipTap (now in active sprint).
 
 ## Later (Backlog)
 - Column reordering, horizontal cross-column sync
