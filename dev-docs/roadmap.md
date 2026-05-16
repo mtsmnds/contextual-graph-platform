@@ -29,6 +29,10 @@ and relational linking on the thread view first.
 
 - m4 - prd0024 - isolate current product. 
 
+- skill de frontend react - conectar com 
+- mongodb - usar ao inves de as coisa que a ia ta recomendad
+  - use link for documentation 
+
 
 
 ## Anti-Overengineering Guardrail
