@@ -25,9 +25,18 @@ and relational linking on the thread view first.
 
 ---
 
-## Now
+# now
 
-- m4 - prd0024 - isolate current product. 
+# m4 - I. isolate the current product\
+
+- m4 - prd0024 - add routing
+  - install react-router-dom. create two route entries:
+    - `/tiptap-editor-test` - mount current app as is
+    - `/` - empty shell for now (render a placeholder)
+
+- m4 - 
+
+# notes
 
 - skill de frontend react - conectar com 
 - mongodb - usar ao inves de as coisa que a ia ta recomendad
