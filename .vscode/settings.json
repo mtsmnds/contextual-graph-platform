@@ -1,0 +1,54 @@
+{
+
+  // files
+  
+  "files.autoSave": "onFocusChange",
+
+  // TODO: how to set formatting only for a few file extensions?
+  //       formatting currently **disabled** in antigravity editor settings
+  
+  
+  // editor wrap test lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ajfajajajfa aljdhfohf lkhdsljfh ljh sldjh lsj glsjhg ljh tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse.
+  
+  
+  // editor style
+  
+  "editor.tabSize": 2,
+  "editor.wordWrap": "bounded",
+  "editor.wordWrapColumn": 88,
+  "editor.wrappingIndent": "indent",
+  "editor.lineHeight": 22,
+  "editor.overviewRulerBorder": false,
+  "editor.minimap.showSlider": "always",
+  /* "editor.minimap.enabled": false, */
+  
+  "editor.occurrencesHighlight": "multiFile",
+
+  
+  // git 
+  
+  "git.enableSmartCommit": true,
+  "git.postCommitCommand": "sync",
+
+
+  // editor snippets
+
+
+// Enable Tab to accept snippets when their prefix matches
+"editor.tabCompletion": "on",
+
+// Make sure snippets show up in the suggestion dropdown
+"editor.suggest.showSnippets": true,
+"editor.suggest.snippetsPreventQuickSuggestions": false,
+"editor.snippetSuggestions":"top",
+
+// (Optional but nice) auto‑trigger suggestions as you type
+"editor.quickSuggestions": {
+  "other": true,
+  "comments": true,
+  "strings": true
+},
+
+// commenting out doesn't work in vscode internal settings
+
+}

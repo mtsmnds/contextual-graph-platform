@@ -1,0 +1,52 @@
+
+// suggestions kick in in the first letter after the `::` or `@@` 
+// for better suggestions maybe start the snippets with a sequence or letters
+
+{
+  "Insert ISO Today": {
+    // "scope": "markdown",
+    "prefix": "::datetoday",
+    "body": [
+      "$CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE"
+    ],
+    "description": "Insert today's date in ISO format (yyyy-mm-dd)"
+  },
+
+  "pretty todo": {
+    "scope": "markdown",
+    "prefix": "::todo",
+    "body": [
+      "[TODO] "
+    ],
+    "description": "lazy add todo item markdown"
+  },
+
+  "pretty done": {
+    "scope": "markdown",
+    "prefix": "::done",
+    "body": [
+      "[done] "
+    ],
+    "description": "lazy add todo item markdown"
+  },
+
+
+  "important / exclamation mark": {
+    "prefix": ["::exclamation mark", "::important"], // The text you type to trigger the snippet
+    "body": [
+        "[!]" // The text inserted at the start of the line
+    ],
+    "description": "Inserts text at the start of the current line"
+},
+
+  
+  "Insert Start-of-Line Text": {
+    "prefix": "soltest", // The text you type to trigger the snippet
+    "body": [
+        "// $1" // The text inserted at the start of the line
+    ],
+    "description": "Inserts text at the start of the current line"
+}
+
+
+}

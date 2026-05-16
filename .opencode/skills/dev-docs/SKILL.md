@@ -164,20 +164,50 @@ ADR format (copy from `archive/TEMPLATE.md`):
 
 Link the ADR from the corresponding `changelog.md` entry using a relative path: `archive/YYYY-MM-DD-short-title.md`.
 
-#### 5. Plan → ADR promotion (required for completed plans)
+---
 
-Once a plan in `dev-docs/plans/` is fully executed, it MUST be moved to `archive/`. This keeps `plans/` as a signal of future/present direction only.
+## Mode: archive-plan
 
-1. Move the plan file from `plans/` to `archive/YYYY-MM-DD-short-title.md`.
-2. Prepend a completion note. Use a **full ADR** (Context/Decision/Alternatives/Consequences) for architecture-changing decisions (schema changes, renderer contracts, build pipeline). Use a **short completion note** (`> **Completion note:** ...`) for straightforward feature work.
-3. Remove the item from `roadmap.md` (if it was listed there) — completed items go in changelog only.
-4. Add a `changelog.md` entry referencing the archive path: `- **Archive:** archive/YYYY-MM-DD-short-title.md`
-5. Remove the plan from `plans/` directory.
+Use when a PRD in `dev-docs/plans/` has been fully executed and needs to be archived. This is a strict ordered workflow — do not skip steps, do not reorder.
+
+### Steps
+
+#### 1. Prepend an ADR-style completion note to the plan file
+
+Open the plan file from `dev-docs/plans/`. Prepend a blockquote with the completion context:
+
+```
+> **Completion note (YYYY-MM-DD):**
+> - What was built: brief summary
+> - Key decisions: 1-2 bullet points on design choices made during implementation
+> - Deviations from plan: anything that changed from the original PRD
+> - Postponed: items explicitly deferred (link to roadmap if applicable)
+```
+
+For architecture-changing decisions (schema changes, renderer contracts, build pipeline), write a full ADR (Context/Decision/Alternatives/Consequences) instead of a short note.
+
+#### 2. Promote to archive
+
+Move the plan file from `dev-docs/plans/` to `dev-docs/archive/` using its current filename:
+
+```
+mv dev-docs/plans/{filename} dev-docs/archive/{filename}
+```
 
 > **Rule of thumb:** `plans/` = future intent or active work. `archive/` = what we already did. If a file is in `plans/`, the next agent should assume it's still relevant. If it's in `archive/`, it's history.
 
-#### 6. Report
+#### 3. Update the roadmap
 
-Summarize what was updated and why. Example:
+If the completed PRD was listed in `dev-docs/roadmap.md`:
+- Remove it from Now, Next, or Later — completed items do not stay in the roadmap.
+- If the PRD defined out-of-scope or deferred items ("Phase 2", "future work", explicit "later" notes), append them to the appropriate section in `roadmap.md`. Preserve the user's original phrasing — do not rewrite or summarize.
 
-> Updated `requirements.md` (new user story for search), added `changelog.md` entry, created ADR at `archive/2026-05-13-search-feature.md`.
+#### 4. Add a changelog entry
+
+Add a changelog entry to `dev-docs/changelog.md` following the changelog format rules (see Mode: update step 3 for format reference). Include:
+- **Archive:** reference linking to the archived file
+- **Files changed:** list of files modified during implementation
+
+#### 5. Report
+
+Summarize what was archived, what roadmap items were moved, and the changelog entry added.

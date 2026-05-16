@@ -82,16 +82,11 @@ The PRD file must exist in `dev-docs/plans/`.
 
 #### 1. Load the dev-docs skill
 
-Call `skill({ name: "dev-docs" })` and use its Mode: update workflow to:
-- Add a changelog entry for the completed PRD
-- Move the PRD from `plans/` to `archive/` with a completion note
-- Update `roadmap.md` (remove completed item from Now/Next, move "out of scope" or "later" items to Next/Later using the user's language)
+Call `skill({ name: "dev-docs" })` and run Mode: archive-plan. This handles the entire archival workflow — prepending an ADR-style completion note, promoting the PRD to `archive/`, updating the roadmap, and adding a changelog entry.
 
-#### 2. Handle out-of-scope / deferred items
+Do not deviate from the archive-plan workflow. Do not substitute Mode: update.
 
-If the PRD contains items marked as out of scope or deferred ("Phase 2", "future", "later"), append them to the appropriate section in `roadmap.md`. Preserve the user's original phrasing — do not rewrite or summarize.
-
-#### 3. Stage and commit
+#### 2. Stage and commit
 
 ```
 git add dev-docs/
@@ -101,7 +96,7 @@ git commit -m "{milestone}: {prd-number} - {short description}"
 # m4: prd0024 - isolate current product
 ```
 
-#### 4. Report
+#### 3. Report
 
 Summarize what was archived, what roadmap items were moved, and the commit message used.
 

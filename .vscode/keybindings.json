@@ -1,0 +1,8 @@
+// reminder that this didn't work and the keybinding below was configured via preferences keyboard shortcuts
+
+[
+  {
+    "key": "alt+cmd+n",
+    "command": "explorer.newFile"
+  }
+]
