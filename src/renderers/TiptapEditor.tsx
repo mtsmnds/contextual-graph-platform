@@ -208,9 +208,9 @@ function TiptapEditor({ content, title, onSave, onTitleChange }: TiptapEditorPro
           items: ({ query }) => {
             const state = useGraphStore.getState()
             return getRootContainers(state)
-              .filter((e) => e.title?.toLowerCase().includes(query.toLowerCase()))
+              .filter((e) => e.content.toLowerCase().includes(query.toLowerCase()))
               .slice(0, 5)
-              .map((e) => ({ id: e.id, label: e.title ?? e.id }))
+              .map((e) => ({ id: e.id, label: e.content || e.id }))
           },
           render: mentionSuggestionRenderer,
         },

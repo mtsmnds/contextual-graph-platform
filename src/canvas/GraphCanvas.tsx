@@ -18,14 +18,13 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
+import type { GraphSnapshot } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
-import NodeDialog from "./NodeDialog"
 import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
 import EntityNode from "./nodes/EntityNode"
-import type { EntityKind } from "../types/graph"
 
 const nodeTypes = { entity: EntityNode }
 
@@ -44,13 +43,6 @@ function GraphCanvasContent() {
   const reactFlowInstance = useReactFlow()
   const storeInit = useGraphStore((s) => s.init)
   const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
-
-  const [nodeDialog, setNodeDialog] = useState<{
-    mode: "create" | "edit"
-    entityId?: string
-    initialTitle?: string
-    initialKind?: EntityKind
-  } | null>(null)
 
   const [edgeDialog, setEdgeDialog] = useState<{
     edgeId: string
@@ -138,39 +130,20 @@ function GraphCanvasContent() {
     [],
   )
 
-  const onNodeDoubleClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      const entity = entities.find((e) => e.id === node.id)
-      if (entity) {
-        setNodeDialog({
-          mode: "edit",
-          entityId: entity.id,
-          initialTitle: entity.title ?? "",
-          initialKind: entity.kind,
-        })
-      }
-    },
-    [entities],
-  )
-
-  const handleNodeDialogConfirm = useCallback(
-    (title: string, kind: EntityKind) => {
-      if (nodeDialog?.mode === "create") {
-        const id = useGraphStore.getState().addEntity(kind, { title: title || undefined })
-        const viewport = reactFlowInstance.screenToFlowPosition({
-          x: window.innerWidth / 2,
-          y: window.innerHeight / 2,
-        })
-        setNodes((nds) =>
-          nds.map((n) => (n.id === id ? { ...n, position: viewport } : n)),
-        )
-      } else if (nodeDialog?.mode === "edit" && nodeDialog.entityId) {
-        useGraphStore.getState().updateEntity(nodeDialog.entityId, { title, kind })
-      }
-      setNodeDialog(null)
-    },
-    [nodeDialog, reactFlowInstance, setNodes],
-  )
+  const createNodeAtCenter = useCallback(() => {
+    const id = useGraphStore.getState().addEntity("concept")
+    const viewport = reactFlowInstance.screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    })
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === id
+          ? { ...n, position: viewport, data: { ...n.data, editTrigger: 1 } }
+          : n,
+      ),
+    )
+  }, [reactFlowInstance, setNodes])
 
   const onEdgeDoubleClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
@@ -228,14 +201,14 @@ function GraphCanvasContent() {
           {
             label: "Edit",
             action: () => {
-              const entity = entities.find((e) => e.id === contextMenu.nodeId)
-              if (entity) {
-                setNodeDialog({
-                  mode: "edit",
-                  entityId: entity.id,
-                  initialTitle: entity.title ?? "",
-                  initialKind: entity.kind,
-                })
+              if (contextMenu.nodeId) {
+                setNodes((nds) =>
+                  nds.map((n) =>
+                    n.id === contextMenu.nodeId
+                      ? { ...n, data: { ...n.data, editTrigger: ((n.data.editTrigger as number) ?? 0) + 1 } }
+                      : n,
+                  ),
+                )
               }
             },
           },
@@ -276,15 +249,15 @@ function GraphCanvasContent() {
         return [
           {
             label: "New Node",
-            action: () => setNodeDialog({ mode: "create" }),
+            action: () => createNodeAtCenter(),
           },
         ]
     }
-  }, [contextMenu, entities, relations])
+  }, [contextMenu, entities, relations, setNodes])
 
   const onCreateNode = useCallback(() => {
-    setNodeDialog({ mode: "create" })
-  }, [])
+    createNodeAtCenter()
+  }, [createNodeAtCenter])
 
   const onOpenFolder = useCallback(async () => {
     const fsa = getFSAccessInstance()
@@ -297,7 +270,7 @@ function GraphCanvasContent() {
       await storeInit(fsa)
     } else {
       const state = useGraphStore.getState()
-      const snapshot = { version: 2 as const, entities: state.entities, relations: state.relations }
+      const snapshot: GraphSnapshot = { version: 3, entities: state.entities, relations: state.relations }
       await fsa.saveGraph(snapshot)
       for (const entity of state.entities) {
         if (entity.kind === "container") {
@@ -332,7 +305,6 @@ function GraphCanvasContent() {
       onEdgesDelete={onEdgesDelete}
       onBeforeDelete={onBeforeDelete}
       onNodesDelete={onNodesDelete}
-      onNodeDoubleClick={onNodeDoubleClick}
       onEdgeDoubleClick={onEdgeDoubleClick}
       onNodeContextMenu={onNodeContextMenu}
       onEdgeContextMenu={onEdgeContextMenu}
@@ -376,14 +348,6 @@ function GraphCanvasContent() {
           </Button>
         </ButtonGroup>
       </Panel>
-      <NodeDialog
-        open={nodeDialog !== null}
-        mode={nodeDialog?.mode ?? "create"}
-        initialTitle={nodeDialog?.initialTitle}
-        initialKind={nodeDialog?.initialKind}
-        onConfirm={handleNodeDialogConfirm}
-        onCancel={() => setNodeDialog(null)}
-      />
       <EdgeDialog
         open={edgeDialog !== null}
         initialType={edgeDialog?.initialType}

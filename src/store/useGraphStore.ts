@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
 import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot } from "../types/graph";
 import { generateUniqueId } from "../engine/ids";
-import { SEED_DATA } from "../data/seed";
+import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import type { PersistenceAdapter } from "./persistence";
 
 let _adapter: PersistenceAdapter | null = null;
@@ -10,21 +10,47 @@ let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
-function migrateSnapshot(snapshot: GraphSnapshot): GraphSnapshot {
-  if (snapshot.version >= 2) return snapshot
-  const now = Date.now()
-  return {
-    version: 2,
-    entities: snapshot.entities.map((e) => ({
+function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relations: Relation[] }): GraphSnapshot {
+  let entities = snapshot.entities
+  let relations = snapshot.relations
+  let version = snapshot.version as number
+
+  if (version < 2) {
+    const now = Date.now()
+    entities = entities.map((e) => ({
       ...e,
       createdAt: e.createdAt ?? now,
       updatedAt: e.updatedAt ?? now,
-    })),
-    relations: snapshot.relations.map((r) => ({
+    }))
+    relations = relations.map((r) => ({
       ...r,
       sortOrder: r.sortOrder ?? generateKeyBetween(null, null),
-    })),
+    }))
+    version = 2
   }
+
+  if (version < 3) {
+    entities = entities.map((e) => {
+      const old = e as Record<string, unknown>
+      const oldTitle = old.title as string | undefined
+      const oldContent = old.content as string | undefined
+
+      if (oldTitle && oldContent) {
+        return {
+          ...e,
+          content: oldContent,
+          metadata: { ...e.metadata, title: oldTitle },
+        } as Entity
+      }
+      return {
+        ...e,
+        content: oldContent || oldTitle || "",
+      } as Entity
+    }) as Entity[]
+    version = 3
+  }
+
+  return { version: version as 3, entities, relations }
 }
 
 interface GraphStore {
@@ -89,31 +115,27 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         folderName: adapter.getFolderName(),
       });
     } else {
-      const cleanEntities = SEED_DATA.entities.map(
-        (e) => (e.kind === "container" ? { ...e, content: undefined } : e),
-      ) as Entity[];
+      const containers = SEED_DATA.entities.filter((e) => e.kind === "container")
 
-      for (const entity of SEED_DATA.entities) {
-        if (entity.kind === "container" && entity.content) {
-          const parsed = JSON.parse(entity.content) as Record<string, unknown>;
-          contentCache[entity.id] = parsed;
-          adapter.saveDocument(entity.id, parsed).catch(() => {});
+      for (const entity of containers) {
+        const doc = SEED_CONTAINER_CONTENT[entity.id]
+        if (doc) {
+          contentCache[entity.id] = doc
+          adapter.saveDocument(entity.id, doc).catch(() => {})
         }
       }
 
       const seedSnapshot: GraphSnapshot = {
-        version: 2,
-        entities: cleanEntities,
+        version: 3,
+        entities: SEED_DATA.entities,
         relations: SEED_DATA.relations,
       };
       adapter.saveGraph(seedSnapshot).catch(() => {});
 
       set({
-        entities: cleanEntities,
+        entities: SEED_DATA.entities,
         relations: SEED_DATA.relations,
-        contentLoaded: Object.fromEntries(
-          SEED_DATA.entities.filter((e) => e.kind === "container").map((e) => [e.id, true]),
-        ),
+        contentLoaded: Object.fromEntries(containers.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
       });
@@ -122,19 +144,19 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     _hydrated = true;
   },
 
-  addEntity: (kind: EntityKind, data = {}, parentId = null) => {
+  addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown> }, parentId: string | null = null) => {
     const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
     const siblingCount = parentId
       ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
       : 0;
-    const id = generateUniqueId(parentId, kind, data.title, existingIds, siblingCount);
+    const content = data?.content ?? ""
+    const id = generateUniqueId(parentId, kind, content || kind, existingIds, siblingCount);
     const now = Date.now();
     const entity: Entity = {
       id,
       kind,
-      title: kind === "segment" ? undefined : (data.title ?? kind),
-      content: kind === "container" ? undefined : data.content,
-      metadata: data.metadata ?? {},
+      content,
+      metadata: data?.metadata ?? {},
       createdAt: now,
       updatedAt: now,
     };
@@ -146,15 +168,10 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const current = get().entities.find((e: Entity) => e.id === id);
     if (!current) return;
 
-    let final = { ...data };
-
-    if (current.kind === "segment") delete final.title;
-    if (current.kind === "container") delete final.content;
-
     let resolvedId = id;
-    if (final.id && final.id !== id) {
+    if (data.id && data.id !== id) {
       const oldId = id;
-      resolvedId = final.id;
+      resolvedId = data.id;
       set((state: GraphStore) => ({
         relations: state.relations.map((r) => ({
           ...r,
@@ -167,7 +184,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => ({
       entities: state.entities.map((e) =>
         e.id === resolvedId
-          ? { ...e, ...final, metadata: { ...e.metadata, ...(final.metadata ?? {}) }, updatedAt: Date.now() }
+          ? { ...e, ...data, metadata: { ...e.metadata, ...(data.metadata ?? {}) }, updatedAt: Date.now() }
           : e,
       ),
     }));
@@ -297,7 +314,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
           currentEntities.push({
             id: segmentId,
             kind: "annotation",
-            content: undefined,
+            content: "",
             metadata: { sourceContainer: id, label },
             createdAt: now,
             updatedAt: now,
@@ -347,7 +364,7 @@ useGraphStore.subscribe((state, prevState) => {
 
   saveTimer = setTimeout(() => {
     const { entities, relations } = useGraphStore.getState();
-    const snapshot: GraphSnapshot = { version: 2, entities, relations };
+    const snapshot: GraphSnapshot = { version: 3, entities, relations };
     _adapter!.saveGraph(snapshot).catch((err) => {
       console.error("Failed to save graph:", err);
     });

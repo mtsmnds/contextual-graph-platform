@@ -39,7 +39,7 @@ export function AppSidebar() {
   )
 
   const handleNewPage = () => {
-    const id = addEntity("container", { title: "Untitled" })
+    const id = addEntity("container", { content: "Untitled" })
     focusEntity(id)
   }
 
@@ -116,7 +116,7 @@ export function AppSidebar() {
                     ) : (
                       <StickyNote />
                     )}
-                    <span>{entity.title ?? entity.id}</span>
+                    <span>{entity.content || entity.id}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

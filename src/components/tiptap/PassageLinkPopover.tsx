@@ -62,7 +62,7 @@ export function PassageLinkPopover({ segmentId, anchorRect, onClose, onDeletePas
   const filteredDocs = useMemo(
     () =>
       docSearch
-        ? rootContainers.filter((e) => e.title?.toLowerCase().includes(docSearch.toLowerCase()))
+        ? rootContainers.filter((e) => e.content.toLowerCase().includes(docSearch.toLowerCase()))
         : rootContainers,
     [rootContainers, docSearch],
   )
@@ -206,7 +206,7 @@ export function PassageLinkPopover({ segmentId, anchorRect, onClose, onDeletePas
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors"
                 >
                   <FileTextIcon size={14} className="shrink-0 text-muted-foreground" />
-                  <span className="truncate">{doc.title ?? doc.id}</span>
+                  <span className="truncate">{doc.content || doc.id}</span>
                 </button>
               ))
             )}
