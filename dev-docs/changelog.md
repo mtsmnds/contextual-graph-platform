@@ -14,6 +14,16 @@ Use this to recover context after breaks.
 
 ## 2026-05-16
 
+### m4 - i1 - p6 - edge editing labels context menus - prd0028b
+- * Added `updateRelation` to store. Created `EdgeDialog.tsx` (Base UI Dialog for relation type + sortOrder). Created `GraphContextMenu.tsx` (manually-positioned menu, no Radix trigger-wrapper conflicts). Wired `onEdgeDoubleClick`, `onNodeContextMenu`, `onEdgeContextMenu`, `onPaneContextMenu` in GraphCanvas. Added CSS override (`.react-flow__edge-label`) for always-visible edge labels.
+- **Files changed:**
+  - `src/store/useGraphStore.ts`: Added `updateRelation` action
+  - `src/canvas/EdgeDialog.tsx`: **New** — edit relation type + sortOrder dialog
+  - `src/canvas/GraphContextMenu.tsx`: **New** — manual positioned context menu
+  - `src/canvas/GraphCanvas.tsx`: Wired edge editing, context menu events, dialog renders
+  - `src/index.css`: Added edge label CSS override
+- **Archive:** `dev-docs/archive/m4-prd0028b-edge-editing-context-menus.md`
+
 ### m4 - i1 - p5 - node crud - prd0028a
 - * Created `NodeDialog.tsx` (Base UI Dialog with title input + EntityKind selector). Wired `onNodeDoubleClick` → edit dialog, "New Node" Panel button → create dialog, `onBeforeDelete` + `onNodesDelete` → select+Backspace delete. Added `ReactFlowProvider` wrapper for `useReactFlow` context. New nodes placed at viewport center via `screenToFlowPosition`. Removed `onDoubleClick` pane handler (conflicted with `onNodeDoubleClick` event ordering).
 - **Files changed:**

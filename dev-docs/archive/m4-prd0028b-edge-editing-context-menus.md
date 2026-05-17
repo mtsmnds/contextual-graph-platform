@@ -1,3 +1,8 @@
+> **Completion note (2026-05-16):**
+> - **What was built:** Added `updateRelation` to store. Created `EdgeDialog.tsx` (Base UI Dialog for relation type + sortOrder). Created `GraphContextMenu.tsx` (manually-positioned menu, no Radix/trigger-wrapper conflicts). Wired `onEdgeDoubleClick`, `onNodeContextMenu`, `onEdgeContextMenu`, `onPaneContextMenu` in `GraphCanvas.tsx`. Added CSS override for always-visible edge labels.
+> - **Key decisions:** Manual context menu div avoids Radix trigger-wrapper conflict with React Flow's pointer events. Edge labels always visible via CSS (no custom edge component needed). `updateRelation` matches `updateEntity` pattern with metadata merge.
+> - **Deviations from plan:** None.
+
 ## Task: Edge editing, always-visible labels, context menus
 
 ### Context
