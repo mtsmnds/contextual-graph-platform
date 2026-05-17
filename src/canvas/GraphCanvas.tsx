@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from "react"
+import { useRef, useEffect, useCallback, useMemo, useState } from "react"
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -18,6 +18,8 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getLayoutedElements } from "../engine/layout"
 import NodeDialog from "./NodeDialog"
+import EdgeDialog from "./EdgeDialog"
+import GraphContextMenu from "./GraphContextMenu"
 import type { EntityKind } from "../types/graph"
 
 function GraphCanvasContent() {
@@ -39,6 +41,20 @@ function GraphCanvasContent() {
     entityId?: string
     initialTitle?: string
     initialKind?: EntityKind
+  } | null>(null)
+
+  const [edgeDialog, setEdgeDialog] = useState<{
+    edgeId: string
+    initialType?: string
+    initialSortOrder?: string
+  } | null>(null)
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    type: "node" | "edge" | "pane"
+    nodeId?: string
+    edgeId?: string
   } | null>(null)
 
   useEffect(() => {
@@ -147,6 +163,116 @@ function GraphCanvasContent() {
     [nodeDialog, reactFlowInstance, setNodes],
   )
 
+  const onEdgeDoubleClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      const rel = relations.find((r) => r.id === edge.id)
+      if (rel) {
+        setEdgeDialog({
+          edgeId: rel.id,
+          initialType: rel.type,
+          initialSortOrder: rel.sortOrder,
+        })
+      }
+    },
+    [relations],
+  )
+
+  const handleEdgeDialogConfirm = useCallback(
+    (type: string, sortOrder: string) => {
+      if (edgeDialog) {
+        useGraphStore.getState().updateRelation(edgeDialog.edgeId, { type, sortOrder })
+      }
+      setEdgeDialog(null)
+    },
+    [edgeDialog],
+  )
+
+  const onNodeContextMenu = useCallback(
+    (e: React.MouseEvent, node: Node) => {
+      e.preventDefault()
+      setContextMenu({ x: e.clientX, y: e.clientY, type: "node", nodeId: node.id })
+    },
+    [],
+  )
+
+  const onEdgeContextMenu = useCallback(
+    (e: React.MouseEvent, edge: Edge) => {
+      e.preventDefault()
+      setContextMenu({ x: e.clientX, y: e.clientY, type: "edge", edgeId: edge.id })
+    },
+    [],
+  )
+
+  const onPaneContextMenu = useCallback(
+    (e: MouseEvent | React.MouseEvent<Element, MouseEvent>) => {
+      e.preventDefault()
+      setContextMenu({ x: e.clientX, y: e.clientY, type: "pane" })
+    },
+    [],
+  )
+
+  const contextMenuItems = useMemo(() => {
+    if (!contextMenu) return []
+    switch (contextMenu.type) {
+      case "node":
+        return [
+          {
+            label: "Edit",
+            action: () => {
+              const entity = entities.find((e) => e.id === contextMenu.nodeId)
+              if (entity) {
+                setNodeDialog({
+                  mode: "edit",
+                  entityId: entity.id,
+                  initialTitle: entity.title ?? "",
+                  initialKind: entity.kind,
+                })
+              }
+            },
+          },
+          {
+            label: "Delete",
+            action: () => {
+              if (contextMenu.nodeId) {
+                useGraphStore.getState().deleteEntity(contextMenu.nodeId)
+              }
+            },
+          },
+        ]
+      case "edge":
+        return [
+          {
+            label: "Edit Relation",
+            action: () => {
+              const rel = relations.find((r) => r.id === contextMenu.edgeId)
+              if (rel) {
+                setEdgeDialog({
+                  edgeId: rel.id,
+                  initialType: rel.type,
+                  initialSortOrder: rel.sortOrder,
+                })
+              }
+            },
+          },
+          {
+            label: "Delete Edge",
+            action: () => {
+              if (contextMenu.edgeId) {
+                useGraphStore.getState().removeRelation(contextMenu.edgeId)
+              }
+            },
+          },
+        ]
+      case "pane":
+        return [
+          {
+            label: "New Node",
+            action: () => setNodeDialog({ mode: "create" }),
+          },
+        ]
+    }
+  }, [contextMenu, entities, relations])
+
   const onCreateNode = useCallback(() => {
     setNodeDialog({ mode: "create" })
   }, [])
@@ -169,6 +295,10 @@ function GraphCanvasContent() {
       onBeforeDelete={onBeforeDelete}
       onNodesDelete={onNodesDelete}
       onNodeDoubleClick={onNodeDoubleClick}
+      onEdgeDoubleClick={onEdgeDoubleClick}
+      onNodeContextMenu={onNodeContextMenu}
+      onEdgeContextMenu={onEdgeContextMenu}
+      onPaneContextMenu={onPaneContextMenu}
       fitView
       snapToGrid
       snapGrid={[15, 15]}
@@ -201,6 +331,20 @@ function GraphCanvasContent() {
         initialKind={nodeDialog?.initialKind}
         onConfirm={handleNodeDialogConfirm}
         onCancel={() => setNodeDialog(null)}
+      />
+      <EdgeDialog
+        open={edgeDialog !== null}
+        initialType={edgeDialog?.initialType}
+        initialSortOrder={edgeDialog?.initialSortOrder}
+        onConfirm={handleEdgeDialogConfirm}
+        onCancel={() => setEdgeDialog(null)}
+      />
+      <GraphContextMenu
+        open={contextMenu !== null}
+        x={contextMenu?.x ?? 0}
+        y={contextMenu?.y ?? 0}
+        items={contextMenuItems}
+        onClose={() => setContextMenu(null)}
       />
     </ReactFlow>
   )

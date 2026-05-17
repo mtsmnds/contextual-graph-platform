@@ -245,3 +245,10 @@ body {
   width: 100%;
   height: 100%;
 }
+
+.react-flow__edge-label {
+  font-size: 10px;
+  opacity: 1 !important;
+  pointer-events: auto;
+  cursor: pointer;
+}

@@ -23,6 +23,7 @@ interface GraphStore {
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => string;
+  updateRelation: (id: string, patch: Partial<Relation>) => void;
   removeRelation: (id: string) => void;
   getEdgesForNode: (id: string, direction?: "in" | "out" | "both") => Relation[];
   queryThread: (filter: { target: string; relationType: string }) => Entity[];
@@ -173,6 +174,16 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   removeRelation: (id: string) => {
     set((state: GraphStore) => ({ relations: state.relations.filter((r) => r.id !== id) }));
+  },
+
+  updateRelation: (id: string, patch: Partial<Relation>) => {
+    set((state: GraphStore) => ({
+      relations: state.relations.map((r) =>
+        r.id === id
+          ? { ...r, ...patch, metadata: { ...r.metadata, ...(patch.metadata ?? {}) } }
+          : r,
+      ),
+    }));
   },
 
   getEdgesForNode: (id: string, direction: "in" | "out" | "both" = "both") => {
