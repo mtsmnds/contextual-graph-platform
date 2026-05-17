@@ -99,62 +99,14 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
       <NodeResizeControl
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
-        position={Position.Top}
+        position={Position.Left}
         minWidth={60}
-        minHeight={45}
       />
       <NodeResizeControl
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Right}
         minWidth={60}
-        minHeight={45}
-      />
-      <NodeResizeControl
-        nodeId={nodeId ?? undefined}
-        variant={ResizeControlVariant.Line}
-        position={Position.Bottom}
-        minWidth={60}
-        minHeight={45}
-      />
-      <NodeResizeControl
-        nodeId={nodeId ?? undefined}
-        variant={ResizeControlVariant.Line}
-        position={Position.Left}
-        minWidth={60}
-        minHeight={45}
-      />
-      <NodeResizeControl
-        nodeId={nodeId ?? undefined}
-        variant={ResizeControlVariant.Handle}
-        position={Position.Top}
-        resizeDirection="vertical"
-        minWidth={60}
-        minHeight={45}
-      />
-      <NodeResizeControl
-        nodeId={nodeId ?? undefined}
-        variant={ResizeControlVariant.Handle}
-        position={Position.Right}
-        resizeDirection="horizontal"
-        minWidth={60}
-        minHeight={45}
-      />
-      <NodeResizeControl
-        nodeId={nodeId ?? undefined}
-        variant={ResizeControlVariant.Handle}
-        position={Position.Bottom}
-        resizeDirection="vertical"
-        minWidth={60}
-        minHeight={45}
-      />
-      <NodeResizeControl
-        nodeId={nodeId ?? undefined}
-        variant={ResizeControlVariant.Handle}
-        position={Position.Left}
-        resizeDirection="horizontal"
-        minWidth={60}
-        minHeight={45}
       />
       <BaseNode className="w-full" onDoubleClick={handleDoubleClick}>
         <BaseNodeHeader>

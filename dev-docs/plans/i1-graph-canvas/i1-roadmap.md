@@ -32,6 +32,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
 - add claude design skill https://github.com/anthropics/claude-code/blob/main/plugins/frontend-design/skills/frontend-design/SKILL.md
 - **prd0032** - resizing and edge handles
   - decide handle design and or node edge conection behavior and implement
+  - fix node resizing - remove top and bottom resizing (node height governed by textarea)
 
 
 ### now

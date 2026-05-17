@@ -286,13 +286,8 @@ body {
   --xy-handle-border-color: var(--muted-foreground);
 }
 
-.react-flow__resize-control.handle,
 .react-flow__resize-control.line {
   opacity: 0;
-}
-
-.react-flow__resize-control.handle,
-.react-flow__resize-control.line {
   pointer-events: auto;
 }
 
@@ -306,16 +301,8 @@ body {
   left: -8px;
 }
 
-.react-flow__resize-control.line.top:hover,
-.react-flow__resize-control.handle.top:hover,
-.react-flow__resize-control.line.bottom:hover,
-.react-flow__resize-control.handle.bottom:hover {
-  cursor: ns-resize !important;
-}
 .react-flow__resize-control.line.right:hover,
-.react-flow__resize-control.handle.right:hover,
-.react-flow__resize-control.line.left:hover,
-.react-flow__resize-control.handle.left:hover {
+.react-flow__resize-control.line.left:hover {
   cursor: ew-resize !important;
 }
 
