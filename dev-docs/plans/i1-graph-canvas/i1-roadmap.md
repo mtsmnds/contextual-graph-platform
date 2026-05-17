@@ -31,7 +31,9 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 ### now
 
-- prd0030 - editing text within nodes
+- **prd0030** - editing text within nodes
+- add claude design skill https://github.com/anthropics/claude-code/blob/main/plugins/frontend-design/skills/frontend-design/SKILL.md
+- resizing
 - test if local storage is storing (i couldn't verify) (use ~/Code/hello2)
 
 - decide handle design and or node edge conection behavior and implement
