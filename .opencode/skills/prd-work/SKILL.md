@@ -9,12 +9,13 @@ compatibility: opencode
 
 Manages the lifecycle of a PRD from branch creation through completion and merge. Each PRD that involves code changes gets its own branch. Pure docs/research stays on `main`.
 
+Branches are **stacked**: each new PRD branches from the previous PRD's branch (not from `main`). This keeps diffs clean and dependencies clear. Merging happens in order — merge the lowest-numbered PRD first, then each subsequent PRD merges into `main` (or the prior merged branch).
+
 ## Commands
 
-- `/prd-work --start <prd-number>` — Create branch from main, begin implementation
-- `/prd-work --finish`             — Update docs (via dev-docs skill), archive PRD, commit
-- `/prd-work --merge`              — Merge current branch into main
-
+- `/prd-work --start <prd-number>` — Create stacked branch, begin implementation
+- `/prd-work --finish`             — Archive PRD, update docs, commit code + docs
+- `/prd-work --merge`              — Merge current branch into main (or into previous branch)
 
 ## Branch naming
 
@@ -22,9 +23,17 @@ Manages the lifecycle of a PRD from branch creation through completion and merge
 {milestone}-{prd-number}-{kebab-description}
 ```
 
-Examples: `m4-prd0024-isolate-product`, `m3-prd0021-passage-anchor-marks`
+Examples: `m4-prd0024-isolate-product`, `m4-prd0025-schema-sortorder`
 
-Branches are created from `main` and merged back into `main`.
+## Stacking rule
+
+Each new PRD branch is created from the **previous** unmerged PRD branch, not from `main`:
+
+```
+main → m4-prd0024-xxx → m4-prd0025-xxx → m4-prd0026-xxx → ...
+```
+
+A branch IS the cumulative diff of all prior PRDs in the stack. When merging, merge PRD0024 → main, then PRD0025 → main (or PRD0025 → main if PRD0024 was already merged).
 
 ## PRD file naming
 
@@ -33,12 +42,13 @@ Branches are created from `main` and merged back into `main`.
 ## Lifecycle
 
 ```
-start → work (iterative) → finish → merge
+start → work (iterative, commit as you go) → finish (archive + docs cleanup commit) → merge
 ```
 
-- **start**: create branch from main, then work on the PRD
-- **finish**: archive PRD, update changelog + roadmap, commit docs
-- **merge**: integrate branch into main
+- **start**: determine parent branch (prior PRD or main), branch off it, begin implementation
+- **work**: commit code and docs changes incrementally during implementation
+- **finish**: update changelog/roadmap, archive PRD file, add a final cleanup commit
+- **merge**: integrate into main
 
 ## How to use
 
@@ -57,16 +67,21 @@ Use when beginning work on a new PRD. Creates the branch then proceeds to implem
 
 2. **Derive the branch name** from the filename:
    - Strip `.md` extension → `{milestone}-{prd-number}-{description}`
-   - Example: `m4-prd0024-isolate-product`
+   - Example: `m4-prd0025-schema-sortorder`
 
-3. **Create the branch** from `main`:
+3. **Determine the parent branch** (stacking):
+   - List existing branches: `git branch --list | sort`
+   - Find the branch with the highest PRD number that's lower than the current PRD number, same milestone, and not yet merged into `main`.
+   - If it exists, use it as the parent. If not, use `main`.
+   - Example: starting PRD0025, if `m4-prd0024-isolate-product` exists, branch from it (not main).
+
+4. **Create the branch** from the parent:
    ```
-   git checkout main
-   git pull origin main
+   git checkout {parent-branch}
    git checkout -b {branch-name}
    ```
 
-4. **Work on the PRD.** The branch is now active. Proceed to implement the PRD — read the plan, write code, create files, etc. Do not stop after creating the branch.
+5. **Work on the PRD.** The branch is now active. Proceed to implement the PRD — read the plan, write code, create files, etc. Commit as you go during implementation. Do not wait until finish to commit code changes.
 
 ---
 
@@ -88,13 +103,17 @@ Do not deviate from the archive-plan workflow. Do not substitute Mode: update.
 
 #### 2. Stage and commit
 
+Stage all changed files — both `dev-docs/` and code — then commit.
+
 ```
-git add dev-docs/
+git add -A
 git commit -m "{milestone}: {prd-number} - {short description}"
 
 # example:
-# m4: prd0024 - isolate current product
+# m4: prd0025 - schema sortOrder queryThread
 ```
+
+If you committed code incrementally during the work phase, the diff may be small (just the docs changes). If you didn't commit during work, this commit captures everything.
 
 #### 3. Report
 
@@ -104,20 +123,21 @@ Summarize what was archived, what roadmap items were moved, and the commit messa
 
 ## Mode: merge
 
-Use to integrate a finished PRD branch into `main`.
+Use to integrate a finished PRD branch into `main`. In a stacked workflow, merge the lowest-numbered (most base) branch first, then merge subsequent branches.
 
 ### Steps
 
 1. **Verify the branch is finished.** Confirm the PRD file has been archived (no longer in `plans/`). If not, run Mode: finish first.
 
-2. **Merge into main:**
+2. **Determine merge target.** If this is the first PRD in the stack to be merged, target is `main`. If a lower-numbered PRD was already merged, this branch's changes are already on `main` — just verify and clean up.
+
+3. **Merge into main:**
    ```
    git checkout main
    git pull origin main
-   git merge {branch-name}
-   git push origin main
+   git merge {branch-name} --no-ff
    ```
 
-3. **Post-merge (branch stays).** The branch is kept locally for reference — do not delete it.
+4. **Post-merge (branch stays).** The branch is kept locally for reference — do not delete it.
 
-4. **Report.** Confirm the merge completed and the branch still exists locally.
+5. **Report.** Confirm the merge completed, the branch still exists locally, and note any stacking dependencies.
