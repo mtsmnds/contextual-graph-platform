@@ -259,5 +259,34 @@ body {
   bottom: calc(26px + 16px) !important;
 }
 
+.react-flow__handle {
+  z-index: 10;
+}
+.react-flow__handle::before {
+  content: '';
+  position: absolute;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  top: -6px;
+  left: -6px;
+}
+
+.react-flow__resize-control.handle[data-handlepos*="top"]:hover,
+.react-flow__resize-control.handle[data-handlepos*="bottom"]:hover {
+  cursor: ns-resize !important;
+}
+.react-flow__resize-control.handle[data-handlepos*="left"]:hover,
+.react-flow__resize-control.handle[data-handlepos*="right"]:hover {
+  cursor: ew-resize !important;
+}
+.react-flow__resize-control.handle[data-handlepos="top-left"]:hover,
+.react-flow__resize-control.handle[data-handlepos="bottom-right"]:hover {
+  cursor: nwse-resize !important;
+}
+.react-flow__resize-control.handle[data-handlepos="top-right"]:hover,
+.react-flow__resize-control.handle[data-handlepos="bottom-left"]:hover {
+  cursor: nesw-resize !important;
+}
+
 
 
