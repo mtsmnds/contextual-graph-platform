@@ -14,6 +14,16 @@ Use this to recover context after breaks.
 
 ## 2026-05-16
 
+### m4 - i1 - p3 - reactflow starter kit - prd0026
+- * Created `src/canvas/GraphCanvas.tsx` — controlled React Flow with `Background` (dots, gap 16, size 1.5), `Controls`, `MiniMap`, snap-to-grid. Created `src/engine/layout.ts` — converts store entities/relations to React Flow nodes/edges via Dagre LR layout. Replaced workspace placeholder `<h1>` in `WorkspaceRoot.tsx` with GraphCanvas. Installed `@dagrejs/dagre`. No custom components — only built-in `"default"` node types. React Flow is a view, not source of truth.
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: **New** — React Flow component with Background/Controls/MiniMap
+  - `src/engine/layout.ts`: **New** — Dagre LR layout engine
+  - `src/routes/WorkspaceRoot.tsx`: Replaced placeholder h1 with GraphCanvas
+  - `src/index.css`: Added `.react-flow`/`.react-flow-wrapper` height styles
+  - `package.json`: Added `@dagrejs/dagre`
+- **Archive:** `dev-docs/archive/m4-prd0026-reactflow-starter.md`
+
 ### m4 - i1 - p2 - schema sortorder querythread - prd0025
 - * Replaced `RelationType` union with free-form `string` on `Relation.type`. Added `sortOrder: string` to `Relation` using fractional-indexing (`fractional-indexing` package, `generateKeyBetween`). Added `createdAt: number` and `updatedAt: number` to `Entity`. Removed `"next"` relation type entirely — ordering is now `sortOrder` scoped to `(targetId, type)`. Removed `getSequentialContext` from query engine (was built on `"next"`). Replaced `next`-chain walk in `getContainerChildren` with `sortOrder`-based sort on `contains` relations. Extended `addRelation` to auto-generate `sortOrder` (optional 5th param to override). `addEntity`/`updateEntity` now manage `createdAt`/`updatedAt`. Added `getEdgesForNode(id, direction?)` and `queryThread({ target, relationType })` to the store. GraphSnapshot version bumped to `2`. No data migration needed — `sortOrder` is populated on first edit for existing relations.
 - **Files changed:**

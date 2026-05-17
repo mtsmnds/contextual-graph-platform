@@ -1,3 +1,8 @@
+> **Completion note (2026-05-16):**
+> - **What was built:** Created `src/engine/layout.ts` (Dagre LR layout for entities/relations → React Flow nodes/edges), `src/canvas/GraphCanvas.tsx` (controlled React Flow with Background dots, Controls, MiniMap, snapToGrid). Wired into `WorkspaceRoot.tsx` replacing the placeholder. Installed `@dagrejs/dagre`. No custom node/edge types — all built-in `"default"`.
+> - **Key decisions:** Default nodes only — no custom components yet. Layout direction LR (left-to-right). Dagre handles all positioning; store is source of truth, React Flow is a view.
+> - **Deviations from plan:** None.
+
 ## Task: React Flow starter kit — render the graph
 
 ### Context
