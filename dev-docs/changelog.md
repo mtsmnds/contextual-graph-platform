@@ -12,6 +12,17 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-16
+
+### m4 - i1 - p1 - add routing - isolate product - prd0024
+- * Installed `react-router-dom`. Moved current `App()` function and all its imports into `src/routes/LegacyApp.tsx` (mounted at `/tiptap-editor-test`). Created `src/routes/WorkspaceRoot.tsx` as a placeholder shell at `/` with the same SidebarProvider/AppSidebar layout and adapter initialization. `App.tsx` is now a thin `<BrowserRouter><Routes>...</Routes></BrowserRouter>` shell. No component, store, engine, or renderer code was modified.
+- **Files changed:**
+  - `src/App.tsx`: Rewritten — thin router shell with two routes
+  - `src/routes/LegacyApp.tsx`: **New** — exact copy of previous App() (query params, store init, sidebar, ReadingViewport/HomePage toggle)
+  - `src/routes/WorkspaceRoot.tsx`: **New** — placeholder shell with SidebarProvider, AppSidebar, centered "Workspace" heading
+  - `package.json`: Added `react-router-dom` dependency (react-router, react-router-dom, @remix-run/router, set-cookie-parser)
+- **Archive:** `dev-docs/archive/m4-prd0024-(i1).md`
+
 ## 2026-05-15
 
 ### m3 - p2 - cross-document passage linking - quote type - prd0022

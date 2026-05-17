@@ -15,27 +15,21 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 ---
 
-## Phase I — Isolate Product
+## ✅ Phase I — Isolate Product (Complete)
 
-### Now (m4)
+PRD0024: Installed react-router-dom, extracted legacy app to `/tiptap-editor-test`, created workspace shell at `/`. All three steps (I.1–I.3) done in one pass.
 
-- **I.1** PRD0024 — Add react-router, extract legacy app to `/tiptap-editor-test`, create workspace shell at `/`
-- **I.2** Extract editor into own route — clean module boundary, canvas route doesn't import editor code
-- **I.3** Create root shell — share SidebarProvider between routes, canvas placeholder in main area
-- **I.4** ~~Install MongoDB / migrate from DexieJS~~ → **Moved to Later** — build data API against DexieJS first
-
-### Next
-
-- Transition to Phase II
+- **I.4** MongoDB / DexieJS migration → **Moved to Later**
 
 ---
 
 ## Phase II — Graph Canvas
 
-### Now (m5)
+### Now
 
-- **II.5** Schema alignment — add `sortOrder` to `Relation` type, align `Entity`/`Relation` with proposed `Node`/`Edge`
-- **II.6** Data API — `createNode`, `updateNode`, `deleteNode`, `createEdge`, `deleteEdge`, `getEdgesForNode`, `queryThread`
+- Transition to Phase II (next PRD)
+- **II.5** Schema alignment — add `sortOrder` to `Relation` type, adopt fractional-indexing for edge ordering
+- **II.6** Data API — extend `useGraphStore` with `getEdgesForNode`, `queryThread`
 - **II.7** Install React Flow — render static graph with Dagre layout
 
 ### Next (m6)
@@ -54,7 +48,6 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 ## Notes
 
-- MongoDB question deferred — build data API against existing IndexedDB/DexieJS adapter, swap persistence later
 - `sortOrder` on relations is the key schema gap between current `Entity`/`Relation` and proposed `Node`/`Edge`
 - Thread view starts as plain text blocks — Tiptap integration comes after m3 converges
 - Data API wraps Zustand store initially; can be extracted into standalone query layer later
