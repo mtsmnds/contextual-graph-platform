@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
+import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
 import NodeDialog from "./NodeDialog"
 import EdgeDialog from "./EdgeDialog"
@@ -35,6 +36,8 @@ function GraphCanvasContent() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutRef.current.edges)
 
   const reactFlowInstance = useReactFlow()
+  const storeInit = useGraphStore((s) => s.init)
+  const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
 
   const [nodeDialog, setNodeDialog] = useState<{
     mode: "create" | "edit"
@@ -277,6 +280,30 @@ function GraphCanvasContent() {
     setNodeDialog({ mode: "create" })
   }, [])
 
+  const onOpenFolder = useCallback(async () => {
+    const fsa = getFSAccessInstance()
+    const picked = await fsa.initFromPicker()
+    if (!picked) return
+
+    const existing = await fsa.loadWorkspace()
+    if (existing) {
+      setAdapter(fsa)
+      await storeInit(fsa)
+    } else {
+      const state = useGraphStore.getState()
+      const snapshot = { version: 2 as const, entities: state.entities, relations: state.relations }
+      await fsa.saveGraph(snapshot)
+      for (const entity of state.entities) {
+        if (entity.kind === "container") {
+          const content = state.getContent(entity.id)
+          if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
+        }
+      }
+      setAdapter(fsa)
+      refreshFolderName()
+    }
+  }, [storeInit, refreshFolderName])
+
   const onRelayout = useCallback(() => {
     const { entities, relations } = useGraphStore.getState()
     const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
@@ -315,6 +342,12 @@ function GraphCanvasContent() {
             className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
           >
             New Node
+          </button>
+          <button
+            onClick={onOpenFolder}
+            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
+          >
+            Open Folder
           </button>
           <button
             onClick={onRelayout}

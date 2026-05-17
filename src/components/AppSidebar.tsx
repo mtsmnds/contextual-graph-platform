@@ -54,7 +54,7 @@ export function AppSidebar() {
       await init(fsa)
     } else {
       const state = useGraphStore.getState()
-      const snapshot = { version: 1 as const, entities: state.entities, relations: state.relations }
+      const snapshot = { version: 2 as const, entities: state.entities, relations: state.relations }
       await fsa.saveGraph(snapshot)
       for (const entity of state.entities) {
         if (entity.kind === "container") {

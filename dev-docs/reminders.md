@@ -13,6 +13,16 @@
   5. Update roadmap — move item to Recently Completed, promote next item to Now
 -->
 
+- React Flow: `useReactFlow()` must be used inside `<ReactFlowProvider>`. Pattern: outer `GraphCanvas` wraps in `ReactFlowProvider`, inner `GraphCanvasContent` uses hooks.
+- React Flow: `onDoubleClick` is a native DOM event that fires after `onNodeDoubleClick`. Don't use both for conflicting state changes — use only `onNodeDoubleClick` for node interactions.
+- React Flow: Context menus via Radix/shadcn trigger-wrapper conflict with canvas pointer events. Use manual `<div>` positioning instead.
+- React Flow: `onBeforeDelete` returns a `Promise<boolean>` and fires before deletion. Use this for confirmation without the node vanishing prematurely.
+- Base UI Dialog: `Dialog` from `@/components/ui/dialog` is `@base-ui/react/dialog`, not Radix. No `AlertDialog` — just `Dialog` with `Header`/`Footer`/`Title`/`Description`.
+- FS Access handle persists in IndexedDB `react-roadmap-fs` database. Clear this to reset folder selection.
+- `showDirectoryPicker` requires a real user gesture (not programmatic click).
+- Edge labels CSS: `.react-flow__edge-label { opacity: 1 !important; pointer-events: auto; }` for always-visible labels.
+- Version 1→2 migration in `useGraphStore.init()` pads missing `createdAt`/`updatedAt`/`sortOrder`. Runs automatically on workspace load.
+
 
 - create a skill specializing in frontend react engineering
 

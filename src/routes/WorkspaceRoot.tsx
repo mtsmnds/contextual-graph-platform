@@ -1,11 +1,5 @@
 import { useEffect, useRef } from "react"
 import { useGraphStore } from "../store/useGraphStore"
-import { AppSidebar } from "@/components/AppSidebar"
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
 import { resolveAdapter } from "@/store/persistence"
 import GraphCanvas from "../canvas/GraphCanvas"
 
@@ -24,17 +18,9 @@ function WorkspaceRoot() {
   }, [init])
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b shrink-0">
-          <SidebarTrigger />
-        </div>
-        <div className="flex-1 min-h-0">
-          <GraphCanvas />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="w-full h-full">
+      <GraphCanvas />
+    </div>
   )
 }
 

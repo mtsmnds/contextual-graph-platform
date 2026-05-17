@@ -24,47 +24,16 @@ Use this to recover context after breaks.
   - `src/index.css`: Added edge label CSS override
 - **Archive:** `dev-docs/archive/m4-prd0028b-edge-editing-context-menus.md`
 
-### m4 - i1 - p5 - node crud - prd0028a
-- * Created `NodeDialog.tsx` (Base UI Dialog with title input + EntityKind selector). Wired `onNodeDoubleClick` → edit dialog, "New Node" Panel button → create dialog, `onBeforeDelete` + `onNodesDelete` → select+Backspace delete. Added `ReactFlowProvider` wrapper for `useReactFlow` context. New nodes placed at viewport center via `screenToFlowPosition`. Removed `onDoubleClick` pane handler (conflicted with `onNodeDoubleClick` event ordering).
+### m4 - i1 - p7 - data migration and ui cleanup
+- * Added version 1→2 migration in `useGraphStore.init()` — pads missing `createdAt`/`updatedAt` on entities, `sortOrder` on relations when loading old data. Removed sidebar and topbar from WorkspaceRoot — now a full-height canvas with only Panel buttons (New Node, Open Folder, Re-layout). Moved "Open Folder" button from AppSidebar into GraphCanvas Panel. Updated `dev-docs/architecture.md` module map, `AGENTS.md` key paths, `reminders.md` with React Flow/Base UI gotchas.
 - **Files changed:**
-  - `src/canvas/NodeDialog.tsx`: **New** — reusable Base UI Dialog for create/edit
-  - `src/canvas/GraphCanvas.tsx`: Added dialog state, NodeDialog, CRUD handlers, `ReactFlowProvider`, Panel buttons
-- **Archive:** `dev-docs/archive/m4-prd0028a-node-crud.md`
-
-### m4 - i1 - p4 - reactflow interactivity - prd0027
-- * Refactored `GraphCanvas.tsx`: ref-capture layout (no useEffect guard), diff-based store sync with data merge (preserves positions, refreshes labels on entity rename). Wired `onConnect` → `addRelation(source, target, "related_to")` (store-only, no optimistic local add — avoids double-write race). Wired `onEdgesDelete` → `removeRelation(id)`. `onNodesDelete` is a no-op (deferred to PRD0028). Added "Re-layout" button in `<Panel position="top-right">`. Enabled `deleteKeyCode` for edges only.
-- **Files changed:**
-  - `src/canvas/GraphCanvas.tsx`: Full refactor — ref-capture, diff sync, connect, edge delete, re-layout panel
-- **Archive:** `dev-docs/archive/m4-prd0027-reactflow-interactivity.md`
-
-### m4 - i1 - p3 - reactflow starter kit - prd0026
-- * Created `src/canvas/GraphCanvas.tsx` — controlled React Flow with `Background` (dots, gap 16, size 1.5), `Controls`, `MiniMap`, snap-to-grid. Created `src/engine/layout.ts` — converts store entities/relations to React Flow nodes/edges via Dagre LR layout. Replaced workspace placeholder `<h1>` in `WorkspaceRoot.tsx` with GraphCanvas. Installed `@dagrejs/dagre`. No custom components — only built-in `"default"` node types. React Flow is a view, not source of truth.
-- **Files changed:**
-  - `src/canvas/GraphCanvas.tsx`: **New** — React Flow component with Background/Controls/MiniMap
-  - `src/engine/layout.ts`: **New** — Dagre LR layout engine
-  - `src/routes/WorkspaceRoot.tsx`: Replaced placeholder h1 with GraphCanvas
-  - `src/index.css`: Added `.react-flow`/`.react-flow-wrapper` height styles
-  - `package.json`: Added `@dagrejs/dagre`
-- **Archive:** `dev-docs/archive/m4-prd0026-reactflow-starter.md`
-
-### m4 - i1 - p2 - schema sortorder querythread - prd0025
-- * Replaced `RelationType` union with free-form `string` on `Relation.type`. Added `sortOrder: string` to `Relation` using fractional-indexing (`fractional-indexing` package, `generateKeyBetween`). Added `createdAt: number` and `updatedAt: number` to `Entity`. Removed `"next"` relation type entirely — ordering is now `sortOrder` scoped to `(targetId, type)`. Removed `getSequentialContext` from query engine (was built on `"next"`). Replaced `next`-chain walk in `getContainerChildren` with `sortOrder`-based sort on `contains` relations. Extended `addRelation` to auto-generate `sortOrder` (optional 5th param to override). `addEntity`/`updateEntity` now manage `createdAt`/`updatedAt`. Added `getEdgesForNode(id, direction?)` and `queryThread({ target, relationType })` to the store. GraphSnapshot version bumped to `2`. No data migration needed — `sortOrder` is populated on first edit for existing relations.
-- **Files changed:**
-  - `src/types/graph.ts`: Removed `RelationType`, added `createdAt`/`updatedAt` to Entity, changed `Relation.type` to `string`, added `sortOrder`
-  - `src/store/useGraphStore.ts`: Updated `addRelation`/`addEntity`/`updateEntity` signatures, added `getEdgesForNode` and `queryThread`, bumped snapshot version
-  - `src/engine/queries.ts`: Removed `getSequentialContext`, replaced `next`-chain with `sortOrder` in `getContainerChildren`
-  - `src/data/seed.ts`: Added timestamps to seed entities, bumped version
-  - `package.json`: Added `fractional-indexing`
-- **Archive:** `dev-docs/archive/m4-prd0025-schema-sortorder.md`
-
-### m4 - i1 - p1 - add routing - isolate product - prd0024
-- * Installed `react-router-dom`. Moved current `App()` function and all its imports into `src/routes/LegacyApp.tsx` (mounted at `/tiptap-editor-test`). Created `src/routes/WorkspaceRoot.tsx` as a placeholder shell at `/` with the same SidebarProvider/AppSidebar layout and adapter initialization. `App.tsx` is now a thin `<BrowserRouter><Routes>...</Routes></BrowserRouter>` shell. No component, store, engine, or renderer code was modified.
-- **Files changed:**
-  - `src/App.tsx`: Rewritten — thin router shell with two routes
-  - `src/routes/LegacyApp.tsx`: **New** — exact copy of previous App() (query params, store init, sidebar, ReadingViewport/HomePage toggle)
-  - `src/routes/WorkspaceRoot.tsx`: **New** — placeholder shell with SidebarProvider, AppSidebar, centered "Workspace" heading
-  - `package.json`: Added `react-router-dom` dependency (react-router, react-router-dom, @remix-run/router, set-cookie-parser)
-- **Archive:** `dev-docs/archive/m4-prd0024-(i1).md`
+  - `src/store/useGraphStore.ts`: Added `migrateSnapshot()`, called on workspace load
+  - `src/canvas/GraphCanvas.tsx`: Added onOpenFolder handler, Open Folder button in Panel
+  - `src/routes/WorkspaceRoot.tsx`: Stripped SidebarProvider/AppSidebar/SidebarInset — just GraphCanvas in full-height div
+  - `dev-docs/architecture.md`: Updated module map, added Graph Canvas section, added store action docs
+  - `AGENTS.md`: Updated Key Paths, App.tsx description
+  - `dev-docs/reminders.md`: Added React Flow, Base UI, FS Access, migration gotchas
+  - `dev-docs/plans/m4-prd0029-data-migration.md`: **New** — small PRD
 
 ## 2026-05-15
 

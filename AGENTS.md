@@ -38,12 +38,20 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-docs` skill (`ski
 | Path | Role |
 |------|------|
 | `src/main.tsx` | App entrypoint |
-| `src/App.tsx` | Root component — sidebar + HomePage/ReadingViewport routing |
+| `src/App.tsx` | Root component — BrowserRouter shell, routes `/` (WorkspaceRoot) and `/tiptap-editor-test` (LegacyApp) |
+| `src/routes/WorkspaceRoot.tsx` | Graph canvas workspace — adapter init, full-height GraphCanvas |
+| `src/routes/LegacyApp.tsx` | Original Tiptap editor app (mounted at `/tiptap-editor-test`) |
+| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, CRUD dialogs, context menu, Panel buttons |
+| `src/canvas/NodeDialog.tsx` | Base UI Dialog for create/edit nodes (title + EntityKind) |
+| `src/canvas/EdgeDialog.tsx` | Base UI Dialog for edit edge relation type + sortOrder |
+| `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (no Radix/shadcn — avoids trigger-wrapper conflicts with React Flow) |
+| `src/engine/layout.ts` | Dagre LR layout: entities/relations → React Flow nodes/edges |
+| `src/engine/queries.ts` | Query engine (getEntity, getRelations, getLinkedContext, getContainerChildren, etc.) |
 | `src/types/graph.ts` | TypeScript types: Entity, Relation, ViewState, GraphSnapshot |
-| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + adapter-based persistence |
+| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + adapter-based persistence + version 1→2 migration |
 | `src/store/persistence/` | Pluggable persistence adapters (IndexedDB default, FS Access opt-in) |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content) |
-| `src/index.css` | Global styles (dark/light vars) |
+| `src/index.css` | Global styles (dark/light vars, React Flow edge label overrides) |
 | `dist/` | Build output (gitignored — never patch manually) |
 | `dev-docs/` | Requirements, architecture, roadmap, changelog, ADR archive |
 

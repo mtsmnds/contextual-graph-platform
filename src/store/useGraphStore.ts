@@ -10,6 +10,23 @@ let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
+function migrateSnapshot(snapshot: GraphSnapshot): GraphSnapshot {
+  if (snapshot.version >= 2) return snapshot
+  const now = Date.now()
+  return {
+    version: 2,
+    entities: snapshot.entities.map((e) => ({
+      ...e,
+      createdAt: e.createdAt ?? now,
+      updatedAt: e.updatedAt ?? now,
+    })),
+    relations: snapshot.relations.map((r) => ({
+      ...r,
+      sortOrder: r.sortOrder ?? generateKeyBetween(null, null),
+    })),
+  }
+}
+
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
@@ -57,15 +74,16 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const workspace = await adapter.loadWorkspace();
 
     if (workspace) {
-      const containerEntities = workspace.entities.filter((e) => e.kind === "container");
+      const migrated = migrateSnapshot(workspace);
+      const containerEntities = migrated.entities.filter((e) => e.kind === "container");
       for (const entity of containerEntities) {
         const doc = await adapter.loadDocument(entity.id).catch(() => null);
         if (doc) contentCache[entity.id] = doc;
       }
 
       set({
-        entities: workspace.entities,
-        relations: workspace.relations,
+        entities: migrated.entities,
+        relations: migrated.relations,
         contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
