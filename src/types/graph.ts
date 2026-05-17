@@ -11,22 +11,16 @@ type Entity = {
   title?: string;
   content?: string;
   metadata: Record<string, unknown>;
+  createdAt: number;
+  updatedAt: number;
 };
-
-type RelationType =
-  | "contains"
-  | "next"
-  | "references"
-  | "annotates"
-  | "summarizes"
-  | "related_to"
-  | "quote";
 
 type Relation = {
   id: string;
   source: string;
   target: string;
-  type: RelationType;
+  type: string;
+  sortOrder: string;
   metadata: Record<string, unknown>;
 };
 
@@ -46,7 +40,6 @@ type GraphSnapshot = {
 export type {
   EntityKind,
   Entity,
-  RelationType,
   Relation,
   ViewState,
   GraphSnapshot,
