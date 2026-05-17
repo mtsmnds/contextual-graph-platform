@@ -23,6 +23,7 @@ export function getLayoutedElements({ entities, relations }: LayoutInput) {
       position: { x: 0, y: 0 },
       data: { content, kind: entity.kind, id: entity.id },
       type: "entity",
+      style: { width: NODE_WIDTH },
     }
   })
 

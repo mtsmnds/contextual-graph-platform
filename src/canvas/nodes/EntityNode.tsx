@@ -1,5 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react"
-import { type Node, type NodeProps, Position, NodeResizer, useUpdateNodeInternals } from "@xyflow/react"
+import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId, useUpdateNodeInternals } from "@xyflow/react"
 import {
   BaseNode,
   BaseNodeContent,
@@ -20,6 +20,7 @@ type EntityNodeData = {
 type EntityNodeType = Node<EntityNodeData, "entity">
 
 function EntityNode({ data }: NodeProps<EntityNodeType>) {
+  const nodeId = useNodeId()
   const [isEditing, setIsEditing] = useState(data.editTrigger ? true : false)
   const [editValue, setEditValue] = useState(data.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -95,11 +96,67 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
 
   return (
     <>
-      <NodeResizer
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Line}
+        position={Position.Top}
         minWidth={60}
         minHeight={45}
       />
-      <BaseNode className="w-[200px]" onDoubleClick={handleDoubleClick}>
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Line}
+        position={Position.Right}
+        minWidth={60}
+        minHeight={45}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Line}
+        position={Position.Bottom}
+        minWidth={60}
+        minHeight={45}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Line}
+        position={Position.Left}
+        minWidth={60}
+        minHeight={45}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Handle}
+        position={Position.Top}
+        resizeDirection="vertical"
+        minWidth={60}
+        minHeight={45}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Handle}
+        position={Position.Right}
+        resizeDirection="horizontal"
+        minWidth={60}
+        minHeight={45}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Handle}
+        position={Position.Bottom}
+        resizeDirection="vertical"
+        minWidth={60}
+        minHeight={45}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Handle}
+        position={Position.Left}
+        resizeDirection="horizontal"
+        minWidth={60}
+        minHeight={45}
+      />
+      <BaseNode className="w-full" onDoubleClick={handleDoubleClick}>
         <BaseNodeHeader>
           <Badge variant="secondary" className="text-xs">{data.kind}</Badge>
         </BaseNodeHeader>
