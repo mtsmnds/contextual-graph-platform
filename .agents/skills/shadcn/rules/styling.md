@@ -11,7 +11,6 @@ See [customization.md](../customization.md) for theming, CSS variables, and addi
 - Prefer size-* over w-* h-* when equal
 - Prefer truncate shorthand
 - No manual dark: color overrides
-- Use cn() for conditional classes
 - No manual z-index on overlay components
 
 ---
