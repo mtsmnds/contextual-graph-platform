@@ -336,10 +336,11 @@ function GraphCanvasContent() {
       snapGrid={[15, 15]}
       deleteKeyCode={["Backspace", "Delete"]}
       multiSelectionKeyCode="Shift"
+      proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
+      <MiniMap pannable zoomable position="bottom-right" />
       <Controls showInteractive={false} position="bottom-right" orientation="horizontal" />
-      <MiniMap pannable zoomable />
       <Panel position="top-right">
         <div className="flex gap-1">
           <button

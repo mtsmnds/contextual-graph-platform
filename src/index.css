@@ -253,8 +253,12 @@ body {
   cursor: pointer;
 }
 
-.react-flow__pane.draggable {
-  cursor: default !important;
+.react-flow__controls.bottom.right {
+  bottom: 8px !important;
+}
+
+.react-flow__minimap.bottom.right {
+  bottom: calc(26px + 16px) !important;
 }
 
 .react-flow__node.selected {
@@ -262,3 +266,4 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
