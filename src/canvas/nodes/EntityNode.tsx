@@ -1,11 +1,12 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react"
-import { type Node, type NodeProps, useUpdateNodeInternals } from "@xyflow/react"
+import { type Node, type NodeProps, Position, NodeResizer, useUpdateNodeInternals } from "@xyflow/react"
 import {
   BaseNode,
   BaseNodeContent,
   BaseNodeHeader,
 } from "@/components/base-node"
 import { Badge } from "@/components/ui/badge"
+import { BaseHandle } from "@/components/base-handle"
 import { useGraphStore } from "@/store/useGraphStore"
 import type { EntityKind } from "@/types/graph"
 
@@ -93,29 +94,43 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
   }, [])
 
   return (
-    <BaseNode className="w-[200px]" onDoubleClick={handleDoubleClick}>
-      <BaseNodeHeader>
-        <Badge variant="secondary" className="text-xs">{data.kind}</Badge>
-      </BaseNodeHeader>
-      <BaseNodeContent>
-        {isEditing ? (
-          <textarea
-            ref={textareaRef}
-            className="nodrag nowheel nopan w-full resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none"
-            value={editValue}
-            onChange={handleTextareaChange}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            placeholder="Type here..."
-            rows={1}
+    <>
+      <NodeResizer
+        minWidth={60}
+        minHeight={45}
+      />
+      <BaseNode className="w-[200px]" onDoubleClick={handleDoubleClick}>
+        <BaseNodeHeader>
+          <Badge variant="secondary" className="text-xs">{data.kind}</Badge>
+        </BaseNodeHeader>
+        <BaseNodeContent>
+          <BaseHandle
+            type="target"
+            position={Position.Left}
           />
-        ) : (
-          <p className="m-0 cursor-grab text-sm text-foreground">
-            {data.content || <span className="text-muted-foreground">Type here...</span>}
-          </p>
-        )}
-      </BaseNodeContent>
-    </BaseNode>
+          {isEditing ? (
+            <textarea
+              ref={textareaRef}
+              className="nodrag nowheel nopan w-full resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none"
+              value={editValue}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              placeholder="Type here..."
+              rows={1}
+            />
+          ) : (
+            <p className="m-0 cursor-grab text-sm text-foreground">
+              {data.content || <span className="text-muted-foreground">Type here...</span>}
+            </p>
+          )}
+          <BaseHandle
+            type="source"
+            position={Position.Right}
+          />
+        </BaseNodeContent>
+      </BaseNode>
+    </>
   )
 }
 

@@ -246,6 +246,11 @@ body {
   height: 100%;
 }
 
+.react-flow {
+  --xy-handle-background-color: var(--card);
+  --xy-handle-border-color: var(--border);
+}
+
 .react-flow__edge-label {
   font-size: 10px;
   opacity: 1 !important;
@@ -257,6 +262,70 @@ body {
 
 .react-flow__minimap.bottom.right {
   bottom: calc(26px + 16px) !important;
+}
+
+.react-flow__handle {
+  z-index: 10;
+}
+.react-flow__handle::before {
+  content: '';
+  position: absolute;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  top: -6px;
+  left: -6px;
+}
+
+.react-flow .react-flow__handle {
+  width: 14px;
+  height: 14px;
+  border-width: 1px;
+}
+
+.react-flow .react-flow__handle:hover {
+  --xy-handle-border-color: var(--muted-foreground);
+}
+
+.react-flow__resize-control.line,
+.react-flow__resize-control.handle {
+  opacity: 0;
+}
+
+.react-flow__resize-control.line::before {
+  content: '';
+  position: absolute;
+  pointer-events: auto;
+  width: 100%;
+  height: 100%;
+}
+.react-flow__resize-control.line.top::before,
+.react-flow__resize-control.line.bottom::before {
+  height: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.react-flow__resize-control.line.left::before,
+.react-flow__resize-control.line.right::before {
+  width: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.react-flow__resize-control.line.top:hover,
+.react-flow__resize-control.line.bottom:hover {
+  cursor: ns-resize !important;
+}
+.react-flow__resize-control.line.left:hover,
+.react-flow__resize-control.line.right:hover {
+  cursor: ew-resize !important;
+}
+.react-flow__resize-control.handle.top.left:hover,
+.react-flow__resize-control.handle.bottom.right:hover {
+  cursor: nwse-resize !important;
+}
+.react-flow__resize-control.handle.top.right:hover,
+.react-flow__resize-control.handle.bottom.left:hover {
+  cursor: nesw-resize !important;
 }
 
 
