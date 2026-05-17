@@ -3,7 +3,6 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
-  Controls,
   MiniMap,
   Panel,
   useNodesState,
@@ -19,6 +18,7 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
+import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import NodeDialog from "./NodeDialog"
@@ -307,6 +307,10 @@ function GraphCanvasContent() {
     }
   }, [storeInit, refreshFolderName])
 
+  const onZoomIn = useCallback(() => reactFlowInstance.zoomIn(), [reactFlowInstance])
+  const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
+  const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
+
   const onRelayout = useCallback(() => {
     const { entities, relations } = useGraphStore.getState()
     const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
@@ -342,7 +346,19 @@ function GraphCanvasContent() {
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
       <MiniMap pannable zoomable position="bottom-right" />
-      <Controls showInteractive={false} position="bottom-right" orientation="horizontal" />
+      <Panel position="bottom-right" style={{ marginBottom: 8 }}>
+        <ButtonGroup>
+          <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
+            <ZoomIn data-icon />
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
+            <ZoomOut data-icon />
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
+            <Maximize data-icon />
+          </Button>
+        </ButtonGroup>
+      </Panel>
       <Panel position="top-right">
         <ButtonGroup>
           <Button variant="outline" size="sm" onClick={onCreateNode}>
