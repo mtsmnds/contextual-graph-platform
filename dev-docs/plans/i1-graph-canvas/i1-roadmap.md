@@ -33,6 +33,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
 - **prd0032** - resizing and edge handles
   - decide handle design and or node edge conection behavior and implement
   - fix node resizing - remove top and bottom resizing (node height governed by textarea)
+- **prd0033** - four multidirectional edges
 
 
 ### now
@@ -56,6 +57,9 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 - **I.4** MongoDB / DexieJS migration → **Moved to Later**
 - **I.4** MongoDB persistence adapter (or alternative embedded DB)
+
+- Namespace view data in metadata (e.g. `canvas.sourceHandle`) to distinguish from domain data
+- Extract first-class `canvasView` field in `GraphSnapshot` and migrate handle IDs out of metadata
 
 ---
 

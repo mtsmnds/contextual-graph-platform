@@ -113,10 +113,10 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           <Badge variant="secondary" className="text-xs">{data.kind}</Badge>
         </BaseNodeHeader>
         <BaseNodeContent>
-          <BaseHandle
-            type="target"
-            position={Position.Left}
-          />
+          <BaseHandle type="source" position={Position.Top} id="top" />
+          <BaseHandle type="source" position={Position.Right} id="right" />
+          <BaseHandle type="source" position={Position.Bottom} id="bottom" />
+          <BaseHandle type="source" position={Position.Left} id="left" />
           {isEditing ? (
             <textarea
               ref={textareaRef}
@@ -133,10 +133,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
               {data.content || <span className="text-muted-foreground">Type here...</span>}
             </p>
           )}
-          <BaseHandle
-            type="source"
-            position={Position.Right}
-          />
+
         </BaseNodeContent>
       </BaseNode>
     </>

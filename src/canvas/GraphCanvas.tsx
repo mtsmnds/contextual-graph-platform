@@ -9,6 +9,7 @@ import {
   useEdgesState,
   useReactFlow,
   BackgroundVariant,
+  ConnectionMode,
   SelectionMode,
   type Connection,
   type Node,
@@ -102,8 +103,17 @@ function GraphCanvasContent() {
         connection.source,
         connection.target,
         "related_to",
+        {
+          sourceHandle: connection.sourceHandle,
+          targetHandle: connection.targetHandle,
+        },
       )
     },
+    [],
+  )
+
+  const isValidConnection = useCallback(
+    (connection: Edge | Connection) => connection.source !== connection.target,
     [],
   )
 
@@ -302,6 +312,7 @@ function GraphCanvasContent() {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      isValidConnection={isValidConnection}
       onEdgesDelete={onEdgesDelete}
       onBeforeDelete={onBeforeDelete}
       onNodesDelete={onNodesDelete}
@@ -314,6 +325,7 @@ function GraphCanvasContent() {
       selectionOnDrag={true}
       selectionMode={SelectionMode.Partial}
       fitView
+      connectionMode={ConnectionMode.Loose}
       snapToGrid
       snapGrid={[15, 15]}
       deleteKeyCode={["Backspace", "Delete"]}
