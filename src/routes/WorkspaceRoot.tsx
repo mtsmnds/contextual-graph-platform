@@ -7,6 +7,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { resolveAdapter } from "@/store/persistence"
+import GraphCanvas from "../canvas/GraphCanvas"
 
 function WorkspaceRoot() {
   const init = useGraphStore((s) => s.init)
@@ -29,8 +30,8 @@ function WorkspaceRoot() {
         <div className="flex items-center gap-2 px-3 py-1.5 border-b shrink-0">
           <SidebarTrigger />
         </div>
-        <div className="flex-1 min-h-0 flex items-center justify-center">
-          <h1 className="text-2xl text-muted-foreground">Workspace</h1>
+        <div className="flex-1 min-h-0">
+          <GraphCanvas />
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -28,10 +28,10 @@ PRD0024: Installed react-router-dom, extracted legacy app to `/tiptap-editor-tes
 ### ✅ Done
 
 - **PRD0025** Schema + `sortOrder` + `queryThread` (II.5 + II.6)
+- **PRD0026** React Flow starter kit — read-only graph with dagre layout, Background/Controls/MiniMap (II.7)
 
 ### Now (m4)
 
-- **PRD0026** React Flow starter kit — read-only graph with dagre layout, Background/Controls/MiniMap (II.7)
 - **PRD0027** React Flow interactivity — drag nodes, connect edges, select, sync with store
 - **PRD0028** Node/edge CRUD — double-click create/edit, select+backspace delete, context menus (II.8)
 

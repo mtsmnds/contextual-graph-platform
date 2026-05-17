@@ -11,6 +11,7 @@
     "import:hamlet": "npx tsx scripts/import-gutenberg.ts scripts/hamlet/pg1524-images.html > src/data/hamlet.json"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "@floating-ui/react": "^0.27.19",
     "@fontsource-variable/geist": "^5.2.8",
     "@phosphor-icons/react": "^2.1.10",
