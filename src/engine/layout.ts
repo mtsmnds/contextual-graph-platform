@@ -33,6 +33,8 @@ export function getLayoutedElements({ entities, relations }: LayoutInput) {
       id: rel.id,
       source: rel.source,
       target: rel.target,
+      sourceHandle: rel.metadata?.sourceHandle as string | undefined,
+      targetHandle: rel.metadata?.targetHandle as string | undefined,
       label: rel.type,
       type: "default",
     }
