@@ -1,3 +1,9 @@
+> **Completion note (2026-05-17):**
+> - **What was built:** Schema migration (dropped `title`, made `content: string` required, v2→v3 snapshot) and inline text editing inside EntityNode via `<textarea>` with Figma-pattern idle/editing states. Context menu triggers inline edit. New nodes open in edit mode immediately. Auto-sizing height with hidden-div mirror, commit on Escape/blur, Enter = newline.
+> - **Key decisions:** `content` becomes the single display text field. Old titles preserved in `metadata.title` during migration. `editTrigger` counter on node data for external edit triggers (avoids stale boolean flag issues). Textarea over contentEditable (avoids React DOM ownership fights). NodeDialog removed entirely — kind changes deferred.
+> - **Deviations from plan:** Connection handles deferred to PRD0032. Node resize deferred to PRD0032.
+> - **Postponed:** Connection handles (PRD0032), node resize (PRD0032).
+
 ## Task: Inline Node Editing
 
 ### Purpose
