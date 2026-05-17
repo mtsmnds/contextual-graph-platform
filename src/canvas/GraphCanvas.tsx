@@ -19,6 +19,8 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
+import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import NodeDialog from "./NodeDialog"
 import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
@@ -342,26 +344,17 @@ function GraphCanvasContent() {
       <MiniMap pannable zoomable position="bottom-right" />
       <Controls showInteractive={false} position="bottom-right" orientation="horizontal" />
       <Panel position="top-right">
-        <div className="flex gap-1">
-          <button
-            onClick={onCreateNode}
-            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
-          >
+        <ButtonGroup>
+          <Button variant="outline" size="sm" onClick={onCreateNode}>
             New Node
-          </button>
-          <button
-            onClick={onOpenFolder}
-            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={onOpenFolder}>
             Open Folder
-          </button>
-          <button
-            onClick={onRelayout}
-            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={onRelayout}>
             Re-layout
-          </button>
-        </div>
+          </Button>
+        </ButtonGroup>
       </Panel>
       <NodeDialog
         open={nodeDialog !== null}
