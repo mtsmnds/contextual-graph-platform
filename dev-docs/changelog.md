@@ -12,6 +12,21 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-17
+
+### m4 - prd0030 - test and ui refinement — BaseNode custom entity node
+- **What:** Implemented a custom entity node using React Flow's BaseNode shadcn-style component. Installed `base-node` (BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) from reactflow.dev UI registry and `badge` from standard shadcn registry. Created `EntityNode.tsx` composing BaseNode + Badge (shows entity kind). Registered `nodeTypes` at module scope in GraphCanvas. Changed layout engine from `type: "default"` to `type: "entity"`. Removed manual `.react-flow__node.selected` CSS since BaseNode handles selection internally.
+- **Reason:** All nodes were using React Flow's built-in `"default"` type — unstyled gray rectangles. BaseNode provides a shared, shadcn-compatible node layout (header/content/footer) that makes the graph look polished and extendable.
+- **Files changed:**
+  - `src/components/base-node.tsx`: **New** — BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter from reactflow.dev registry
+  - `src/components/ui/badge.tsx`: **New** — Badge component from shadcn standard registry
+  - `src/canvas/nodes/EntityNode.tsx`: **New** — custom entity node composing BaseNode family + Badge
+  - `src/engine/layout.ts`: Changed `type: "default"` → `type: "entity"`
+  - `src/canvas/GraphCanvas.tsx`: Added `EntityNode` import + `nodeTypes` registration, passed `nodeTypes` prop to ReactFlow
+  - `src/index.css`: Removed `.react-flow__node.selected` outline rule
+- **Impact:** All entities now render with a styled card layout (header with title, content with kind badge). Foundation for future custom node variants and connection handles.
+- **Archive:** `dev-docs/archive/m4-prd0030-test-and-ui-refinement.md`
+
 ## 2026-05-16
 
 ### m4 - i1 - p6 - edge editing labels context menus - prd0028b

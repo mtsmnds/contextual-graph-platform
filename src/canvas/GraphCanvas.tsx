@@ -24,7 +24,10 @@ import { ButtonGroup } from "@/components/ui/button-group"
 import NodeDialog from "./NodeDialog"
 import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
+import EntityNode from "./nodes/EntityNode"
 import type { EntityKind } from "../types/graph"
+
+const nodeTypes = { entity: EntityNode }
 
 function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
@@ -320,6 +323,7 @@ function GraphCanvasContent() {
 
   return (
     <ReactFlow
+      nodeTypes={nodeTypes}
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
