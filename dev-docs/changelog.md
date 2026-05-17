@@ -14,6 +14,13 @@ Use this to recover context after breaks.
 
 ## 2026-05-16
 
+### m4 - i1 - p5 - node crud - prd0028a
+- * Created `NodeDialog.tsx` (Base UI Dialog with title input + EntityKind selector). Wired `onNodeDoubleClick` → edit dialog, "New Node" Panel button → create dialog, `onBeforeDelete` + `onNodesDelete` → select+Backspace delete. Added `ReactFlowProvider` wrapper for `useReactFlow` context. New nodes placed at viewport center via `screenToFlowPosition`. Removed `onDoubleClick` pane handler (conflicted with `onNodeDoubleClick` event ordering).
+- **Files changed:**
+  - `src/canvas/NodeDialog.tsx`: **New** — reusable Base UI Dialog for create/edit
+  - `src/canvas/GraphCanvas.tsx`: Added dialog state, NodeDialog, CRUD handlers, `ReactFlowProvider`, Panel buttons
+- **Archive:** `dev-docs/archive/m4-prd0028a-node-crud.md`
+
 ### m4 - i1 - p4 - reactflow interactivity - prd0027
 - * Refactored `GraphCanvas.tsx`: ref-capture layout (no useEffect guard), diff-based store sync with data merge (preserves positions, refreshes labels on entity rename). Wired `onConnect` → `addRelation(source, target, "related_to")` (store-only, no optimistic local add — avoids double-write race). Wired `onEdgesDelete` → `removeRelation(id)`. `onNodesDelete` is a no-op (deferred to PRD0028). Added "Re-layout" button in `<Panel position="top-right">`. Enabled `deleteKeyCode` for edges only.
 - **Files changed:**
