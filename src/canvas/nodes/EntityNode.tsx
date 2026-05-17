@@ -98,8 +98,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
       <NodeResizer
         minWidth={60}
         minHeight={45}
-        handleClassName="opacity-0"
-        lineClassName="opacity-0"
       />
       <BaseNode className="w-[200px]" onDoubleClick={handleDoubleClick}>
         <BaseNodeHeader>
@@ -109,7 +107,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           <BaseHandle
             type="target"
             position={Position.Left}
-            className="!bg-muted-foreground/40 hover:!bg-muted-foreground/70"
           />
           {isEditing ? (
             <textarea
@@ -130,7 +127,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           <BaseHandle
             type="source"
             position={Position.Right}
-            className="!bg-muted-foreground/40 hover:!bg-muted-foreground/70"
           />
         </BaseNodeContent>
       </BaseNode>

@@ -30,14 +30,17 @@ Entities carry content. Relations carry typed links with sort order. Projections
 - **prd0030** - test and ui refinement
 - **prd0031** - editing text within nodes
 - add claude design skill https://github.com/anthropics/claude-code/blob/main/plugins/frontend-design/skills/frontend-design/SKILL.md
+- **prd0032** - resizing and edge handles
+  - decide handle design and or node edge conection behavior and implement
 
 
 ### now
 
-- **prd0032** - resizing and edge handles
+
 - test if local storage is storing (i couldn't verify) (use ~/Code/hello2)
 
-- decide handle design and or node edge conection behavior and implement
+- after adding the percent view and zoom to 100% buttons, fine tune the size of text and the size of the handle and border activation area.
+- handle border thickness change with interaction, same as borders, but with different shades cause the borders go very dark
    
 - prepare to approach certain nodes having different appearances depending on what they are. 
 
