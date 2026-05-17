@@ -18,26 +18,6 @@ export function getRelations(
   );
 }
 
-export function getSequentialContext(
-  state: GraphState,
-  entityId: string,
-): { prev?: Entity; next?: Entity } | null {
-  const entity = getEntity(state, entityId);
-  if (!entity) return null;
-
-  const nextRel = state.relations.find(
-    (r) => r.source === entityId && r.type === "next",
-  );
-  const prevRel = state.relations.find(
-    (r) => r.target === entityId && r.type === "next",
-  );
-
-  return {
-    prev: prevRel ? getEntity(state, prevRel.source) : undefined,
-    next: nextRel ? getEntity(state, nextRel.target) : undefined,
-  };
-}
-
 export function getLinkedContext(
   state: GraphState,
   entityId: string,
@@ -60,48 +40,18 @@ export function getContainerChildren(
   containerId: string,
   depth = Infinity,
 ): Entity[] {
-  const childIds = state.relations
+  const containsRels = state.relations
     .filter((r) => r.source === containerId && r.type === "contains")
-    .map((r) => r.target);
+    .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder));
 
-  const children = childIds
-    .map((id) => getEntity(state, id))
+  const children = containsRels
+    .map((r) => getEntity(state, r.target))
     .filter((e): e is Entity => e !== undefined);
 
-  if (childIds.length === 0) return children;
-
-  const childSet = new Set(childIds);
-  const nextMap = new Map<string, string>();
-  for (const r of state.relations) {
-    if (r.type === "next" && childSet.has(r.source) && childSet.has(r.target)) {
-      nextMap.set(r.source, r.target);
-    }
-  }
-
-  // Find the head of the chain (entity that no other child points to via next)
-  const targets = new Set(nextMap.values());
-  const head = childIds.find((id) => !targets.has(id)) ?? childIds[0];
-
-  const ordered: Entity[] = [];
-  let current = head;
-  const seen = new Set<string>();
-  while (current && !seen.has(current)) {
-    seen.add(current);
-    const entity = getEntity(state, current);
-    if (entity) ordered.push(entity);
-    current = nextMap.get(current) ?? "";
-  }
-
-  // Append any remaining children not in the chain
-  for (const child of children) {
-    if (!seen.has(child.id)) ordered.push(child);
-  }
-
-  // Flatten recursively: sub-containers expand to their content, segments stay
-  if (depth <= 0) return ordered;
+  if (depth <= 0) return children;
 
   const flattened: Entity[] = [];
-  for (const child of ordered) {
+  for (const child of children) {
     if (child.kind === "container" && depth > 0) {
       flattened.push(child);
       flattened.push(

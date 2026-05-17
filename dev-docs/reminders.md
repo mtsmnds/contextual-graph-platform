@@ -12,3 +12,14 @@
   4. Link archive from changelog entry (Archive: field)
   5. Update roadmap — move item to Recently Completed, promote next item to Now
 -->
+
+
+- create a skill specializing in frontend react engineering
+
+- if needed improve skills with https://github.com/mattpocock/skills/tree/main/skills/productivity/write-a-skill
+  - ask to get the skill docs from the link, save and use to improve existing skills
+
+- use link for to share documentation with agent
+  - add documentation link to dev-docs where appropriate 
+
+- use graphite if necessary https://graphite.com/docs/get-started

@@ -1,12 +1,16 @@
 import type { GraphSnapshot } from "../types/graph";
 
+const SEED_TS = 1715702400000;
+
 export const SEED_DATA: GraphSnapshot = {
-  version: 1,
+  version: 2,
   entities: [
     {
       id: "about-workspace",
       kind: "container",
       title: "About This Workspace",
+      createdAt: SEED_TS,
+      updatedAt: SEED_TS,
       content: JSON.stringify({
         type: "doc",
         content: [
@@ -112,6 +116,8 @@ export const SEED_DATA: GraphSnapshot = {
       id: "editor-playground",
       kind: "container",
       title: "Editor Playground",
+      createdAt: SEED_TS,
+      updatedAt: SEED_TS,
       content: JSON.stringify({
         type: "doc",
         content: [

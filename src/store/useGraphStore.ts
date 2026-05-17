@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { Entity, EntityKind, Relation, RelationType, ViewState, GraphSnapshot } from "../types/graph";
+import { generateKeyBetween } from "fractional-indexing";
+import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot } from "../types/graph";
 import { generateUniqueId } from "../engine/ids";
 import { SEED_DATA } from "../data/seed";
 import type { PersistenceAdapter } from "./persistence";
@@ -21,8 +22,10 @@ interface GraphStore {
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
-  addRelation: (source: string, target: string, type: RelationType, metadata?: Record<string, unknown>) => string;
+  addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => string;
   removeRelation: (id: string) => void;
+  getEdgesForNode: (id: string, direction?: "in" | "out" | "both") => Relation[];
+  queryThread: (filter: { target: string; relationType: string }) => Entity[];
 
   focusEntity: (id: string | null, anchorId?: string | null) => void;
   expandPanel: (entityId: string) => void;
@@ -80,7 +83,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       }
 
       const seedSnapshot: GraphSnapshot = {
-        version: 1,
+        version: 2,
         entities: cleanEntities,
         relations: SEED_DATA.relations,
       };
@@ -106,12 +109,15 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
       : 0;
     const id = generateUniqueId(parentId, kind, data.title, existingIds, siblingCount);
+    const now = Date.now();
     const entity: Entity = {
       id,
       kind,
       title: kind === "segment" ? undefined : (data.title ?? kind),
       content: kind === "container" ? undefined : data.content,
       metadata: data.metadata ?? {},
+      createdAt: now,
+      updatedAt: now,
     };
     set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
     return id;
@@ -142,7 +148,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => ({
       entities: state.entities.map((e) =>
         e.id === resolvedId
-          ? { ...e, ...final, metadata: { ...e.metadata, ...(final.metadata ?? {}) } }
+          ? { ...e, ...final, metadata: { ...e.metadata, ...(final.metadata ?? {}) }, updatedAt: Date.now() }
           : e,
       ),
     }));
@@ -157,15 +163,34 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     }));
   },
 
-  addRelation: (source: string, target: string, type: RelationType, metadata?: Record<string, unknown>) => {
+  addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => {
     const id = `r_${Date.now()}`;
-    const relation: Relation = { id, source, target, type, metadata: metadata ?? {} };
+    const order = sortOrder ?? generateKeyBetween(null, null);
+    const relation: Relation = { id, source, target, type, sortOrder: order, metadata: metadata ?? {} };
     set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
     return id;
   },
 
   removeRelation: (id: string) => {
     set((state: GraphStore) => ({ relations: state.relations.filter((r) => r.id !== id) }));
+  },
+
+  getEdgesForNode: (id: string, direction: "in" | "out" | "both" = "both") => {
+    const state = get() as GraphStore;
+    return state.relations.filter((r) => {
+      if (direction === "in") return r.target === id;
+      if (direction === "out") return r.source === id;
+      return r.source === id || r.target === id;
+    });
+  },
+
+  queryThread: (filter: { target: string; relationType: string }) => {
+    const state = get() as GraphStore;
+    return state.relations
+      .filter((r) => r.target === filter.target && r.type === filter.relationType)
+      .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+      .map((r) => state.entities.find((e) => e.id === r.source))
+      .filter((e): e is Entity => e !== undefined);
   },
 
   focusEntity: (id: string | null, anchorId = null) => {
@@ -239,11 +264,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       for (const [segmentId, text] of found) {
         if (!currentEntities.some((e) => e.id === segmentId)) {
           const label = text.length > 60 ? text.slice(0, 60) + "..." : text;
+          const now = Date.now();
           currentEntities.push({
             id: segmentId,
             kind: "annotation",
             content: undefined,
             metadata: { sourceContainer: id, label },
+            createdAt: now,
+            updatedAt: now,
           });
         }
       }
@@ -290,7 +318,7 @@ useGraphStore.subscribe((state, prevState) => {
 
   saveTimer = setTimeout(() => {
     const { entities, relations } = useGraphStore.getState();
-    const snapshot: GraphSnapshot = { version: 1, entities, relations };
+    const snapshot: GraphSnapshot = { version: 2, entities, relations };
     _adapter!.saveGraph(snapshot).catch((err) => {
       console.error("Failed to save graph:", err);
     });

@@ -25,22 +25,23 @@ PRD0024: Installed react-router-dom, extracted legacy app to `/tiptap-editor-tes
 
 ## Phase II — Graph Canvas
 
-### Now
+### ✅ Done
 
-- Transition to Phase II (next PRD)
-- **II.5** Schema alignment — add `sortOrder` to `Relation` type, adopt fractional-indexing for edge ordering
-- **II.6** Data API — extend `useGraphStore` with `getEdgesForNode`, `queryThread`
-- **II.7** Install React Flow — render static graph with Dagre layout
+- **PRD0025** Schema + `sortOrder` + `queryThread` (II.5 + II.6)
 
-### Next (m6)
+### Now (m4)
 
-- **II.8** Node/edge CRUD — double-click, drag, context menu, always-visible edge labels
-- **II.9** Implement `queryThread` — the ordered projection that makes "documents" possible
+- **PRD0026** React Flow starter kit — read-only graph with dagre layout, Background/Controls/MiniMap (II.7)
+- **PRD0027** React Flow interactivity — drag nodes, connect edges, select, sync with store
+- **PRD0028** Node/edge CRUD — double-click create/edit, select+backspace delete, context menus (II.8)
 
-### Later (m7+)
+### Next (m5)
 
 - **II.10** Thread view component — vertical list of query results with metadata strip and inline inspector
 - **II.11** Query builder UI — target dropdown + relation type dropdown + Show Thread button
+
+### Later (m6+)
+
 - **II.12** Highlight active thread in the graph canvas
 - **I.4** MongoDB persistence adapter (or alternative embedded DB)
 
@@ -48,6 +49,6 @@ PRD0024: Installed react-router-dom, extracted legacy app to `/tiptap-editor-tes
 
 ## Notes
 
-- `sortOrder` on relations is the key schema gap between current `Entity`/`Relation` and proposed `Node`/`Edge`
+- `sortOrder` on relations is the key schema change: removes `"next"` relation type, uses fractional-indexing instead
 - Thread view starts as plain text blocks — Tiptap integration comes after m3 converges
 - Data API wraps Zustand store initially; can be extracted into standalone query layer later

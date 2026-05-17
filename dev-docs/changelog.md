@@ -14,6 +14,16 @@ Use this to recover context after breaks.
 
 ## 2026-05-16
 
+### m4 - i1 - p2 - schema sortorder querythread - prd0025
+- * Replaced `RelationType` union with free-form `string` on `Relation.type`. Added `sortOrder: string` to `Relation` using fractional-indexing (`fractional-indexing` package, `generateKeyBetween`). Added `createdAt: number` and `updatedAt: number` to `Entity`. Removed `"next"` relation type entirely — ordering is now `sortOrder` scoped to `(targetId, type)`. Removed `getSequentialContext` from query engine (was built on `"next"`). Replaced `next`-chain walk in `getContainerChildren` with `sortOrder`-based sort on `contains` relations. Extended `addRelation` to auto-generate `sortOrder` (optional 5th param to override). `addEntity`/`updateEntity` now manage `createdAt`/`updatedAt`. Added `getEdgesForNode(id, direction?)` and `queryThread({ target, relationType })` to the store. GraphSnapshot version bumped to `2`. No data migration needed — `sortOrder` is populated on first edit for existing relations.
+- **Files changed:**
+  - `src/types/graph.ts`: Removed `RelationType`, added `createdAt`/`updatedAt` to Entity, changed `Relation.type` to `string`, added `sortOrder`
+  - `src/store/useGraphStore.ts`: Updated `addRelation`/`addEntity`/`updateEntity` signatures, added `getEdgesForNode` and `queryThread`, bumped snapshot version
+  - `src/engine/queries.ts`: Removed `getSequentialContext`, replaced `next`-chain with `sortOrder` in `getContainerChildren`
+  - `src/data/seed.ts`: Added timestamps to seed entities, bumped version
+  - `package.json`: Added `fractional-indexing`
+- **Archive:** `dev-docs/archive/m4-prd0025-schema-sortorder.md`
+
 ### m4 - i1 - p1 - add routing - isolate product - prd0024
 - * Installed `react-router-dom`. Moved current `App()` function and all its imports into `src/routes/LegacyApp.tsx` (mounted at `/tiptap-editor-test`). Created `src/routes/WorkspaceRoot.tsx` as a placeholder shell at `/` with the same SidebarProvider/AppSidebar layout and adapter initialization. `App.tsx` is now a thin `<BrowserRouter><Routes>...</Routes></BrowserRouter>` shell. No component, store, engine, or renderer code was modified.
 - **Files changed:**
