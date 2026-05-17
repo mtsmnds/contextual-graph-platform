@@ -15,7 +15,7 @@ export function HomePage() {
   )
 
   const handleNewPage = () => {
-    const id = addEntity("container", { title: "Untitled" })
+    const id = addEntity("container", { content: "Untitled" })
     focusEntity(id)
   }
 
@@ -50,7 +50,7 @@ export function HomePage() {
                     <StickyNote className="size-4 shrink-0 text-muted-foreground" />
                   )}
                   <span className="font-medium truncate">
-                    {entity.title ?? entity.id}
+                    {entity.content || entity.id}
                   </span>
                 </button>
               ))}

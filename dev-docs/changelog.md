@@ -14,6 +14,22 @@ Use this to recover context after breaks.
 
 ## 2026-05-17
 
+### m4 - prd0031 - inline node editing
+- **What:** Schema migration (dropped `title`, made `content: string` required, v2→v3 snapshot) and inline text editing inside EntityNode. Textarea with `nodrag nowheel nopan`, auto-sizing height, commit on Escape/blur (Enter = newline). Double-click enters edit mode. Context menu "Edit" triggers inline edit via `editTrigger` counter. New nodes open in edit mode immediately. NodeDialog removed (kind changes deferred). Seed data restructured — Tiptap JSON moved to separate `SEED_CONTAINER_CONTENT` map.
+- **Reason:** Nodes were static — editing required a separate dialog. The Figma pattern (double-click to edit inline) is faster and more natural. Schema cleanup removes the redundant `title`/`content` duality.
+- **Files changed:**
+  - `src/types/graph.ts`: Dropped `title?`, made `content: string` required, version → 3
+  - `src/store/useGraphStore.ts`: v2→v3 migration (old titles → `metadata.title`), updated `addEntity`/`updateEntity`
+  - `src/data/seed.ts`: Tiptap JSON → separate `SEED_CONTAINER_CONTENT` map, entities use `content` for display text
+  - `src/engine/ids.ts`: `generateUniqueId` parameter `title` → `content`
+  - `src/canvas/nodes/EntityNode.tsx`: Inline editing — idle/editing states, textarea, height mirror, commit logic
+  - `src/canvas/GraphCanvas.tsx`: Removed `onNodeDoubleClick`, context menu triggers inline edit, removed NodeDialog
+  - `src/canvas/NodeDialog.tsx`: Deleted
+  - `src/engine/layout.ts`: `entity.title` → `entity.content`
+  - `src/renderers/ReadingViewport.tsx`, `AppSidebar.tsx`, `HomePage.tsx`, `TiptapEditor.tsx`, `PassageLinkPopover.tsx`, `MentionNodeView.tsx`, `queries.ts`: All `entity.title` → `entity.content`/`metadata.title` fallback
+- **Impact:** Nodes editable inline — double-click to type, Enter for newline, Escape/blur to commit. Schema is cleaner (one text field). Existing data migrated automatically. Foundation for handles (PRD0032) and resize (PRD0032).
+- **Archive:** `dev-docs/archive/m4-prd0031-inline-node-editing.md`
+
 ### m4 - prd0030 - test and ui refinement — BaseNode custom entity node
 - **What:** Implemented a custom entity node using React Flow's BaseNode shadcn-style component. Installed `base-node` (BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) from reactflow.dev UI registry and `badge` from standard shadcn registry. Created `EntityNode.tsx` composing BaseNode + Badge (shows entity kind). Registered `nodeTypes` at module scope in GraphCanvas. Changed layout engine from `type: "default"` to `type: "entity"`. Removed manual `.react-flow__node.selected` CSS since BaseNode handles selection internally.
 - **Reason:** All nodes were using React Flow's built-in `"default"` type — unstyled gray rectangles. BaseNode provides a shared, shadcn-compatible node layout (header/content/footer) that makes the graph look polished and extendable.

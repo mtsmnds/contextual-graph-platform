@@ -24,12 +24,12 @@ const SEG_PREFIX_RE = /_seg-\d+$/;
 export function generateEntityId(
   parentId: string | null,
   kind: string,
-  title: string | undefined,
+  content: string | undefined,
   siblingCount: number,
 ): string {
   if (!parentId) {
     if (kind === "container") return generateDocId();
-    return title ? slugify(title) : kind;
+    return content ? slugify(content) : kind;
   }
 
   if (kind === "segment") {
@@ -37,7 +37,7 @@ export function generateEntityId(
     return `${parentId}_seg-${counter}`;
   }
 
-  const slug = title ? slugify(title) : kind;
+  const slug = content ? slugify(content) : kind;
   let base = `${parentId}_${slug}`;
 
   base = base.replace(SEG_PREFIX_RE, "");
@@ -48,11 +48,11 @@ export function generateEntityId(
 export function generateUniqueId(
   parentId: string | null,
   kind: string,
-  title: string | undefined,
+  content: string | undefined,
   existingIds: Set<string>,
   siblingCount: number,
 ): string {
-  const base = generateEntityId(parentId, kind, title, siblingCount);
+  const base = generateEntityId(parentId, kind, content, siblingCount);
   if (!existingIds.has(base)) return base;
 
   let counter = 1;

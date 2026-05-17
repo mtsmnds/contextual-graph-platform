@@ -96,7 +96,7 @@ export function getContainerBreadcrumb(
   for (let i = 0; i < 10; i++) {
     const entity = getEntity(state, current);
     if (!entity) break;
-    crumbs.unshift({ id: current, title: entity.title ?? current });
+    crumbs.unshift({ id: current, title: entity.content || current });
     const parentRel = state.relations.find(
       (r) => r.target === current && r.type === "contains",
     );

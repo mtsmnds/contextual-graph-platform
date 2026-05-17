@@ -16,12 +16,12 @@ export function getLayoutedElements({ entities, relations }: LayoutInput) {
   g.setDefaultEdgeLabel(() => ({}))
 
   const nodes: Node[] = entities.map((entity) => {
-    const label = entity.title || entity.kind || entity.id
+    const content = entity.content || entity.kind || entity.id
     g.setNode(entity.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
     return {
       id: entity.id,
       position: { x: 0, y: 0 },
-      data: { label, kind: entity.kind, id: entity.id },
+      data: { content, kind: entity.kind, id: entity.id },
       type: "entity",
     }
   })

@@ -1,6 +1,6 @@
 # Initiative: Graph Canvas (i1)
 
-Running in parallel with m3 (Tiptap editor).
+make graph canvas mvp up to good base interaction with nodes
 
 ## Architectural Direction
 
@@ -15,23 +15,30 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 ---
 
+## ✅ Done
+
 ## ✅ Phase I — Isolate Product (Complete)
 
-PRD0024: Installed react-router-dom, extracted legacy app to `/tiptap-editor-test`, created workspace shell at `/`. All three steps (I.1–I.3) done in one pass.
+### Phase II — Graph Canvas
 
-- **I.4** MongoDB / DexieJS migration → **Moved to Later**
-
----
-
-## Phase II — Graph Canvas
-
-### ✅ Done
-
+- **PRD0024** Installed react-router-dom, extracted legacy app to `/tiptap-editor-test`, created workspace shell at `/`. All three steps (I.1–I.3) done in one pass.
 - **PRD0025** Schema + `sortOrder` + `queryThread` (II.5 + II.6)
 - **PRD0026** React Flow starter kit — read-only graph with dagre layout, Background/Controls/MiniMap (II.7)
 - **PRD0027** React Flow interactivity — drag, connect, select, sync
 - **PRD0028a** Node CRUD — create/edit/delete with dialogs
 - **PRD0028b** Edge editing, always-visible labels, context menus
+
+
+### now
+
+- **prd0030** - editing text within nodes
+- add claude design skill https://github.com/anthropics/claude-code/blob/main/plugins/frontend-design/skills/frontend-design/SKILL.md
+- resizing
+- test if local storage is storing (i couldn't verify) (use ~/Code/hello2)
+
+- decide handle design and or node edge conection behavior and implement
+   
+- prepare to approach certain nodes having different appearances depending on what they are. 
 
 ### Next (m5)
 
@@ -41,6 +48,8 @@ PRD0024: Installed react-router-dom, extracted legacy app to `/tiptap-editor-tes
 ### Later (m6+)
 
 - **II.12** Highlight active thread in the graph canvas
+
+- **I.4** MongoDB / DexieJS migration → **Moved to Later**
 - **I.4** MongoDB persistence adapter (or alternative embedded DB)
 
 ---

@@ -8,7 +8,7 @@ export function MentionNodeView({ node, editor }: NodeViewProps) {
   const entityId = node.attrs.id as string
   const state = useGraphStore.getState()
   const entity = state.entities.find((e) => e.id === entityId)
-  const label = entity?.title ?? (node.attrs.label as string)
+  const label = entity?.content ?? (node.attrs.label as string)
 
   const handleClick = (e: React.MouseEvent) => {
     if (editor.isEditable && !e.metaKey && !e.ctrlKey) return

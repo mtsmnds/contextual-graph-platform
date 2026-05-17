@@ -39,7 +39,7 @@ function AnnotationCard({
         </button>
       </div>
       <p className="text-sm font-medium text-foreground mt-2">
-        {context.entity.title}
+        {(context.entity.metadata?.title as string) ?? context.entity.content}
       </p>
       <RichTextContent className="text-xs text-muted-foreground leading-relaxed mt-1" content={context.entity.content ?? ""} />
     </div>
@@ -63,7 +63,7 @@ function RelationSidebar() {
           (c) => c.relation.type === "annotates" || c.relation.type === "references",
         );
         if (linked.length === 0) return null;
-        return { sourceId: id, sourceTitle: source.title ?? id, linked };
+        return { sourceId: id, sourceTitle: ((source.metadata?.title as string) ?? source.content) || id, linked };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [expandedPanels, entities, relations]);
@@ -115,7 +115,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
       <div className="pt-12 pb-2">
         <hr className="border-t mb-6" />
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          {entity.title}
+          {(entity.metadata?.title as string) ?? entity.content}
         </h2>
       </div>
     );
@@ -126,7 +126,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
       <div className="pt-12 pb-6">
         <hr className="border-t mb-6" />
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          {entity.title}
+          {(entity.metadata?.title as string) ?? entity.content}
         </h2>
       </div>
     );
@@ -135,7 +135,7 @@ function SegmentCard({ entity }: { entity: Entity }) {
   if (isScene) {
     return (
       <div className="pt-8 pb-4">
-        <h3 className="text-lg font-medium text-foreground">{entity.title}</h3>
+        <h3 className="text-lg font-medium text-foreground">{(entity.metadata?.title as string) ?? entity.content}</h3>
         {entity.content && (
           <RichTextContent className="text-sm text-muted-foreground mt-1" content={entity.content} />
         )}
@@ -163,8 +163,8 @@ function SegmentCard({ entity }: { entity: Entity }) {
           </div>
         ) : (
           <div className="py-2">
-            {entity.title && (
-              <p className="font-medium text-sm text-foreground">{entity.title}</p>
+            {((entity.metadata?.title as string) || entity.content) && (
+              <p className="font-medium text-sm text-foreground">{(entity.metadata?.title as string) ?? entity.content}</p>
             )}
             {entity.content && (
               <RichTextContent className="leading-relaxed text-foreground" content={entity.content} />
@@ -229,7 +229,7 @@ function ReadingViewport() {
         <TiptapEditor
           key={rootEntity?.id ?? "new"}
           content={docContent}
-          title={rootEntity?.title}
+          title={rootEntity?.content}
           onSave={(json) => {
             if (rootEntity) {
               try {
@@ -241,7 +241,7 @@ function ReadingViewport() {
           }}
           onTitleChange={(val) => {
             if (rootEntity) {
-              useGraphStore.getState().updateEntity(rootEntity.id, { title: val })
+              useGraphStore.getState().updateEntity(rootEntity.id, { content: val })
             }
           }}
         />

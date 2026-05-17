@@ -8,8 +8,7 @@ type EntityKind =
 type Entity = {
   id: string;
   kind: EntityKind;
-  title?: string;
-  content?: string;
+  content: string;
   metadata: Record<string, unknown>;
   createdAt: number;
   updatedAt: number;
@@ -32,7 +31,7 @@ type ViewState = {
 };
 
 type GraphSnapshot = {
-  version: number;
+  version: 3;
   entities: Entity[];
   relations: Relation[];
 };
