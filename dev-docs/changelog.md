@@ -14,6 +14,12 @@ Use this to recover context after breaks.
 
 ## 2026-05-16
 
+### m4 - i1 - p4 - reactflow interactivity - prd0027
+- * Refactored `GraphCanvas.tsx`: ref-capture layout (no useEffect guard), diff-based store sync with data merge (preserves positions, refreshes labels on entity rename). Wired `onConnect` → `addRelation(source, target, "related_to")` (store-only, no optimistic local add — avoids double-write race). Wired `onEdgesDelete` → `removeRelation(id)`. `onNodesDelete` is a no-op (deferred to PRD0028). Added "Re-layout" button in `<Panel position="top-right">`. Enabled `deleteKeyCode` for edges only.
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: Full refactor — ref-capture, diff sync, connect, edge delete, re-layout panel
+- **Archive:** `dev-docs/archive/m4-prd0027-reactflow-interactivity.md`
+
 ### m4 - i1 - p3 - reactflow starter kit - prd0026
 - * Created `src/canvas/GraphCanvas.tsx` — controlled React Flow with `Background` (dots, gap 16, size 1.5), `Controls`, `MiniMap`, snap-to-grid. Created `src/engine/layout.ts` — converts store entities/relations to React Flow nodes/edges via Dagre LR layout. Replaced workspace placeholder `<h1>` in `WorkspaceRoot.tsx` with GraphCanvas. Installed `@dagrejs/dagre`. No custom components — only built-in `"default"` node types. React Flow is a view, not source of truth.
 - **Files changed:**
