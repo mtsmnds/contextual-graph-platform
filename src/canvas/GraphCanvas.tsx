@@ -10,6 +10,7 @@ import {
   useEdgesState,
   useReactFlow,
   BackgroundVariant,
+  SelectionMode,
   type Connection,
   type Node,
   type Edge,
@@ -326,6 +327,10 @@ function GraphCanvasContent() {
       onNodeContextMenu={onNodeContextMenu}
       onEdgeContextMenu={onEdgeContextMenu}
       onPaneContextMenu={onPaneContextMenu}
+      panOnDrag={false}
+      panOnScroll={true}
+      selectionOnDrag={true}
+      selectionMode={SelectionMode.Partial}
       fitView
       snapToGrid
       snapGrid={[15, 15]}
@@ -333,7 +338,7 @@ function GraphCanvasContent() {
       multiSelectionKeyCode="Shift"
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
-      <Controls showInteractive={false} />
+      <Controls showInteractive={false} position="bottom-right" orientation="horizontal" />
       <MiniMap pannable zoomable />
       <Panel position="top-right">
         <div className="flex gap-1">
