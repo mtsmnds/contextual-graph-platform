@@ -3,13 +3,13 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
-  Controls,
   MiniMap,
   Panel,
   useNodesState,
   useEdgesState,
   useReactFlow,
   BackgroundVariant,
+  SelectionMode,
   type Connection,
   type Node,
   type Edge,
@@ -18,10 +18,16 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
+import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import NodeDialog from "./NodeDialog"
 import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
+import EntityNode from "./nodes/EntityNode"
 import type { EntityKind } from "../types/graph"
+
+const nodeTypes = { entity: EntityNode }
 
 function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
@@ -304,6 +310,10 @@ function GraphCanvasContent() {
     }
   }, [storeInit, refreshFolderName])
 
+  const onZoomIn = useCallback(() => reactFlowInstance.zoomIn(), [reactFlowInstance])
+  const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
+  const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
+
   const onRelayout = useCallback(() => {
     const { entities, relations } = useGraphStore.getState()
     const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
@@ -313,6 +323,7 @@ function GraphCanvasContent() {
 
   return (
     <ReactFlow
+      nodeTypes={nodeTypes}
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
@@ -326,36 +337,44 @@ function GraphCanvasContent() {
       onNodeContextMenu={onNodeContextMenu}
       onEdgeContextMenu={onEdgeContextMenu}
       onPaneContextMenu={onPaneContextMenu}
+      panOnDrag={false}
+      panOnScroll={true}
+      selectionOnDrag={true}
+      selectionMode={SelectionMode.Partial}
       fitView
       snapToGrid
       snapGrid={[15, 15]}
       deleteKeyCode={["Backspace", "Delete"]}
       multiSelectionKeyCode="Shift"
+      proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
-      <Controls showInteractive={false} />
-      <MiniMap pannable zoomable />
+      <MiniMap pannable zoomable position="bottom-right" />
+      <Panel position="bottom-right" style={{ marginBottom: 8 }}>
+        <ButtonGroup>
+          <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
+            <ZoomIn data-icon />
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
+            <ZoomOut data-icon />
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
+            <Maximize data-icon />
+          </Button>
+        </ButtonGroup>
+      </Panel>
       <Panel position="top-right">
-        <div className="flex gap-1">
-          <button
-            onClick={onCreateNode}
-            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
-          >
+        <ButtonGroup>
+          <Button variant="outline" size="sm" onClick={onCreateNode}>
             New Node
-          </button>
-          <button
-            onClick={onOpenFolder}
-            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={onOpenFolder}>
             Open Folder
-          </button>
-          <button
-            onClick={onRelayout}
-            className="px-2 py-1 text-xs bg-accent text-accent-foreground rounded border shadow-sm hover:bg-accent/80"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={onRelayout}>
             Re-layout
-          </button>
-        </div>
+          </Button>
+        </ButtonGroup>
       </Panel>
       <NodeDialog
         open={nodeDialog !== null}

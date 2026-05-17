@@ -252,3 +252,12 @@ body {
   pointer-events: auto;
   cursor: pointer;
 }
+
+
+
+.react-flow__minimap.bottom.right {
+  bottom: calc(26px + 16px) !important;
+}
+
+
+
