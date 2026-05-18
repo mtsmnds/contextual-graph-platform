@@ -33,7 +33,7 @@ Persist user-arranged node positions and viewport state inside the `GraphSnapsho
 
 5. **On node create at a specific position** (double-click or "New Node"): save that position to `canvas.positions` immediately.
 
-6. **"Re-layout" button** re-runs Dagre for all entities and overwrites `canvas.positions` with the result, then persists.
+6. **"Re-layout" button** — hide it behind a feature flag (`__experimentalReLayout`). If present, it re-runs Dagre for all entities and overwrites `canvas.positions`. Not shipped in this PRD.
 
 7. **Persistence adapters** (`indexeddb-adapter`, `fs-access-adapter`) work unchanged — they already serialize/deserialize the full `GraphSnapshot`. The `WorkspaceSnapshot` type in `persistence/types.ts` should be kept in sync or removed in favor of `GraphSnapshot`.
 
@@ -44,7 +44,7 @@ Persist user-arranged node positions and viewport state inside the `GraphSnapsho
 - `src/types/graph.ts` — add `CanvasState` type, bump `GraphSnapshot` to v4 with `canvas` field
 - `src/store/useGraphStore.ts` — add v3→v4 migration, add `setNodePosition` action, update auto-save to include `canvas`, update viewport persistence from localStorage to store
 - `src/data/seed.ts` — update seed snapshot to v4
-- `src/canvas/GraphCanvas.tsx` — on load: read positions from store; on drag end: save position; on create: save position; on relayout: overwrite positions; remove localStorage viewport logic
+- `src/canvas/GraphCanvas.tsx` — on load: read positions from store; on drag end: save position; on create: save position; gate relayout behind `__experimentalReLayout` flag; remove localStorage viewport logic
 - `src/store/persistence/types.ts` — update `WorkspaceSnapshot` to match new shape (or align with `GraphSnapshot`)
 
 ## Phases
