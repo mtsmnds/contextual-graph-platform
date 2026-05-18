@@ -153,7 +153,7 @@ function GraphCanvasContent() {
     [],
   )
 
-  const setNodePosition = useGraphStore((s) => s.setNodePosition)
+  const setCanvasPositions = useGraphStore((s) => s.setCanvasPositions)
 
   const pendingNodeRef = useRef<{ id: string; position: { x: number; y: number } } | null>(null)
 
@@ -164,10 +164,15 @@ function GraphCanvasContent() {
   }, [])
 
   const onNodeDragStop = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      setNodePosition(node.id, node.position)
+    (_: React.MouseEvent) => {
+      const allNodes = reactFlowInstance.getNodes()
+      const positions: Record<string, { x: number; y: number }> = {}
+      for (const n of allNodes) {
+        positions[n.id] = n.position
+      }
+      setCanvasPositions(positions)
     },
-    [setNodePosition],
+    [reactFlowInstance, setCanvasPositions],
   )
 
   const createNodeAtCenter = useCallback(() => {
@@ -348,24 +353,28 @@ function GraphCanvasContent() {
     setEdges(relayoutedEdges)
   }, [setNodes, setEdges])
 
+  const hydrated = useGraphStore((s) => s.hydrated)
   const savedViewport = useGraphStore((s) => s.canvas.viewport)
   const setViewport = useGraphStore((s) => s.setViewport)
 
   const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
   const [x, y, zoom] = transform
 
-  const restoredViewportRef = useRef(false)
+  const viewportRestoredRef = useRef(false)
   useEffect(() => {
-    if (restoredViewportRef.current) return
-    restoredViewportRef.current = true
+    if (!hydrated || viewportRestoredRef.current) return
+    viewportRestoredRef.current = true
+
     if (savedViewport) {
       reactFlowInstance.setViewport(savedViewport)
+    } else {
+      reactFlowInstance.fitView({ maxZoom: 1 })
     }
-  }, [reactFlowInstance, savedViewport])
+  }, [hydrated, savedViewport, reactFlowInstance])
 
   const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    if (!restoredViewportRef.current) return
+    if (!viewportRestoredRef.current) return
     if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
     viewportTimerRef.current = setTimeout(() => {
       setViewport({ x, y, zoom })
@@ -402,8 +411,6 @@ function GraphCanvasContent() {
       panOnScroll={true}
       selectionOnDrag={true}
       selectionMode={SelectionMode.Partial}
-      fitView
-      fitViewOptions={{ maxZoom: 1 }}
       connectionMode={ConnectionMode.Loose}
       snapToGrid
       snapGrid={[15, 15]}

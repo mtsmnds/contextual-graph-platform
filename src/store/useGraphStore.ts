@@ -67,6 +67,7 @@ interface GraphStore {
   contentLoaded: Record<string, boolean>;
   adapterId: string | null;
   folderName: string | null;
+  hydrated: boolean;
 
   init: (adapter: PersistenceAdapter) => Promise<void>;
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
@@ -105,6 +106,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   contentLoaded: {},
   adapterId: null,
   folderName: null,
+  hydrated: false,
 
   init: async (adapter: PersistenceAdapter) => {
     _adapter = adapter;
@@ -157,6 +159,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     }
 
     _hydrated = true;
+    set({ hydrated: true });
   },
 
   addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown> }, parentId: string | null = null) => {
