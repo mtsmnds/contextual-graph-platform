@@ -7,11 +7,12 @@ compatibility: opencode
 
 ## Overview
 
-Merged workflow combining dev-docs management and PRD lifecycle. Five commands:
+Merged workflow combining dev-docs management and PRD lifecycle. Six commands:
 
 | Command | Purpose |
 |---------|---------|
 | `devdocs init` | Scaffold the dev-docs documentation system |
+| `update` | Post-completion docs update for any non-PRD change |
 | `prd write` | Create a PRD plan file (planning only, no git ops) |
 | `prd start` | Branch and implement a PRD |
 | `prd end` | Archive PRD, update changelog, write ADR, commit |
@@ -93,6 +94,103 @@ Initialize the dev-docs documentation system in a new or existing project.
 4. **Report.** List every file created with a one-line summary of its content.
 
 5. **Suggest commit message:** `"initialized devdocs"`
+
+---
+
+## Mode: update
+
+A general update in main documentation, based on the documentation matrix. Specially useful when merging, to make sure we are providing most updated documentation with the merge
+
+### Steps
+
+#### 1. Pre-Commit Guard
+
+#### 2. Classify the change
+
+| Category | Examples |
+|----------|----------|
+| Feature change | Added capability, changed user-facing behavior, updated acceptance criteria |
+| Architecture change | Build pipeline, data contracts, rendering, output conventions, new module |
+| Operator change | Build/test commands, onboarding steps, secrets, dev workflow |
+| Bug fix / small tweak | Non-feature bug fix, style, minor refactor |
+| Documentation | Changelog, roadmap, comments, AGENTS.md — anything doc-only |
+
+#### 3. Apply the update matrix
+
+| If the change was... | Then update... |
+|---|---|
+| Feature behavior or capability | `requirements.md` — update or add user stories, adjust acceptance criteria |
+| System design, contracts, pipeline | `architecture.md` + `changelog.md` + ADR (see step 5) |
+| Onboarding, quickstart, commands | `AGENTS.md` — update Build, Test, Secrets, or Conventions sections |
+| Bug fix / small tweak | `changelog.md` — add entry |
+| Documentation only | No update needed (the doc IS the change). Optionally log to `changelog.md` if significant. |
+
+A change can fall into multiple categories (e.g. an architecture change → update both `architecture.md` and `changelog.md` + ADR).
+
+#### 4. Changelog entry format
+
+```markdown
+## YYYY-MM-DD
+
+### {short title}
+- **What:** summary of what changed
+- **Reason:** why the change was made
+- **Files changed:**
+  - `path/to/file`: one-line description
+- **Impact:** observable effects, risks, follow-ups
+- **ADR:** `dev-docs/archive/{YYYY-MM-DD}-{short-title}-adr.md` (if applicable)
+```
+
+**Ordering rules:**
+- Most recent on top — entries sorted newest-to-oldest by date.
+- One `## YYYY-MM-DD` per day — group all entries under one date.
+- Purpose/Rules section stays at the very top of the file.
+- Within a single day, entries can be in any order.
+
+#### 5. ADR (mandatory — no exceptions)
+
+**If the change affected architecture** (schema, build pipeline, rendering contracts, data flow, agent operating process) → full ADR:
+
+```markdown
+# {YYYY-MM-DD}: {short-title}
+
+## Context
+- What problem or pressure triggered this decision?
+- What constraints were relevant?
+
+## Decision
+- What was chosen?
+- What is in scope and out of scope?
+
+## Alternatives Considered
+- Option A: summary, pros, cons.
+- Option B: summary, pros, cons.
+
+## Consequences
+- Positive outcomes expected.
+- Trade-offs accepted.
+- Risks introduced and mitigation.
+
+## Follow-ups
+- Required implementation tasks.
+- Required documentation updates.
+```
+
+**If no architecture change** → short-form ADR:
+
+```markdown
+# {YYYY-MM-DD}: {short-title} — no architectural changes
+
+This change did not affect architecture. See changelog entry for scope.
+```
+
+Save ADR to `dev-docs/archive/{YYYY-MM-DD}-{short-title}-adr.md`. Link from the changelog entry.
+
+#### 6. Do NOT commit
+
+Documentation updates only. The user commits separately (or runs `prd end` if this turned into a PRD).
+
+#### 7. Append to workflow log
 
 ---
 

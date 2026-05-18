@@ -52,10 +52,6 @@
 4. `roadmap.md` — priority (what to do now vs later).
 5. `changelog.md` + relevant ADRs — history/decisions.
 
-### Post-completion
-
-After every completed change, load the `dev-docs` skill (`skill({ name: "dev-docs" })`) and follow its update instructions to keep all docs current.
-
 ## Conventions
 
 <!--

@@ -15,7 +15,7 @@ This document defines why this project exists, who it serves, and what capabilit
 ## Target Audience
 - Primary: The developer building both products from this codebase.
 - Secondary: OpenCode agents contributing to the codebase.
-- Contributors/agents: Implementers using the dev-docs workflow.
+- Contributors/agents: Implementers using the dev-workflow skill.
 
 ## Functional Requirements
 
