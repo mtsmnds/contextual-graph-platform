@@ -14,7 +14,7 @@ export function BaseHandle({
     <Handle
       {...props}
       className={cn(
-        "rounded-full transition-colors",
+        "rounded-full transition-colors cursor-grab",
         className,
       )}
     >

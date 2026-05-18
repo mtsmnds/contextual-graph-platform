@@ -129,7 +129,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
               rows={1}
             />
           ) : (
-            <p className="m-0 cursor-grab text-sm text-foreground">
+            <p className="m-0 cursor-default text-sm text-foreground">
               {data.content || <span className="text-muted-foreground">Type here...</span>}
             </p>
           )}
