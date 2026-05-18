@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd merge — m4-prd0040-edge-inline-editing
+- **Branch at time:** main (clean)
+- **User decision:** merge single branch (m4-prd0040-edge-inline-editing)
+- **Merge order:** m4-prd0040-edge-inline-editing (0040)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** no changes
+
 ### prd end — m4-prd0040-edge-inline-editing
 - **Source:** roadmap: "Edge inline editing"
 - **Branch at time:** m4-prd0040-edge-inline-editing (clean)
