@@ -36,7 +36,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
 - **prd0033** - four multidirectional edges
 - **prd0034** - FS Access persistence test — verified load, create, edit, delete, reload roundtrip with `~/Code/hello2`
 - **prd0035** - cursor styles 
-- Double-click on pane → create new node at click position (zoomOnDoubleClick=false)
+- **prd0036** - double-click pane to create node at click position + fix node positioning for button (ADR: archive/m4/m4-prd0036-pane-double-click-position-fix.md)
 
 
 ## Now (ordered by dependency)
