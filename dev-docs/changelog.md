@@ -14,6 +14,20 @@ Use this to recover context after breaks.
 
 ## 2026-05-17
 
+### m4 - prd0034 - FS Access persistence test
+- **What:** Verified the FS Access persistence layer end-to-end after PRD0033 edge-handle changes. Cleaned up `~/Code/hello2/` — replaced stale v2 schema data (corrupted titles, orphaned annotations) with fresh v3 test data: 8 entities (2 seed containers + "Tech Stack" container + 5 tech-stack concepts), 7 relations (5x `contains` + 2x `related_to`), and 3 Tiptap documents. Opened folder in browser via "Open Folder" → all nodes and edges rendered correctly. Created new "Vite" node → auto-save wrote to `~/Code/hello2/graph.json` within 300ms. Inline-edited content from "concept" to "Vite" → auto-save persisted. Reloaded page → FS handle auto-reconnected (`tryReconnect()`) → all data restored including the "Vite" node. Zero console errors. No code changes required.
+- **Reason:** The FS Access adapter and auto-save had never been tested with real entities+relations after the edge connection and handle implementations (PRD0028b–PRD0033). The existing `~/Code/hello2/` data was from a v2 schema and had accumulated stale annotations from editor tests, making real persistence verification impossible.
+- **Files changed:**
+  - `~/Code/hello2/graph.json`: Rewritten — v3 schema, 8 entities, 7 relations
+  - `~/Code/hello2/documents/about-workspace.json`: Refreshed seed TipTap content
+  - `~/Code/hello2/documents/editor-playground.json`: Refreshed seed TipTap content
+  - `~/Code/hello2/documents/tech-stack.json`: **New** — TipTap content for Tech Stack container
+  - `dev-docs/plans/m4-prd0034-fs-access-persistence-test.md`: **New** — PRD plan
+  - `dev-docs/archive/m4/m4-prd0034-fs-access-persistence-test.md`: Archived PRD with completion note
+  - `dev-docs/plans/i1-graph-canvas/i1-roadmap.md`: Moved test item from "now" to "✅ Done"
+- **Impact:** Persistence roundtrip confirmed working — load from folder, create/edit entities, auto-save to disk, survive page reload. The FS handle stored in IndexedDB enables seamless reconnection without re-picking the folder. The test folder `~/Code/hello2/` now has clean, meaningful test data that exercises both nodes and edges in the graph canvas.
+- **Archive:** `dev-docs/archive/m4/m4-prd0034-fs-access-persistence-test.md`
+
 ### m4 - prd0031 - inline node editing
 - **What:** Schema migration (dropped `title`, made `content: string` required, v2→v3 snapshot) and inline text editing inside EntityNode. Textarea with `nodrag nowheel nopan`, auto-sizing height, commit on Escape/blur (Enter = newline). Double-click enters edit mode. Context menu "Edit" triggers inline edit via `editTrigger` counter. New nodes open in edit mode immediately. NodeDialog removed (kind changes deferred). Seed data restructured — Tiptap JSON moved to separate `SEED_CONTAINER_CONTENT` map.
 - **Reason:** Nodes were static — editing required a separate dialog. The Figma pattern (double-click to edit inline) is faster and more natural. Schema cleanup removes the redundant `title`/`content` duality.

@@ -34,12 +34,11 @@ Entities carry content. Relations carry typed links with sort order. Projections
   - decide handle design and or node edge conection behavior and implement
   - fix node resizing - remove top and bottom resizing (node height governed by textarea)
 - **prd0033** - four multidirectional edges
+- **prd0034** - FS Access persistence test — verified load, create, edit, delete, reload roundtrip with `~/Code/hello2`
 
 
 ### now
 
-
-- test if local storage is storing (i couldn't verify) (use ~/Code/hello2)
 
 - after adding the percent view and zoom to 100% buttons, fine tune the size of text and the size of the handle and border activation area.
 - handle border thickness change with interaction, same as borders, but with different shades cause the borders go very dark
