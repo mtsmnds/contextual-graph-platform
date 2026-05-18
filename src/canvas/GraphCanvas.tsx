@@ -70,9 +70,14 @@ function GraphCanvasContent() {
       for (const [id, layoutedNode] of layoutedById) {
         const existing = prevById.get(id)
         if (existing) {
-          merged.push({ ...existing, data: layoutedNode.data })
+          merged.push({ ...existing, data: { ...existing.data, ...layoutedNode.data } })
         } else {
-          merged.push(layoutedNode)
+          const pending = pendingNodeRef.current
+          if (pending && pending.id === id) {
+            merged.push({ ...layoutedNode, position: pending.position, data: { ...layoutedNode.data, editTrigger: 1 } })
+          } else {
+            merged.push(layoutedNode)
+          }
         }
       }
 
@@ -140,20 +145,37 @@ function GraphCanvasContent() {
     [],
   )
 
-  const createNodeAtCenter = useCallback(() => {
+  const pendingNodeRef = useRef<{ id: string; position: { x: number; y: number } } | null>(null)
+
+  const createNode = useCallback((position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("concept")
+    pendingNodeRef.current = { id, position }
+  }, [])
+
+  const createNodeAtCenter = useCallback(() => {
     const viewport = reactFlowInstance.screenToFlowPosition({
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
     })
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === id
-          ? { ...n, position: viewport, data: { ...n.data, editTrigger: 1 } }
-          : n,
-      ),
-    )
-  }, [reactFlowInstance, setNodes])
+    createNode(viewport)
+  }, [reactFlowInstance, createNode])
+
+  const flowRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = flowRef.current
+    if (!el) return
+    const handler = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest(".react-flow__node")) return
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      })
+      createNode(position)
+    }
+    el.addEventListener("dblclick", handler, { capture: true })
+    return () => el.removeEventListener("dblclick", handler, { capture: true })
+  }, [reactFlowInstance, createNode])
 
   const onEdgeDoubleClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
@@ -320,6 +342,8 @@ function GraphCanvasContent() {
       onNodeContextMenu={onNodeContextMenu}
       onEdgeContextMenu={onEdgeContextMenu}
       onPaneContextMenu={onPaneContextMenu}
+      ref={flowRef}
+      zoomOnDoubleClick={false}
       panOnDrag={false}
       panOnScroll={true}
       selectionOnDrag={true}

@@ -35,22 +35,37 @@ Entities carry content. Relations carry typed links with sort order. Projections
   - fix node resizing - remove top and bottom resizing (node height governed by textarea)
 - **prd0033** - four multidirectional edges
 - **prd0034** - FS Access persistence test — verified load, create, edit, delete, reload roundtrip with `~/Code/hello2`
+- **prd0035** - cursor styles 
+- Double-click on pane → create new node at click position (zoomOnDoubleClick=false)
 
 
 ## Now (ordered by dependency)
 
-#### PRD0035 — Interaction & Position Persistence
+#### Interaction & Position Persistence
 
 Foundation batch. Everything structural depends on stable positions.
 
-- Cursor styles: pointer on canvas pane, pointer/grab on node body (grab = draggable), text cursor on editable text (node content, edge labels), pointer on handles
-- Double-click on pane → create new node at click position. Disable React Flow's built-in double-click-to-zoom (`noZoomOnDoubleClick`)
-- Easy connect (`easyconnect` prop on ReactFlow) — shows a floating handle when dragging from a node, making edge creation intuitive
+
 - Viewport logger component in the bottom-right control group (shows x/y/zoom as live text, separated from zoom/fit buttons)
+
+- zoom improvements
+  - viewport logger: show the viewport logger in the `control` button group, to the left of the buttons, after a separator (shadcn)
+    - button group: https://ui.shadcn.com/docs/components/base/button-group
+    - i want a separation between the logger's `x/y/zoom` live text and the buttons, do we achieve that by nestiong button groups as the text in ref link says, or the `x/y/zoom` lives in another component/div (since its not a button)?
+    - follow shadcn/tailwind for a text that is not primary. describe which style will use
+    - zoom is in percentage (%)
+
+  - add a button that does `zoom=100%` to the button group
+  - when the canvas is opened/refreshed, the viewport should never fit to more than 100% zoom, however this rule does not superseed persistence of the user's location and zoom if that is saved.
+
+  - check if there is a feature that is storing the user's x/y/zoom and using saving so it loads on next reload/open. if it doesn't exist (i think it doesnt) then lets create it.
+
+
+- Easy connect (`easyconnect` prop on ReactFlow) — shows a floating handle when dragging from a node, making edge creation intuitive
 - **Save node positions** — schema v4: add `canvas: { positions: Record<string, {x, y}>, viewport?: {x, y, zoom} }` to `GraphSnapshot`. On load, use saved positions when available (fall back to Dagre for new entities). "Re-layout" button re-runs Dagre and overwrites saved positions. This is the foundation for user-arranged layouts, sub-flows, and any positional work.
 - Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
 
-#### PRD0036 — Node & Edge Data Editing
+#### Node & Edge Data Editing
 
 Core editing capability — the biggest current pain point (user couldn't edit metadata, relation types, or entity kinds).
 
@@ -62,7 +77,7 @@ Core editing capability — the biggest current pain point (user couldn't edit m
   - `id` — read-only display
 - **Context menu "Edit"** currently triggers inline text editing; change it to open the NodeAppendix inspector. Inline editing stays available via double-click on the node body.
 
-#### PRD0037 — Structural Container Grouping
+#### Structural Container Grouping
 
 Making the `contains` relation visible by rendering containers as visual groups that enclose their children.
 
@@ -74,7 +89,7 @@ Making the `contains` relation visible by rendering containers as visual groups 
 
 Depends on: PRD0035 (positions + schema v4 for `canvas.positions`).
 
-#### PRD0038 — Undo/Redo
+#### Undo/Redo
 
 Cross-cutting history system for graph operations.
 
@@ -85,7 +100,7 @@ Cross-cutting history system for graph operations.
 
 Could be done at any point, but harder to retrofit once more store actions accumulate.
 
-#### Cleanup polish (after PRD0038)
+#### Cleanup polish
 
 Former "now" items, deferred:
 

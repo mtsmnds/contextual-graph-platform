@@ -251,11 +251,26 @@ body {
   --xy-handle-border-color: var(--border);
 }
 
+.react-flow__pane {
+  cursor: default !important;
+}
+
+.react-flow__node {
+  cursor: grab;
+}
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
 .react-flow__edge-label {
   font-size: 10px;
   opacity: 1 !important;
   pointer-events: auto;
-  cursor: pointer;
+  cursor: default;
+}
+
+.react-flow__handle {
+  cursor: grab;
 }
 
 
