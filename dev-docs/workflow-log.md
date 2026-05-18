@@ -7,6 +7,16 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd write — m4-prd0039-cmd-drag-duplicate-node
+- **Source:** roadmap: "Cmd+drag to duplicate node"
+- **Branch at time:** main (clean)
+- **User decision:** full clone (kind+content+metadata), preserve relative positions on multi-select, no auto-edit mode
+- **PRD file:** `dev-docs/plans/m4-prd0039-cmd-drag-duplicate-node.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** no changes
+
+
+
 ### prd merge — cursor-styles → create-node-on-double-click → prd0037-zoom-improvements → m4-prd0038-save-node-positions
 - **Branch at time:** m4-prd0038-save-node-positions (clean)
 - **User decision:** follow suggested order; archived prd0037 before merge
