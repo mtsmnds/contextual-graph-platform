@@ -1,3 +1,9 @@
+> **Completion note (2026-05-18):**
+> - **What was built:** Context-appropriate cursors across the graph canvas. Canvas pane → `default` (`!important` overrides React Flow's `pointer` from `selectionOnDrag`). Node body non-text → `grab`, dragging → `grabbing`. Node text content → `default`, editing → `text`. Edge labels → `default` (was `pointer`). Handles → `grab`. Verified all 7 cursor scenarios from the PRD.
+> - **Key decisions:** Used `!important` on `.react-flow__pane` to override React Flow's default `pointer` cursor (from `selectionOnDrag` being enabled) — no alternative way to override React Flow's inline cursor on the pane element.
+> - **Deviations from plan:** None — implementation matches the PRD exactly.
+> - **Postponed:** None (cursor styles were a self-contained task).
+
 # PRD0035 — Cursor Styles
 
 ## Overview

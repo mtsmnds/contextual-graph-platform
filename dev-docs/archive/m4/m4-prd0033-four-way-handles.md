@@ -1,3 +1,9 @@
+> **Completion note (2026-05-18):**
+> - **What was built:** Replaced 2-handle setup (target left, source right) with 4 handles at every edge (top/right/bottom/left), all `type="source"` — direction is source→target in the Connection object. `onConnect` stores `sourceHandle`/`targetHandle` in relation metadata. `isValidConnection` prevents self-connections. Layout engine passes handle IDs from metadata to React Flow `Edge`, so edges reconnect at correct handle positions on reload.
+> - **Key decisions:** All 4 handles use `type="source"` — direction is captured by source→target in Connection, not by handle type. Handle IDs stored in `Relation.metadata` as an interim solution — future evolution may extract to dedicated `canvasView` field.
+> - **Deviations from plan:** None — implementation matches the PRD exactly.
+> - **Postponed:** View data namespacing (prefix `canvas.sourceHandle`) and first-class `canvasView` field — deferred as noted in "Future evolution" section.
+
 ## Task: 4-Way Handles
 
 ### Purpose

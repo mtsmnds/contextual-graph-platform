@@ -1,3 +1,9 @@
+> **Completion note (2026-05-18):**
+> - **What was built:** Added BaseHandle (left/right) and invisible NodeResizer to EntityNode. Handles are 14px dots with 2px border, themed via React Flow CSS variables. Resize is cursor-only (no visible dots) via NodeResizer with `opacity-0` lines/handles. Min size 60×45. `::before` expansion on handles creates ~18px grab zone. Handle hit area wins over resize at left/right midpoints via z-index.
+> - **Key decisions:** ① Colors via React Flow CSS variables (`--xy-handle-*`), sizing via specificity override (`.react-flow .react-flow__handle` = 2 classes > 1) — zero `!important`. ② Resize `::before` expansion on edge lines to 8px (from 2px) for full edge activation; corners covered by overlapping edge strips. ③ `lineClassName`/`handleClassName` props removed from NodeResizer — all styling in `index.css`. ④ Top/bottom resize removed — node height governed by textarea.
+> - **Deviations from plan:** No ADR was written as a separate file — decisions are documented inline in the PRD (they still are). The PRD specified left-handle-only initially but that evolved into 2-handle (left target, right source), which was later replaced by PRD0033's 4-handle setup.
+> - **Postponed:** Visible resize dots/corner handles deferred (resize remains cursor-only). Border lines on resize hover also deferred.
+
 ## Task: Edge Handles + Invisible Resize
 
 ### Purpose

@@ -12,6 +12,18 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-18
+
+### m4 - prd0035 - cursor styles (cursor-styles branch, unmerged)
+- **What:** Context-appropriate cursors across the graph canvas. Canvas pane → `default` (`!important` overrides React Flow's `pointer` from `selectionOnDrag`). Node body non-text → `grab`, dragging → `grabbing`. Node text content → `default`, editing → `text`. Edge labels → `default` (was `pointer`). Handles → `grab`. Verified all 7 cursor scenarios.
+- **Reason:** The cursor is the first feedback the user gets — matching cursor to expected interaction makes the canvas feel intentional rather than confusing. The pane was showing `pointer` (from `selectionOnDrag`), nodes had no grab affordance, and edge labels falsely signaled clickability.
+- **Files changed:**
+  - `src/index.css`: Added pane (`default`), node (`grab`/`grabbing`), handle (`grab`) cursors; changed edge-label from `pointer` to `default`
+  - `src/canvas/nodes/EntityNode.tsx`: Changed text `<p>` from `cursor-grab` to `cursor-default`
+  - `src/components/base-handle.tsx`: Added `cursor-grab` to className
+- **Impact:** Canvas cursor behavior now matches user expectations — pane is for selection/context-menu, nodes are grab-draggable, text is read-only until double-clicked.
+- **Archive:** `dev-docs/archive/m4/m4-prd0035-cursor-styles.md`
+
 ## 2026-05-17
 
 ### m4 - prd0034 - FS Access persistence test
@@ -43,6 +55,26 @@ Use this to recover context after breaks.
   - `src/renderers/ReadingViewport.tsx`, `AppSidebar.tsx`, `HomePage.tsx`, `TiptapEditor.tsx`, `PassageLinkPopover.tsx`, `MentionNodeView.tsx`, `queries.ts`: All `entity.title` → `entity.content`/`metadata.title` fallback
 - **Impact:** Nodes editable inline — double-click to type, Enter for newline, Escape/blur to commit. Schema is cleaner (one text field). Existing data migrated automatically. Foundation for handles (PRD0032) and resize (PRD0032).
 - **Archive:** `dev-docs/archive/m4-prd0031-inline-node-editing.md`
+
+### m4 - prd0033 - four-way handles
+- **What:** Replaced 2-handle setup (target left, source right) with 4 handles at every edge (top/right/bottom/left), all `type="source"` — direction captured by source→target in Connection, not handle type. `onConnect` stores `sourceHandle`/`targetHandle` in relation metadata. `isValidConnection` prevents self-connections. Layout engine passes handle IDs from metadata to React Flow `Edge` for correct reconnection on reload.
+- **Reason:** Users need to connect any side of any node to any side of any other node — 4 handles make the graph feel responsive and precise rather than forcing connections to fixed left/right positions.
+- **Files changed:**
+  - `src/canvas/nodes/EntityNode.tsx`: Replaced 2 BaseHandle calls with 4, each with unique `id` (top/right/bottom/left)
+  - `src/canvas/GraphCanvas.tsx`: `onConnect` stores handle IDs, added `isValidConnection` (no self-connections)
+  - `src/engine/layout.ts`: Passes `sourceHandle`/`targetHandle` from relation metadata to Edge
+- **Impact:** Any-to-any edge connections. Self-connections blocked. Handle positions survive grid reload. Foundation for future view data namespacing.
+- **Archive:** `dev-docs/archive/m4/m4-prd0033-four-way-handles.md`
+
+### m4 - prd0032 - handles and invisible resize
+- **What:** Added BaseHandle (left target, right source) and invisible NodeResizer to EntityNode. Handles are 14px dots with 2px border, themed via React Flow CSS variables — zero `!important` except on resize cursor rules (inline React Flow override). `::before` pseudo-element expands handle hit area to ~18px. Resize is cursor-only: 2px edge lines expanded to 8px via `::before` for full edge activation, corners covered by overlapping edge strips. Top/bottom resize removed after prototyping (node height governed by textarea). Min size 60×45.
+- **Reason:** Nodes had no connection handles and no resize capability. Handles enable edge creation. Resize lets users adjust node width for readable text display. Cursor-only resize keeps the visual clean (no visible resize dots).
+- **Files changed:**
+  - `src/components/base-handle.tsx`: **New** — installed from reactflow.dev shadcn registry
+  - `src/canvas/nodes/EntityNode.tsx`: Added BaseHandle + NodeResizer imports and render
+  - `src/index.css`: Handle hit-area expansion (`::before`), resize cursor rules (edge lines + corners), handle theming via CSS variables + specificity
+- **Impact:** Nodes have edge connection handles. Nodes are resizable by dragging edges. Handle hit areas are generous (~18px). Resize activation covers full edge (~8px from border). Foundation for PRD0033 (4-way handles) and future resize dot visibility.
+- **Archive:** `dev-docs/archive/m4/m4-prd0032-handles-and-resize.md`
 
 ### m4 - prd0030 - test and ui refinement — BaseNode custom entity node
 - **What:** Implemented a custom entity node using React Flow's BaseNode shadcn-style component. Installed `base-node` (BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) from reactflow.dev UI registry and `badge` from standard shadcn registry. Created `EntityNode.tsx` composing BaseNode + Badge (shows entity kind). Registered `nodeTypes` at module scope in GraphCanvas. Changed layout engine from `type: "default"` to `type: "entity"`. Removed manual `.react-flow__node.selected` CSS since BaseNode handles selection internally.
