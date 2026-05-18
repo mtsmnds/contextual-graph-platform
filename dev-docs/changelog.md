@@ -14,6 +14,18 @@ Use this to recover context after breaks.
 
 ## 2026-05-18
 
+### m4 — prd0040 — edge inline editing
+- **What:** Double-click edge label → inline text input + combobox of existing relation types. Custom `EdgeLabel` edge component renders Bezier path with `EdgeLabelRenderer` for interactive label. Enter/blur commits via `updateRelation`, Escape cancels. Dropdown click immediately selects and commits. Removed EdgeDialog, `onEdgeDoubleClick`, edge context menu "Edit Relation". Added pane double-click guard (`.react-flow__edge-label` / `.react-flow__edge` check) to prevent accidental node creation when interacting with edge labels.
+- **Reason:** Inline editing is faster than a modal dialog — same commit pattern as node inline editing. Eliminates unnecessary modal overhead.
+- **Files changed:**
+  - `src/canvas/edges/EdgeLabel.tsx` (new): Custom edge component with inline editing
+  - `src/canvas/GraphCanvas.tsx`: Registered `edgeTypes`; removed EdgeDialog import/state/handlers; removed "Edit Relation" from edge context menu; added pane double-click guard for edges
+  - `src/engine/queries.ts`: Added `getRelationTypes()` utility
+  - `src/canvas/EdgeDialog.tsx` (deleted): Replaced by inline editing
+- **Impact:** Faster edge type editing. No more modal dialog. Edge label clicks don't accidentally create nodes.
+- **Archive:** `dev-docs/archive/m4/m4-prd0040-edge-inline-editing.md`
+- **ADR:** `dev-docs/archive/m4/2026-05-18-prd0040-edge-inline-editing-adr.md`
+
 ### m4 — prd0039 — cmd+drag to duplicate node
 - **What:** Cmd+drag on a node clones the entity (kind, content, metadata) with a unique ID and places the copy at the drop position (snapped to 15px grid). Multi-selection Cmd+drag duplicates all selected nodes while preserving relative offsets. Ghost nodes (50% opacity) appear at original positions during drag for visual confirmation — user sees two nodes confirming duplication. Dagre disabled via `__experimentalNoDagre` — node positions come only from the store. `setCanvasPositions` changed from hard-replace to merge (spreads existing positions under new ones) with a `replaceCanvasPositions` variant for deliberate bulk resets. Fallback positions log a `console.warn` when a node has no saved position (canary for position leaks).
 - **Reason:** Fast node duplication without leaving the canvas. The ghost UX eliminates the "did it work?" uncertainty on drop. The `setCanvasPositions` merge prevents accidental position data loss (found during development — Cmd+drag handler was dropping all other saved positions). Dagre disabled because it fights user-positioned layouts.

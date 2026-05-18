@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd start — m4-prd0040-edge-inline-editing
+- **Source:** roadmap: "Edge inline editing"
+- **Branch at time:** main (clean)
+- **User decision:** branch from main
+- **Branch name:** m4-prd0040-edge-inline-editing
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
+
 ### prd write — m4-prd0041-node-metadata-panel
 - **Source:** roadmap: "Node metadata panel (NodeAppendix)"
 - **Branch at time:** main (dirty — prd0040 files)

@@ -1,3 +1,9 @@
+> **Completion note (2026-05-18):**
+> - **What was built:** Edge label double-click → inline text input + combobox of existing relation types. Custom edge component (`EdgeLabel`) with Bezier path + EdgeLabelRenderer for interactive label. Removed EdgeDialog entirely. Added pane double-click guard to prevent accidental node creation when editing edge labels.
+> - **Key decisions:** EdgeLabelRenderer + getBezierPath for label rendering (standard React Flow pattern). Dropdown is simple positioned `div` list (not Popover+Command) to avoid integration complexity with absolute edge label positioning.
+> - **Deviations from plan:** Added pane double-click guard (`el.closest(".react-flow__edge-label")` / `.react-flow__edge` check) to fix edge label clicks creating nodes. Not in the original spec, but required for correct UX.
+> - **Postponed:** None.
+
 # m4-prd0040 — Edge Inline Editing
 
 ## Overview
