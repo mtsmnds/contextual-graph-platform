@@ -321,5 +321,11 @@ body {
   cursor: ew-resize !important;
 }
 
+.react-flow__node.ghost-node {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: default;
+}
+
 
 

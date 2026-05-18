@@ -32,9 +32,16 @@ Hold Cmd while dragging a node in the React Flow canvas to create a full clone a
 7. **Key state is captured at drag start:**
    - The Cmd key state is read when `onNodeDragStart` fires. Mid-drag changes to the modifier key do not affect the outcome.
 
+8. **Ghost node during drag (visual feedback):**
+   - On drag start with Cmd held, semi-transparent ghost copies of the original node(s) appear at the original positions.
+   - During the drag, the user sees two nodes: the ghost (at the original spot) and the dragged node moving (appearing as the clone-to-be).
+   - On drop, the ghost is removed, the original snaps back to its position, and the real clone appears at the drop endpoint.
+   - Ghost nodes use a `ghost-node` CSS class for styling (50% opacity, no pointer events).
+
 ## Files Changed (inferred)
 
-- `src/canvas/GraphCanvas.tsx` — add `onNodeDragStart` to capture Cmd state + source nodes; modify `onNodeDragStop` to run duplication logic; add refs for key tracking
+- `src/canvas/GraphCanvas.tsx` — add `onNodeDragStart` to capture Cmd state + source nodes + inject ghost nodes; modify `onNodeDragStop` to remove ghosts, revert originals, and create clones; add refs for key tracking
+- `src/index.css` — add `.react-flow__node.ghost-node` styles
 
 ## Phases
 

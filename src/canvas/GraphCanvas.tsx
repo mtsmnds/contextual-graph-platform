@@ -40,13 +40,13 @@ function GraphCanvasContent() {
   const layoutRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   if (layoutRef.current === null) {
     if (__experimentalNoDagre) {
-      const nodes: Node[] = entities.map((entity) => {
+      const nodes: Node[] = entities.map((entity, idx) => {
         const content = entity.content || entity.kind || entity.id
         const saved = savedPositions[entity.id]
         return {
           id: entity.id,
           type: "entity",
-          position: saved ?? { x: 0, y: 0 },
+          position: saved ?? { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 },
           data: { content, kind: entity.kind, id: entity.id },
           style: { width: 200 },
         }
@@ -107,7 +107,7 @@ function GraphCanvasContent() {
             const newNode: Node = {
               id: entity.id,
               type: "entity",
-              position: saved ?? { x: 0, y: 0 },
+              position: saved ?? { x: merged.length * 30, y: merged.length * 30 },
               data: { content, kind: entity.kind, id: entity.id },
               style: { width: 200 },
             }
@@ -270,8 +270,21 @@ function GraphCanvasContent() {
         }))
 
       dragStateRef.current = { originals }
+
+      setNodes((prev) => [
+        ...prev,
+        ...originals.map((o) => ({
+          id: `__ghost_${o.id}`,
+          type: "entity" as const,
+          position: o.originalPosition,
+          data: { content: o.content, kind: o.kind, id: `__ghost_${o.id}` },
+          style: { width: 200 },
+          className: "ghost-node",
+          selectable: false,
+        })),
+      ])
     },
-    [reactFlowInstance],
+    [reactFlowInstance, setNodes],
   )
 
   const createNode = useCallback((position: { x: number; y: number }) => {
@@ -288,8 +301,10 @@ function GraphCanvasContent() {
       if (dragState) {
         dragStateRef.current = null
 
+        const ghostIds = new Set(dragState.originals.map((o) => `__ghost_${o.id}`))
+
         const store = useGraphStore.getState()
-        const positions: Record<string, { x: number; y: number }> = {}
+        const positions = { ...store.canvas.positions }
 
         for (const orig of dragState.originals) {
           const droppedNode = allNodes.find((n) => n.id === orig.id)
@@ -304,10 +319,12 @@ function GraphCanvasContent() {
         }
 
         setNodes((nds) =>
-          nds.map((n) => {
-            const orig = dragState.originals.find((o) => o.id === n.id)
-            return orig ? { ...n, position: orig.originalPosition } : n
-          }),
+          nds
+            .filter((n) => !ghostIds.has(n.id))
+            .map((n) => {
+              const orig = dragState.originals.find((o) => o.id === n.id)
+              return orig ? { ...n, position: orig.originalPosition } : n
+            }),
         )
 
         setCanvasPositions(positions)
