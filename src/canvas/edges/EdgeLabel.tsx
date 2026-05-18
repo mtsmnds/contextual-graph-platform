@@ -3,6 +3,7 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
+  useReactFlow,
   type EdgeProps,
 } from "@xyflow/react"
 import { useGraphStore } from "../../store/useGraphStore"
@@ -29,6 +30,7 @@ function EdgeLabel({
   })
 
   const relations = useGraphStore((s) => s.relations)
+  const { setEdges } = useReactFlow()
   const relationTypes = useMemo(
     () => [...new Set(relations.map((r) => r.type))].sort(),
     [relations],
@@ -45,10 +47,11 @@ function EdgeLabel({
     const trimmed = value.trim()
     if (trimmed && trimmed !== label) {
       useGraphStore.getState().updateRelation(id, { type: trimmed })
+      setEdges((eds) => eds.map((e) => (e.id === id ? { ...e, label: trimmed } : e)))
     }
     setIsEditing(false)
     setShowDropdown(false)
-  }, [value, label, id])
+  }, [value, label, id, setEdges])
 
   const cancel = useCallback(() => {
     setValue(typeof label === "string" ? label : "")
@@ -73,10 +76,11 @@ function EdgeLabel({
   const selectType = useCallback(
     (type: string) => {
       useGraphStore.getState().updateRelation(id, { type })
+      setEdges((eds) => eds.map((e) => (e.id === id ? { ...e, label: type } : e)))
       setIsEditing(false)
       setShowDropdown(false)
     },
-    [id],
+    [id, setEdges],
   )
 
   if (isEditing) {
