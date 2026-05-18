@@ -86,6 +86,10 @@ export function resolveContainer(
   return resolveContainer(state, parentRel.source);
 }
 
+export function getRelationTypes(state: GraphState): string[] {
+  return [...new Set(state.relations.map((r) => r.type))].sort()
+}
+
 export function getContainerBreadcrumb(
   state: GraphState,
   containerId: string,

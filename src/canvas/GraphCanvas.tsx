@@ -24,11 +24,12 @@ import type { EntityKind, GraphSnapshot } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
-import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
 import EntityNode from "./nodes/EntityNode"
+import EdgeLabel from "./edges/EdgeLabel"
 
 const nodeTypes = { entity: EntityNode }
+const edgeTypes = { edgelabel: EdgeLabel }
 
 function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
@@ -65,7 +66,7 @@ function GraphCanvasContent() {
         sourceHandle: rel.metadata?.sourceHandle as string | undefined,
         targetHandle: rel.metadata?.targetHandle as string | undefined,
         label: rel.type,
-        type: "default",
+        type: "edgelabel",
       }))
       layoutRef.current = { nodes, edges }
     } else {
@@ -84,12 +85,6 @@ function GraphCanvasContent() {
   const reactFlowInstance = useReactFlow()
   const storeInit = useGraphStore((s) => s.init)
   const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
-
-  const [edgeDialog, setEdgeDialog] = useState<{
-    edgeId: string
-    initialType?: string
-    initialSortOrder?: string
-  } | null>(null)
 
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -152,7 +147,7 @@ function GraphCanvasContent() {
               sourceHandle: rel.metadata?.sourceHandle as string | undefined,
               targetHandle: rel.metadata?.targetHandle as string | undefined,
               label: rel.type,
-              type: "default",
+              type: "edgelabel",
             })
           }
         }
@@ -368,7 +363,10 @@ function GraphCanvasContent() {
     const el = flowRef.current
     if (!el) return
     const handler = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest(".react-flow__node")) return
+      const el = e.target as HTMLElement
+      if (el.closest(".react-flow__node")) return
+      if (el.closest(".react-flow__edge-label")) return
+      if (el.closest(".react-flow__edge")) return
       const position = reactFlowInstance.screenToFlowPosition({
         x: e.clientX,
         y: e.clientY,
@@ -378,30 +376,6 @@ function GraphCanvasContent() {
     el.addEventListener("dblclick", handler, { capture: true })
     return () => el.removeEventListener("dblclick", handler, { capture: true })
   }, [reactFlowInstance, createNode])
-
-  const onEdgeDoubleClick = useCallback(
-    (_: React.MouseEvent, edge: Edge) => {
-      const rel = relations.find((r) => r.id === edge.id)
-      if (rel) {
-        setEdgeDialog({
-          edgeId: rel.id,
-          initialType: rel.type,
-          initialSortOrder: rel.sortOrder,
-        })
-      }
-    },
-    [relations],
-  )
-
-  const handleEdgeDialogConfirm = useCallback(
-    (type: string, sortOrder: string) => {
-      if (edgeDialog) {
-        useGraphStore.getState().updateRelation(edgeDialog.edgeId, { type, sortOrder })
-      }
-      setEdgeDialog(null)
-    },
-    [edgeDialog],
-  )
 
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent, node: Node) => {
@@ -457,19 +431,6 @@ function GraphCanvasContent() {
         ]
       case "edge":
         return [
-          {
-            label: "Edit Relation",
-            action: () => {
-              const rel = relations.find((r) => r.id === contextMenu.edgeId)
-              if (rel) {
-                setEdgeDialog({
-                  edgeId: rel.id,
-                  initialType: rel.type,
-                  initialSortOrder: rel.sortOrder,
-                })
-              }
-            },
-          },
           {
             label: "Delete Edge",
             action: () => {
@@ -581,7 +542,7 @@ function GraphCanvasContent() {
       onNodesDelete={onNodesDelete}
       onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}
-      onEdgeDoubleClick={onEdgeDoubleClick}
+      edgeTypes={edgeTypes}
       onNodeContextMenu={onNodeContextMenu}
       onEdgeContextMenu={onEdgeContextMenu}
       onPaneContextMenu={onPaneContextMenu}
@@ -636,13 +597,6 @@ function GraphCanvasContent() {
           )}
         </ButtonGroup>
       </Panel>
-      <EdgeDialog
-        open={edgeDialog !== null}
-        initialType={edgeDialog?.initialType}
-        initialSortOrder={edgeDialog?.initialSortOrder}
-        onConfirm={handleEdgeDialogConfirm}
-        onCancel={() => setEdgeDialog(null)}
-      />
       <GraphContextMenu
         open={contextMenu !== null}
         x={contextMenu?.x ?? 0}
