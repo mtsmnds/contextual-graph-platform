@@ -20,7 +20,7 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
-import type { GraphSnapshot } from "../types/graph"
+import type { EntityKind, GraphSnapshot } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
@@ -35,14 +35,40 @@ function GraphCanvasContent() {
   const relations = useGraphStore((s) => s.relations)
   const savedPositions = useGraphStore((s) => s.canvas.positions)
 
+  const __experimentalNoDagre = true
+
   const layoutRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   if (layoutRef.current === null) {
-    const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
-    const nodes = dagreNodes.map((n) => {
-      const saved = savedPositions[n.id]
-      return saved ? { ...n, position: saved } : n
-    })
-    layoutRef.current = { nodes, edges }
+    if (__experimentalNoDagre) {
+      const nodes: Node[] = entities.map((entity) => {
+        const content = entity.content || entity.kind || entity.id
+        const saved = savedPositions[entity.id]
+        return {
+          id: entity.id,
+          type: "entity",
+          position: saved ?? { x: 0, y: 0 },
+          data: { content, kind: entity.kind, id: entity.id },
+          style: { width: 200 },
+        }
+      })
+      const edges: Edge[] = relations.map((rel) => ({
+        id: rel.id,
+        source: rel.source,
+        target: rel.target,
+        sourceHandle: rel.metadata?.sourceHandle as string | undefined,
+        targetHandle: rel.metadata?.targetHandle as string | undefined,
+        label: rel.type,
+        type: "default",
+      }))
+      layoutRef.current = { nodes, edges }
+    } else {
+      const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
+      const nodes = dagreNodes.map((n) => {
+        const saved = savedPositions[n.id]
+        return saved ? { ...n, position: saved } : n
+      })
+      layoutRef.current = { nodes, edges }
+    }
   }
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutRef.current.nodes)
@@ -67,8 +93,63 @@ function GraphCanvasContent() {
   } | null>(null)
 
   useEffect(() => {
-    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations })
     const positions = useGraphStore.getState().canvas.positions
+
+    if (__experimentalNoDagre) {
+      setNodes((prev) => {
+        const prevById = new Map(prev.map((n) => [n.id, n]))
+        const merged = [...prev]
+
+        for (const entity of entities) {
+          if (!prevById.has(entity.id)) {
+            const content = entity.content || entity.kind || entity.id
+            const saved = positions[entity.id]
+            const newNode: Node = {
+              id: entity.id,
+              type: "entity",
+              position: saved ?? { x: 0, y: 0 },
+              data: { content, kind: entity.kind, id: entity.id },
+              style: { width: 200 },
+            }
+
+            const pending = pendingNodeRef.current
+            if (pending && pending.id === entity.id) {
+              pendingNodeRef.current = null
+              newNode.data = { ...newNode.data, editTrigger: 1 }
+            }
+
+            merged.push(newNode)
+          }
+        }
+
+        return merged
+      })
+
+      setEdges((prev) => {
+        const prevById = new Map(prev.map((e) => [e.id, e]))
+        const merged = [...prev]
+
+        for (const rel of relations) {
+          if (!prevById.has(rel.id)) {
+            merged.push({
+              id: rel.id,
+              source: rel.source,
+              target: rel.target,
+              sourceHandle: rel.metadata?.sourceHandle as string | undefined,
+              targetHandle: rel.metadata?.targetHandle as string | undefined,
+              label: rel.type,
+              type: "default",
+            })
+          }
+        }
+
+        return merged
+      })
+
+      return
+    }
+
+    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations })
 
     setNodes((prev) => {
       const prevById = new Map(prev.map((n) => [n.id, n]))
@@ -157,6 +238,42 @@ function GraphCanvasContent() {
 
   const pendingNodeRef = useRef<{ id: string; position: { x: number; y: number } } | null>(null)
 
+  const dragStateRef = useRef<{
+    originals: Array<{
+      id: string
+      kind: EntityKind
+      content: string
+      metadata: Record<string, unknown>
+      originalPosition: { x: number; y: number }
+    }>
+  } | null>(null)
+
+  const onNodeDragStart = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (!_.metaKey) {
+        dragStateRef.current = null
+        return
+      }
+
+      const allNodes = reactFlowInstance.getNodes()
+      const selectedIds = new Set(allNodes.filter((n) => n.selected).map((n) => n.id))
+      selectedIds.add(node.id)
+
+      const originals = allNodes
+        .filter((n) => selectedIds.has(n.id))
+        .map((n) => ({
+          id: n.id,
+          kind: n.data.kind as EntityKind,
+          content: n.data.content as string,
+          metadata: (n.data.metadata as Record<string, unknown>) ?? {},
+          originalPosition: { ...n.position },
+        }))
+
+      dragStateRef.current = { originals }
+    },
+    [reactFlowInstance],
+  )
+
   const createNode = useCallback((position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("concept")
     pendingNodeRef.current = { id, position }
@@ -166,13 +283,44 @@ function GraphCanvasContent() {
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent) => {
       const allNodes = reactFlowInstance.getNodes()
+
+      const dragState = dragStateRef.current
+      if (dragState) {
+        dragStateRef.current = null
+
+        const store = useGraphStore.getState()
+        const positions: Record<string, { x: number; y: number }> = {}
+
+        for (const orig of dragState.originals) {
+          const droppedNode = allNodes.find((n) => n.id === orig.id)
+          if (!droppedNode) continue
+
+          const cloneId = store.addEntity(orig.kind, { content: orig.content, metadata: orig.metadata })
+          store.setNodePosition(cloneId, droppedNode.position)
+          positions[cloneId] = droppedNode.position
+
+          store.setNodePosition(orig.id, orig.originalPosition)
+          positions[orig.id] = orig.originalPosition
+        }
+
+        setNodes((nds) =>
+          nds.map((n) => {
+            const orig = dragState.originals.find((o) => o.id === n.id)
+            return orig ? { ...n, position: orig.originalPosition } : n
+          }),
+        )
+
+        setCanvasPositions(positions)
+        return
+      }
+
       const positions: Record<string, { x: number; y: number }> = {}
       for (const n of allNodes) {
         positions[n.id] = n.position
       }
       setCanvasPositions(positions)
     },
-    [reactFlowInstance, setCanvasPositions],
+    [reactFlowInstance, setCanvasPositions, setNodes],
   )
 
   const createNodeAtCenter = useCallback(() => {
@@ -400,6 +548,7 @@ function GraphCanvasContent() {
       onEdgesDelete={onEdgesDelete}
       onBeforeDelete={onBeforeDelete}
       onNodesDelete={onNodesDelete}
+      onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}
       onEdgeDoubleClick={onEdgeDoubleClick}
       onNodeContextMenu={onNodeContextMenu}
