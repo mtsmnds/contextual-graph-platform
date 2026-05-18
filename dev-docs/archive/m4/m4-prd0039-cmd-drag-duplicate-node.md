@@ -1,5 +1,11 @@
 # m4-prd0039 — Cmd+drag to Duplicate Node
 
+> **Completion note (2026-05-18):**
+> - **What was built:** Cmd+drag duplicates a node (or multi-selection) with ghost-node visual feedback during drag. `setCanvasPositions` changed from hard-replace to merge with `replaceCanvasPositions` for explicit resets. Dagre disabled via `__experimentalNoDagre`. Fallback positions log a `console.warn`.
+> - **Key decisions:** Ghost nodes (injected via `setNodes` in `onNodeDragStart`, removed in `onNodeDragStop`) provide visual duplication feedback during drag. `setCanvasPositions` merged by default to prevent accidental position loss — the Cmd+drag handler was silently dropping all other saved positions. Fallback positions use `console.warn` as a detection canary.
+> - **Deviations from plan:** `src/store/useGraphStore.ts` was changed (not in original PRD scope) — the `setCanvasPositions` merge fix was discovered as necessary during implementation.
+> - **Postponed:** None.
+
 ## Overview
 
 Hold Cmd while dragging a node in the React Flow canvas to create a full clone at the drop endpoint. The clone copies the source entity's `kind`, `content`, and `metadata` (with a unique ID). Multi-selection Cmd+drag duplicates all selected nodes while preserving their relative spatial offsets. The clone appears as a plain node — no auto-inline-editing.
@@ -32,9 +38,16 @@ Hold Cmd while dragging a node in the React Flow canvas to create a full clone a
 7. **Key state is captured at drag start:**
    - The Cmd key state is read when `onNodeDragStart` fires. Mid-drag changes to the modifier key do not affect the outcome.
 
+8. **Ghost node during drag (visual feedback):**
+   - On drag start with Cmd held, semi-transparent ghost copies of the original node(s) appear at the original positions.
+   - During the drag, the user sees two nodes: the ghost (at the original spot) and the dragged node moving (appearing as the clone-to-be).
+   - On drop, the ghost is removed, the original snaps back to its position, and the real clone appears at the drop endpoint.
+   - Ghost nodes use a `ghost-node` CSS class for styling (50% opacity, no pointer events).
+
 ## Files Changed (inferred)
 
-- `src/canvas/GraphCanvas.tsx` — add `onNodeDragStart` to capture Cmd state + source nodes; modify `onNodeDragStop` to run duplication logic; add refs for key tracking
+- `src/canvas/GraphCanvas.tsx` — add `onNodeDragStart` to capture Cmd state + source nodes + inject ghost nodes; modify `onNodeDragStop` to remove ghosts, revert originals, and create clones; add refs for key tracking
+- `src/index.css` — add `.react-flow__node.ghost-node` styles
 
 ## Phases
 

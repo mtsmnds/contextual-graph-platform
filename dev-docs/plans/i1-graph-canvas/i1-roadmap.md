@@ -49,7 +49,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
   - check if there is a feature that is storing the user's x/y/zoom and using saving so it loads on next reload/open. if it doesn't exist (i think it doesnt) then lets create it.
 - **prd0038** - Save node positions — schema v4: add `canvas: { positions: Record<string, {x, y}>, viewport?: {x, y, zoom} }` to `GraphSnapshot`. On load, use saved positions when available (fall back to Dagre for new entities). "Re-layout" button re-runs Dagre and overwrites saved positions. This is the foundation for user-arranged layouts, sub-flows, and any positional work.
-
+- **prd0039** - Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
 
 ## Now (ordered by dependency)
 
@@ -57,7 +57,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 Foundation batch. Everything structural depends on stable positions.
 
-- Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
+
 
 #### Node & Edge Data Editing
 

@@ -90,6 +90,7 @@ interface GraphStore {
 
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
   setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
+  replaceCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 }
 
@@ -379,6 +380,12 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => {
+    set((state: GraphStore) => ({
+      canvas: { ...state.canvas, positions: { ...state.canvas.positions, ...positions } },
+    }));
+  },
+
+  replaceCanvasPositions: (positions: Record<string, { x: number; y: number }>) => {
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, positions },
     }));
