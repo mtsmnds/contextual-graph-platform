@@ -43,10 +43,17 @@ function GraphCanvasContent() {
       const nodes: Node[] = entities.map((entity, idx) => {
         const content = entity.content || entity.kind || entity.id
         const saved = savedPositions[entity.id]
+        let position: { x: number; y: number }
+        if (saved) {
+          position = saved
+        } else {
+          console.warn(`[layout] No saved position for "${entity.id}" — applying fallback`)
+          position = { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 }
+        }
         return {
           id: entity.id,
           type: "entity",
-          position: saved ?? { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 },
+          position,
           data: { content, kind: entity.kind, id: entity.id },
           style: { width: 200 },
         }
@@ -104,10 +111,17 @@ function GraphCanvasContent() {
           if (!prevById.has(entity.id)) {
             const content = entity.content || entity.kind || entity.id
             const saved = positions[entity.id]
+            let position: { x: number; y: number }
+            if (saved) {
+              position = saved
+            } else {
+              console.warn(`[layout] No saved position for new entity "${entity.id}" — applying fallback`)
+              position = { x: merged.length * 30, y: merged.length * 30 }
+            }
             const newNode: Node = {
               id: entity.id,
               type: "entity",
-              position: saved ?? { x: merged.length * 30, y: merged.length * 30 },
+              position,
               data: { content, kind: entity.kind, id: entity.id },
               style: { width: 200 },
             }
@@ -513,7 +527,7 @@ function GraphCanvasContent() {
     const { entities, relations } = useGraphStore.getState()
     const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
     const dagrePositions = Object.fromEntries(relayouted.map((n) => [n.id, n.position]))
-    useGraphStore.getState().setCanvasPositions(dagrePositions)
+    useGraphStore.getState().replaceCanvasPositions(dagrePositions)
     setNodes(relayouted)
     setEdges(relayoutedEdges)
   }, [setNodes, setEdges])
