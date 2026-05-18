@@ -23,7 +23,7 @@ import { getLayoutedElements } from "../engine/layout"
 import type { GraphSnapshot } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ButtonGroup, ButtonGroupText, ButtonGroupSeparator } from "@/components/ui/button-group"
+import { ButtonGroup } from "@/components/ui/button-group"
 import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
 import EntityNode from "./nodes/EntityNode"
@@ -397,24 +397,25 @@ function GraphCanvasContent() {
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
       <MiniMap pannable zoomable position="bottom-right" />
       <Panel position="bottom-right" style={{ marginBottom: 8 }}>
-        <ButtonGroup>
-          <ButtonGroupText className="font-mono text-xs tabular-nums">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px] tabular-nums text-muted-foreground/60">
             x: {x.toFixed(1)} y: {y.toFixed(1)} z: {Math.round(zoom * 100)}%
-          </ButtonGroupText>
-          <ButtonGroupSeparator />
-          <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
-            <ZoomIn data-icon />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
-            <ZoomOut data-icon />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
-            <Maximize data-icon />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Zoom to 100%" onClick={onZoom100}>
-            <span className="text-xs font-semibold tabular-nums">1:1</span>
-          </Button>
-        </ButtonGroup>
+          </span>
+          <ButtonGroup>
+            <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
+              <ZoomIn data-icon />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
+              <ZoomOut data-icon />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
+              <Maximize data-icon />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Zoom to 100%" onClick={onZoom100}>
+              <span className="text-xs font-semibold tabular-nums">1:1</span>
+            </Button>
+          </ButtonGroup>
+        </div>
       </Panel>
       <Panel position="top-right">
         <ButtonGroup>
