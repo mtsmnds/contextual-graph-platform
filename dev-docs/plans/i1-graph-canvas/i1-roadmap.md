@@ -37,18 +37,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
 - **prd0034** - FS Access persistence test — verified load, create, edit, delete, reload roundtrip with `~/Code/hello2`
 - **prd0035** - cursor styles 
 - **prd0036** - double-click pane to create node at click position + fix node positioning for button (ADR: archive/m4/m4-prd0036-pane-double-click-position-fix.md)
-
-
-## Now (ordered by dependency)
-
-#### Interaction & Position Persistence
-
-Foundation batch. Everything structural depends on stable positions.
-
-
-- Viewport logger component in the bottom-right control group (shows x/y/zoom as live text, separated from zoom/fit buttons)
-
-- zoom improvements
+- **prd0037** - zoom improvements
   - viewport logger: show the viewport logger in the `control` button group, to the left of the buttons, after a separator (shadcn)
     - button group: https://ui.shadcn.com/docs/components/base/button-group
     - i want a separation between the logger's `x/y/zoom` live text and the buttons, do we achieve that by nestiong button groups as the text in ref link says, or the `x/y/zoom` lives in another component/div (since its not a button)?
@@ -61,8 +50,17 @@ Foundation batch. Everything structural depends on stable positions.
   - check if there is a feature that is storing the user's x/y/zoom and using saving so it loads on next reload/open. if it doesn't exist (i think it doesnt) then lets create it.
 
 
-- Easy connect (`easyconnect` prop on ReactFlow) — shows a floating handle when dragging from a node, making edge creation intuitive
+## Now (ordered by dependency)
+
+#### Interaction & Position Persistence
+
+Foundation batch. Everything structural depends on stable positions.
+
 - **Save node positions** — schema v4: add `canvas: { positions: Record<string, {x, y}>, viewport?: {x, y, zoom} }` to `GraphSnapshot`. On load, use saved positions when available (fall back to Dagre for new entities). "Re-layout" button re-runs Dagre and overwrites saved positions. This is the foundation for user-arranged layouts, sub-flows, and any positional work.
+
+
+
+- Easy connect (`easyconnect` prop on ReactFlow) — shows a floating handle when dragging from a node, making edge creation intuitive
 - Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
 
 #### Node & Edge Data Editing
