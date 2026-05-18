@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd merge — m4-prd0039-cmd-drag-duplicate-node
+- **Branch at time:** main (clean)
+- **User decision:** merge single branch
+- **Merge order:** m4-prd0039-cmd-drag-duplicate-node (0039)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** committed wip ("docs")
+
 ### prd end — m4-prd0039-cmd-drag-duplicate-node
 - **Source:** roadmap: "Cmd+drag to duplicate node"
 - **Branch at time:** m4-prd0039-cmd-drag-duplicate-node (clean)

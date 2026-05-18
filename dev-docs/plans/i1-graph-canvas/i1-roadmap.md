@@ -35,6 +35,10 @@ Entities carry content. Relations carry typed links with sort order. Projections
   - fix node resizing - remove top and bottom resizing (node height governed by textarea)
 - **prd0033** - four multidirectional edges
 - **prd0034** - FS Access persistence test — verified load, create, edit, delete, reload roundtrip with `~/Code/hello2`
+
+## ✅ Phase III - Interaction & Postion Persistence
+everything structural depends on stable positions
+
 - **prd0035** - cursor styles 
 - **prd0036** - double-click pane to create node at click position + fix node positioning for button (ADR: archive/m4/m4-prd0036-pane-double-click-position-fix.md)
 - **prd0037** - zoom improvements
@@ -51,13 +55,10 @@ Entities carry content. Relations carry typed links with sort order. Projections
 - **prd0038** - Save node positions — schema v4: add `canvas: { positions: Record<string, {x, y}>, viewport?: {x, y, zoom} }` to `GraphSnapshot`. On load, use saved positions when available (fall back to Dagre for new entities). "Re-layout" button re-runs Dagre and overwrites saved positions. This is the foundation for user-arranged layouts, sub-flows, and any positional work.
 - **prd0039** - Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
 
+## Phase IV - Node & Edge Data Editing
+
+
 ## Now (ordered by dependency)
-
-#### Interaction & Position Persistence
-
-Foundation batch. Everything structural depends on stable positions.
-
-
 
 #### Node & Edge Data Editing
 
