@@ -1,3 +1,9 @@
+> **Completion note (2026-05-18):**
+> - **What was built:** Viewport logger (live x/y/zoom in bottom-right), zoom controls (Zoom In/Out, Fit View, 1:1), initial zoom cap at 100%, and localStorage-based viewport persistence.
+> - **Key decisions:** Chose simple localStorage for viewport persistence instead of schema-level storage (deferred to prd0038).
+> - **Deviations from plan:** None.
+> - **Postponed:** Schema-level viewport persistence implemented in prd0038 (replaces localStorage approach).
+
 # PRD0037 — Zoom Improvements
 
 ## Overview
