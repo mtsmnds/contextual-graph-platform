@@ -173,24 +173,24 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the legacy rendere
 The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 
 - Renders a full-height React Flow canvas with `Background` (dots), `Controls`, `MiniMap`.
-- Entities render as custom `"entity"` nodes (EntityNode component registered at module scope). Relations render as built-in `"default"` edges with always-visible labels (CSS override on `.react-flow__edge-label`).
+- Entities render as custom `"entity"` nodes (EntityNode component registered at module scope). Relations render as custom `"edgelabel"` edges (EdgeLabel component) with always-visible interactive labels — double-click the label to enter inline edit mode (text input + combobox dropdown of existing relation types).
 - **Panel buttons** (top-right): New Node, Open Folder, Re-layout. **Zoom controls** (bottom-right): Zoom In, Zoom Out, Fit View.
 - **Interactions:**
   - Double-click pane → creates new node at click position (native DOM `dblclick` listener with capture phase; React Flow's synthetic `onDoubleClick` never fires)
   - Double-click node body → inline text editing (textarea with `nodrag nowheel nopan`, Enter=newline, Escape/blur=commit)
   - Context menu "Edit" on node → triggers inline editing via `editTrigger` counter on node data
-  - Double-click edge → opens EdgeDialog (edit relation type + sortOrder)
+  - Double-click edge label → inline editing (text input + combobox; Enter/blur to commit via `updateRelation`, Escape to cancel; dropdown click commits immediately)
   - Drag from node handle → creates edge with type `"related_to"`; source/target handle IDs stored in relation metadata
   - Select + Backspace/Delete → deletes selected nodes/edges (node deletion cascades to relations)
   - Right-click node → context menu (Edit, Delete)
-  - Right-click edge → context menu (Edit Relation, Delete Edge)
+  - Right-click edge → context menu (Delete Edge)
   - Right-click pane → context menu (New Node)
   - `isValidConnection` prevents self-connections
 - **Handles:** 4 handles per node (top/right/bottom/left), all `type="source"` — direction captured by source→target in Connection. `BaseHandle` component (14px dot, 2px border, `::before` expansion to ~18px hit area).
 - **Resize:** Invisible `NodeResizeControl` on left and right edges (cursor-only, no visible dots). Min width 60px. Top/bottom resize removed — height governed by textarea content.
 - **Canvas props:** `zoomOnDoubleClick={false}`, `panOnDrag={false}`, `panOnScroll={true}`, `selectionOnDrag={true}`, `connectionMode={ConnectionMode.Loose}`, `snapToGrid` (15×15), `multiSelectionKeyCode="Shift"`.
 - **Sync:** Diff-based — positions live in React Flow state, never the store. Store changes add/remove nodes/edges by ID and merge data labels, preserving user-dragged positions.
-- **Layout:** Dagre LR computed once on mount. Re-layout button recomputes and resets all positions. Pending nodes (newly created) skip Dagre positioning — they enter at cursor/viewport-center via `pendingNodeRef` in the merge loop.
+- **Layout:** Dagre is disabled (`__experimentalNoDagre`). Node positions are store-authoritative only — user-dragged positions are the sole source of truth. `setCanvasPositions` merges new positions under existing ones (never drops unsaved positions); `replaceCanvasPositions` is used only by the re-layout button for deliberate bulk reset. New nodes enter at cursor/viewport-center via `pendingNodeRef`.
 - **Cursor styles:** Pane → `default`, node body → `grab` (dragging → `grabbing`), text → `default`, edge labels → `default`, handles → `grab`. All via CSS with `!important` on pane to override React Flow's inline pointer from `selectionOnDrag`.
 
 ### Output / State
@@ -219,7 +219,7 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 | `src/canvas/nodes/EntityNode.tsx` | Custom node component (BaseNode + Badge + 4 handles + inline text editing + NodeResizeControl) |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |
 | `src/components/base-node.tsx` | BaseNode layout components (BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) from reactflow.dev registry |
-| `src/canvas/EdgeDialog.tsx` | Base UI Dialog for edit edge relation type + sortOrder |
+| `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (not shadcn/Radix — avoids trigger-wrapper conflicts with React Flow) |
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content, loaded on first visit) |

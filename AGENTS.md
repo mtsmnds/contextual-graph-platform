@@ -40,11 +40,11 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
 | `src/App.tsx` | Root component — BrowserRouter shell, routes `/` (WorkspaceRoot) and `/tiptap-editor-test` (LegacyApp) |
 | `src/routes/WorkspaceRoot.tsx` | Graph canvas workspace — adapter init, full-height GraphCanvas |
 | `src/routes/LegacyApp.tsx` | Original Tiptap editor app (mounted at `/tiptap-editor-test`) |
-| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, CRUD dialogs, context menu, Panel buttons |
+| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, edge inline editing, context menu, Panel buttons |
 | `src/canvas/nodes/EntityNode.tsx` | Custom entity node — BaseNode + Badge + 4 handles + inline text editing + resize |
+| `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |
 | `src/components/base-node.tsx` | BaseNode layout components from reactflow.dev registry |
-| `src/canvas/EdgeDialog.tsx` | Base UI Dialog for edit edge relation type + sortOrder |
 | `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (no Radix/shadcn — avoids trigger-wrapper conflicts with React Flow) |
 | `src/engine/layout.ts` | Dagre LR layout: entities/relations → React Flow nodes/edges |
 | `src/engine/queries.ts` | Query engine (getEntity, getRelations, getLinkedContext, getContainerChildren, etc.) |
