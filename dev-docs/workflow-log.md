@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd end — m4-prd0039-cmd-drag-duplicate-node
+- **Source:** roadmap: "Cmd+drag to duplicate node"
+- **Branch at time:** m4-prd0039-cmd-drag-duplicate-node (clean)
+- **User decision:** classification: Feature change + Architecture change
+- **Change classification:** Feature change + Architecture change
+- **ADR type:** full (`setCanvasPositions` merge → `replaceCanvasPositions` split, store contract changed)
+- **Commit hash:** 5564d09 (archive)
+- **Pre-commit guard:** no changes (already committed)
+
 ### prd start — m4-prd0039-cmd-drag-duplicate-node
 - **Source:** roadmap: "Cmd+drag to duplicate node"
 - **Branch at time:** main (clean)
