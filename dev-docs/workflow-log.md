@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd merge — cursor-styles → create-node-on-double-click → prd0037-zoom-improvements → m4-prd0038-save-node-positions
+- **Branch at time:** m4-prd0038-save-node-positions (clean)
+- **User decision:** follow suggested order; archived prd0037 before merge
+- **Merge order:** cursor-styles (0035) → create-node-on-double-click (0036) → prd0037-zoom-improvements (0037) → m4-prd0038-save-node-positions (0038)
+- **Conflicts:** none
+- **Final status:** all 4 branches merged into main cleanly
+- **Pre-commit guard:** committed ("m4: prd0038 - save node positions (archive, changelog, ADR)")
+
 ### prd end — m4-prd0038-save-node-positions
 - **Source:** user text: "Save node positions — schema v4..."
 - **Branch at time:** m4-prd0038-save-node-positions (clean)
