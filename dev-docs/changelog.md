@@ -31,7 +31,7 @@ Use this to recover context after breaks.
   - `src/canvas/GraphCanvas.tsx`: Added native `dblclick` listener with capture phase, `zoomOnDoubleClick={false}` prop, `pendingNodeRef` for deferred position, refactored `createNode` as shared helper, fixed layout merge data spread
   - `dev-docs/plans/i1-graph-canvas/i1-roadmap.md`: Moved double-click item from Now to ✅ Done
 - **Impact:** Double-clicking on empty canvas pane creates a node at that exact position with auto-open editor. The "New Node" button now reliably positions at viewport center AND opens the editor too (both were silently broken — `setNodes` in the event handler couldn't find the new node in state yet, so positions and `editTrigger` were always overridden by the layout effect with Dagre defaults). Editor auto-opens for all new node creation paths.
-- **ADR:** `dev-docs/archive/m4/m4-prd0035b-pane-double-click-position-fix.md`
+- **ADR:** `dev-docs/archive/m4/m4-prd0036-pane-double-click-position-fix.md`
 
 ## 2026-05-17
 

@@ -34,16 +34,21 @@ This document defines why this project exists, who it serves, and what capabilit
 - As a user, I can collapse containers (acts, scenes) like accordions within the reading viewport.
 
 ### Node Component
-- As a developer, I have a single Node component that can render both segments and containers with appropriate action icons in the border area.
-- As a developer, segments show actions: comment/note/reference/mention/link, create next segment, view metadata.
-- As a developer, containers show the same actions plus collapsible accordion behavior and table of contents referencing.
-- As a user, I can toggle a dev tools panel that shows the focused node's full JSON data (kind, title, content, metadata, relations).
+- As a user, I can edit node text inline by double-clicking the node body (textarea with Enter=newline, Escape/blur=commit).
+- As a user, I can resize nodes by dragging their left/right edges (cursor-only, no visible resize dots).
+- As a user, I can connect nodes by dragging from any of the 4 handles (top/right/bottom/left) to another node.
+- As a user, I cannot connect a node to itself (self-connections blocked).
+- As a user, I can see the entity kind displayed as a badge in the node header.
 
 ### Canvas
-- As a user, I can see all entities rendered as nodes with edges. Work, act, scene, and segment nodes are all visible.
-- As a user, clicking any node opens the reading viewport showing the full work in context.
-- As a user, I can filter the canvas by entity kind, relation type, or container membership.
-- As a user, I can view the roadmap itself as a graph (future: self-hosting roadmap).
+- As a user, I can see all entities rendered as custom nodes (with header, content, kind badge) and edges with always-visible labels.
+- As a user, I can double-click on empty canvas space to create a new node at that exact position, with the inline editor auto-opened.
+- As a user, clicking the "New Node" button creates a node at viewport center with the inline editor auto-opened.
+- As a user, I can pan the canvas by dragging (selection mode) or scrolling, zoom via scroll or buttons, and fit the view.
+- As a user, right-clicking nodes, edges, or the canvas pane shows a context menu with relevant actions.
+- As a user, I can select multiple nodes (Shift+click) and delete them with Backspace/Delete.
+- As a user, the cursor changes contextually: grab on nodes, default on pane and edge labels, text on content.
+- As a user, nodes snap to a 15×15 grid when moved.
 
 ### State Management
 - As a developer, I can add, update, and delete entities and relations through primitive store actions.
