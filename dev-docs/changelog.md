@@ -14,6 +14,20 @@ Use this to recover context after breaks.
 
 ## 2026-05-18
 
+### m4 — prd0038 — save node positions
+- **What:** Schema v4 with `canvas: { positions, viewport }` on `GraphSnapshot`. Node positions and viewport are now persisted inside the snapshot (replaces localStorage viewport). On load, saved positions override Dagre; Dagre fills in for new entities. On drag end (including multi-select drag), all node positions are saved. Viewport debounce-saves to canvas. Re-layout button gated behind `__experimentalReLayout`. Migration v3→v4 inserts empty canvas.
+- **Reason:** Foundation for user-arranged layouts. Positions were ephemeral (lost on reload), making the canvas unreliable for any layout work.
+- **Files changed:**
+  - `src/types/graph.ts`: Added `CanvasState` type, bumped `GraphSnapshot` to v4 with `canvas` field
+  - `src/store/persistence/types.ts`: Updated `WorkspaceSnapshot` to include `canvas`
+  - `src/store/useGraphStore.ts`: Added `hydrated` flag, v3→v4 migration, `setNodePosition`/`setCanvasPositions`/`setViewport` actions, auto-save includes canvas and triggers on canvas changes
+  - `src/data/seed.ts`: Seed snapshot to v4 with empty canvas
+  - `src/canvas/GraphCanvas.tsx`: Positions loaded from store on init; saved on drag end via `getNodes()` (handles multi-select); viewport restored after hydration from `canvas.viewport` (replaces localStorage); fitView called imperatively when no saved viewport
+  - `src/components/AppSidebar.tsx`: Snapshot format to v4
+- **Impact:** User node arrangements and viewport survive reload. Multi-select drag now persists all moved nodes. Re-layout hidden behind flag. Schema v3 data auto-migrates to v4 on load.
+- **Archive:** `dev-docs/archive/m4/m4-prd0038-save-node-positions.md`
+- **ADR:** `dev-docs/archive/m4/2026-05-18-prd0038-save-node-positions-adr.md`
+
 ### m4 - prd0035 - cursor styles (cursor-styles branch, unmerged)
 - **What:** Context-appropriate cursors across the graph canvas. Canvas pane → `default` (`!important` overrides React Flow's `pointer` from `selectionOnDrag`). Node body non-text → `grab`, dragging → `grabbing`. Node text content → `default`, editing → `text`. Edge labels → `default` (was `pointer`). Handles → `grab`. Verified all 7 cursor scenarios.
 - **Reason:** The cursor is the first feedback the user gets — matching cursor to expected interaction makes the canvas feel intentional rather than confusing. The pane was showing `pointer` (from `selectionOnDrag`), nodes had no grab affordance, and edge labels falsely signaled clickability.
