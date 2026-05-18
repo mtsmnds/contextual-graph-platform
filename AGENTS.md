@@ -25,13 +25,12 @@ Store is pre-seeded with sample data (two Tiptap containers: "About This Workspa
 
 ## Before Implementing
 
-1. Load the `dev-docs` skill (`skill({ name: "dev-docs" })`) to understand naming conventions, file formats, and documentation workflows.
-2. If starting or finishing work on a PRD, load the `prd-work` skill (`skill({ name: "prd-work" })`) for branching and archival workflow.
-3. Read in order: `README.md` → `dev-docs/requirements.md` → `dev-docs/architecture.md` → `dev-docs/roadmap.md` → `dev-docs/changelog.md` + `dev-docs/archive/`.
+1. Load the `dev-workflow` skill (`skill({ name: "dev-workflow" })`) — merged workflow for dev-docs management, PRD lifecycle (write/start/end/merge), and post-completion documentation.
+2. Read in order: `README.md` → `dev-docs/requirements.md` → `dev-docs/architecture.md` → `dev-docs/roadmap.md` → `dev-docs/changelog.md` + `dev-docs/archive/`.
 
 ## After Completing
 
-Run `npx tsc --noEmit` and `npm run build`, then load the `dev-docs` skill (`skill({ name: "dev-docs" })`) to keep docs current.
+Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (`skill({ name: "dev-workflow" })`) to keep docs current.
 
 ## Key Paths
 

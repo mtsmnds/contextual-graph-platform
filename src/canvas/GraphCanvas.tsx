@@ -8,6 +8,7 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  useStore,
   BackgroundVariant,
   ConnectionMode,
   SelectionMode,
@@ -326,6 +327,42 @@ function GraphCanvasContent() {
     setEdges(relayoutedEdges)
   }, [setNodes, setEdges])
 
+  const VIEWPORT_KEY = "react-roadmap:viewport"
+
+  const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
+  const [x, y, zoom] = transform
+
+  const restoredViewportRef = useRef(false)
+  useEffect(() => {
+    if (restoredViewportRef.current) return
+    restoredViewportRef.current = true
+    const stored = localStorage.getItem(VIEWPORT_KEY)
+    if (stored) {
+      try {
+        const vp = JSON.parse(stored) as { x: number; y: number; zoom: number }
+        reactFlowInstance.setViewport(vp)
+      } catch (e) {
+        console.error("Failed to restore viewport:", e)
+      }
+    }
+  }, [reactFlowInstance])
+
+  const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!restoredViewportRef.current) return
+    if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
+    viewportTimerRef.current = setTimeout(() => {
+      localStorage.setItem(VIEWPORT_KEY, JSON.stringify({ x, y, zoom }))
+    }, 500)
+    return () => {
+      if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
+    }
+  }, [x, y, zoom])
+
+  const onZoom100 = useCallback(() => {
+    reactFlowInstance.zoomTo(1)
+  }, [reactFlowInstance])
+
   return (
     <ReactFlow
       nodeTypes={nodeTypes}
@@ -349,6 +386,7 @@ function GraphCanvasContent() {
       selectionOnDrag={true}
       selectionMode={SelectionMode.Partial}
       fitView
+      fitViewOptions={{ maxZoom: 1 }}
       connectionMode={ConnectionMode.Loose}
       snapToGrid
       snapGrid={[15, 15]}
@@ -359,17 +397,25 @@ function GraphCanvasContent() {
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
       <MiniMap pannable zoomable position="bottom-right" />
       <Panel position="bottom-right" style={{ marginBottom: 8 }}>
-        <ButtonGroup>
-          <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
-            <ZoomIn data-icon />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
-            <ZoomOut data-icon />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
-            <Maximize data-icon />
-          </Button>
-        </ButtonGroup>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px] tabular-nums text-muted-foreground/60">
+            x: {x.toFixed(1)} y: {y.toFixed(1)} z: {Math.round(zoom * 100)}%
+          </span>
+          <ButtonGroup>
+            <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
+              <ZoomIn data-icon />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
+              <ZoomOut data-icon />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
+              <Maximize data-icon />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Zoom to 100%" onClick={onZoom100}>
+              <span className="text-xs font-semibold tabular-nums">1:1</span>
+            </Button>
+          </ButtonGroup>
+        </div>
       </Panel>
       <Panel position="top-right">
         <ButtonGroup>
