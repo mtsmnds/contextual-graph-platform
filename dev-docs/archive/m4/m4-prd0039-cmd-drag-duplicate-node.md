@@ -1,5 +1,11 @@
 # m4-prd0039 — Cmd+drag to Duplicate Node
 
+> **Completion note (2026-05-18):**
+> - **What was built:** Cmd+drag duplicates a node (or multi-selection) with ghost-node visual feedback during drag. `setCanvasPositions` changed from hard-replace to merge with `replaceCanvasPositions` for explicit resets. Dagre disabled via `__experimentalNoDagre`. Fallback positions log a `console.warn`.
+> - **Key decisions:** Ghost nodes (injected via `setNodes` in `onNodeDragStart`, removed in `onNodeDragStop`) provide visual duplication feedback during drag. `setCanvasPositions` merged by default to prevent accidental position loss — the Cmd+drag handler was silently dropping all other saved positions. Fallback positions use `console.warn` as a detection canary.
+> - **Deviations from plan:** `src/store/useGraphStore.ts` was changed (not in original PRD scope) — the `setCanvasPositions` merge fix was discovered as necessary during implementation.
+> - **Postponed:** None.
+
 ## Overview
 
 Hold Cmd while dragging a node in the React Flow canvas to create a full clone at the drop endpoint. The clone copies the source entity's `kind`, `content`, and `metadata` (with a unique ID). Multi-selection Cmd+drag duplicates all selected nodes while preserving their relative spatial offsets. The clone appears as a plain node — no auto-inline-editing.

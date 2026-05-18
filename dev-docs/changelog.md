@@ -14,6 +14,17 @@ Use this to recover context after breaks.
 
 ## 2026-05-18
 
+### m4 — prd0039 — cmd+drag to duplicate node
+- **What:** Cmd+drag on a node clones the entity (kind, content, metadata) with a unique ID and places the copy at the drop position (snapped to 15px grid). Multi-selection Cmd+drag duplicates all selected nodes while preserving relative offsets. Ghost nodes (50% opacity) appear at original positions during drag for visual confirmation — user sees two nodes confirming duplication. Dagre disabled via `__experimentalNoDagre` — node positions come only from the store. `setCanvasPositions` changed from hard-replace to merge (spreads existing positions under new ones) with a `replaceCanvasPositions` variant for deliberate bulk resets. Fallback positions log a `console.warn` when a node has no saved position (canary for position leaks).
+- **Reason:** Fast node duplication without leaving the canvas. The ghost UX eliminates the "did it work?" uncertainty on drop. The `setCanvasPositions` merge prevents accidental position data loss (found during development — Cmd+drag handler was dropping all other saved positions). Dagre disabled because it fights user-positioned layouts.
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: Added `onNodeDragStart`/`onNodeDragStop` for Cmd+drag detection, ghost node injection, clone creation, original revert; disabled Dagre via `__experimentalNoDagre`; added warning-enhanced fallback positions
+  - `src/index.css`: Added `.react-flow__node.ghost-node` styles (50% opacity, no pointer events)
+  - `src/store/useGraphStore.ts`: `setCanvasPositions` now merges with existing positions; added `replaceCanvasPositions` for explicit bulk replacement
+- **Impact:** Users can Cmd+drag to duplicate any node (or selection). Positions can never be silently dropped by a partial `setCanvasPositions` call. Console warns if any node loads without a saved position.
+- **Archive:** `dev-docs/archive/m4/m4-prd0039-cmd-drag-duplicate-node.md`
+- **ADR:** `dev-docs/archive/m4/2026-05-18-prd0039-cmd-drag-duplicate-node-adr.md`
+
 ### m4 — prd0038 — save node positions
 - **What:** Schema v4 with `canvas: { positions, viewport }` on `GraphSnapshot`. Node positions and viewport are now persisted inside the snapshot (replaces localStorage viewport). On load, saved positions override Dagre; Dagre fills in for new entities. On drag end (including multi-select drag), all node positions are saved. Viewport debounce-saves to canvas. Re-layout button gated behind `__experimentalReLayout`. Migration v3→v4 inserts empty canvas.
 - **Reason:** Foundation for user-arranged layouts. Positions were ephemeral (lost on reload), making the canvas unreliable for any layout work.
