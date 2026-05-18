@@ -7,6 +7,22 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd write — m4-prd0041-node-metadata-panel
+- **Source:** roadmap: "Node metadata panel (NodeAppendix)"
+- **Branch at time:** main (dirty — prd0040 files)
+- **User decision:** panel on node selection, simple two-column key-value table for metadata, context menu "Edit" opens panel
+- **PRD file:** `dev-docs/plans/m4-prd0041-node-metadata-panel.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** skipped (uncommitted prd0040 files)
+
+### prd write — m4-prd0040-edge-inline-editing
+- **Source:** roadmap: "Edge inline editing"
+- **Branch at time:** main (clean)
+- **User decision:** freeform input + combobox dropdown of existing relation types
+- **PRD file:** `dev-docs/plans/m4-prd0040-edge-inline-editing.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** no changes
+
 ### prd merge — m4-prd0039-cmd-drag-duplicate-node
 - **Branch at time:** main (clean)
 - **User decision:** merge single branch
