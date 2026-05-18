@@ -48,6 +48,7 @@ Entities carry content. Relations carry typed links with sort order. Projections
   - when the canvas is opened/refreshed, the viewport should never fit to more than 100% zoom, however this rule does not superseed persistence of the user's location and zoom if that is saved.
 
   - check if there is a feature that is storing the user's x/y/zoom and using saving so it loads on next reload/open. if it doesn't exist (i think it doesnt) then lets create it.
+- **prd0038** - Save node positions — schema v4: add `canvas: { positions: Record<string, {x, y}>, viewport?: {x, y, zoom} }` to `GraphSnapshot`. On load, use saved positions when available (fall back to Dagre for new entities). "Re-layout" button re-runs Dagre and overwrites saved positions. This is the foundation for user-arranged layouts, sub-flows, and any positional work.
 
 
 ## Now (ordered by dependency)
@@ -56,11 +57,6 @@ Entities carry content. Relations carry typed links with sort order. Projections
 
 Foundation batch. Everything structural depends on stable positions.
 
-- **Save node positions** — schema v4: add `canvas: { positions: Record<string, {x, y}>, viewport?: {x, y, zoom} }` to `GraphSnapshot`. On load, use saved positions when available (fall back to Dagre for new entities). "Re-layout" button re-runs Dagre and overwrites saved positions. This is the foundation for user-arranged layouts, sub-flows, and any positional work.
-
-
-
-- Easy connect (`easyconnect` prop on ReactFlow) — shows a floating handle when dragging from a node, making edge creation intuitive
 - Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
 
 #### Node & Edge Data Editing
@@ -125,6 +121,12 @@ Former "now" items, deferred:
 - Selection-based grouping: select multiple nodes → group them in a new container (creates `contains` relations)
 
 ### Deferred (not in scope until promoted)
+
+- easy connect - shows a floating handle when dragging from a node, making edge creation intuitive
+  - lines draw differently
+  - might compete with dragging nodes
+  - 
+
 
 - Old "Now" items from earlier roadmap (zoom tuning, handle borders, node kind appearances) — moved to Cleanup polish above
 
