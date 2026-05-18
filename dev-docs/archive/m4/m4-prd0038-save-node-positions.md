@@ -1,3 +1,9 @@
+> **Completion note (2026-05-18):**
+> - **What was built:** Schema v4 with `canvas: { positions, viewport }` on `GraphSnapshot`. Positions persist from user drag/creation. Viewport moves from localStorage to snapshot. Multi-drag saves all moved nodes. Re-layout gated behind flag.
+> - **Key decisions:** Positions stored at snapshot level (not entity metadata). `getNodes()` used on drag end to capture all dragged nodes. Viewport restoration waits for `hydrated` flag.
+> - **Deviations from plan:** Added `hydrated` flag to store for correct viewport restoration timing. `onNodeDragStop` saves all node positions (not just the event's node) to fix multi-select drag.
+> - **Postponed:** Re-layout button remains flagged off.
+
 # m4-prd0038 — Save Node Positions
 
 ## Overview

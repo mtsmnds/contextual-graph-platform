@@ -30,10 +30,16 @@ type ViewState = {
   expandedPanels: string[];
 };
 
+type CanvasState = {
+  positions: Record<string, { x: number; y: number }>;
+  viewport?: { x: number; y: number; zoom: number };
+};
+
 type GraphSnapshot = {
-  version: 3;
+  version: 4;
   entities: Entity[];
   relations: Relation[];
+  canvas: CanvasState;
 };
 
 export type {
@@ -42,4 +48,5 @@ export type {
   Relation,
   ViewState,
   GraphSnapshot,
+  CanvasState,
 };

@@ -1,4 +1,4 @@
-import type { Entity, Relation } from "../../types/graph"
+import type { Entity, Relation, CanvasState } from "../../types/graph"
 
 export type AdapterType = "indexeddb" | "fs-access"
 
@@ -6,6 +6,7 @@ export type WorkspaceSnapshot = {
   version: number
   entities: Entity[]
   relations: Relation[]
+  canvas: CanvasState
 }
 
 export interface PersistenceAdapter {

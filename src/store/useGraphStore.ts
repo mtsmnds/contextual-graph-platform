@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
-import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot } from "../types/graph";
+import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState } from "../types/graph";
 import { generateUniqueId } from "../engine/ids";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import type { PersistenceAdapter } from "./persistence";
@@ -10,9 +10,10 @@ let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
-function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relations: Relation[] }): GraphSnapshot {
+function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relations: Relation[]; canvas?: CanvasState }): GraphSnapshot {
   let entities = snapshot.entities
   let relations = snapshot.relations
+  let canvas: CanvasState = snapshot.canvas ?? { positions: {} }
   let version = snapshot.version as number
 
   if (version < 2) {
@@ -50,16 +51,23 @@ function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relati
     version = 3
   }
 
-  return { version: version as 3, entities, relations }
+  if (version < 4) {
+    canvas = { positions: {} }
+    version = 4
+  }
+
+  return { version: version as 4, entities, relations, canvas }
 }
 
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
+  canvas: CanvasState;
   view: ViewState;
   contentLoaded: Record<string, boolean>;
   adapterId: string | null;
   folderName: string | null;
+  hydrated: boolean;
 
   init: (adapter: PersistenceAdapter) => Promise<void>;
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
@@ -79,11 +87,16 @@ interface GraphStore {
   saveContent: (id: string, data: Record<string, unknown>) => void;
   clearContent: (id: string) => void;
   refreshFolderName: () => void;
+
+  setNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
+  setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
+  setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 }
 
 const storeInitializer = (set: any, get: any): GraphStore => ({
   entities: [],
   relations: [],
+  canvas: { positions: {} },
   view: {
     focusedEntityId: null,
     anchorEntityId: null,
@@ -93,6 +106,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   contentLoaded: {},
   adapterId: null,
   folderName: null,
+  hydrated: false,
 
   init: async (adapter: PersistenceAdapter) => {
     _adapter = adapter;
@@ -110,6 +124,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       set({
         entities: migrated.entities,
         relations: migrated.relations,
+        canvas: migrated.canvas,
         contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
@@ -126,15 +141,17 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       }
 
       const seedSnapshot: GraphSnapshot = {
-        version: 3,
+        version: 4,
         entities: SEED_DATA.entities,
         relations: SEED_DATA.relations,
+        canvas: { positions: {} },
       };
       adapter.saveGraph(seedSnapshot).catch(() => {});
 
       set({
         entities: SEED_DATA.entities,
         relations: SEED_DATA.relations,
+        canvas: { positions: {} },
         contentLoaded: Object.fromEntries(containers.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
@@ -142,6 +159,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     }
 
     _hydrated = true;
+    set({ hydrated: true });
   },
 
   addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown> }, parentId: string | null = null) => {
@@ -350,6 +368,27 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const adapterId = _adapter?.id ?? null;
     set({ folderName: name, adapterId });
   },
+
+  setNodePosition: (nodeId: string, position: { x: number; y: number }) => {
+    set((state: GraphStore) => ({
+      canvas: {
+        ...state.canvas,
+        positions: { ...state.canvas.positions, [nodeId]: position },
+      },
+    }));
+  },
+
+  setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => {
+    set((state: GraphStore) => ({
+      canvas: { ...state.canvas, positions },
+    }));
+  },
+
+  setViewport: (viewport: { x: number; y: number; zoom: number }) => {
+    set((state: GraphStore) => ({
+      canvas: { ...state.canvas, viewport },
+    }));
+  },
 });
 
 export const useGraphStore = create<GraphStore>(storeInitializer);
@@ -358,13 +397,13 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 useGraphStore.subscribe((state, prevState) => {
   if (!_hydrated || !_adapter) return;
-  if (state.entities === prevState.entities && state.relations === prevState.relations) return;
+  if (state.entities === prevState.entities && state.relations === prevState.relations && state.canvas === prevState.canvas) return;
 
   if (saveTimer) clearTimeout(saveTimer);
 
   saveTimer = setTimeout(() => {
-    const { entities, relations } = useGraphStore.getState();
-    const snapshot: GraphSnapshot = { version: 3, entities, relations };
+    const { entities, relations, canvas } = useGraphStore.getState();
+    const snapshot: GraphSnapshot = { version: 4, entities, relations, canvas };
     _adapter!.saveGraph(snapshot).catch((err) => {
       console.error("Failed to save graph:", err);
     });
