@@ -8,6 +8,7 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  useStore,
   BackgroundVariant,
   ConnectionMode,
   SelectionMode,
@@ -22,7 +23,7 @@ import { getLayoutedElements } from "../engine/layout"
 import type { GraphSnapshot } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
+import { ButtonGroup, ButtonGroupText, ButtonGroupSeparator } from "@/components/ui/button-group"
 import EdgeDialog from "./EdgeDialog"
 import GraphContextMenu from "./GraphContextMenu"
 import EntityNode from "./nodes/EntityNode"
@@ -326,6 +327,42 @@ function GraphCanvasContent() {
     setEdges(relayoutedEdges)
   }, [setNodes, setEdges])
 
+  const VIEWPORT_KEY = "react-roadmap:viewport"
+
+  const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
+  const [x, y, zoom] = transform
+
+  const restoredViewportRef = useRef(false)
+  useEffect(() => {
+    if (restoredViewportRef.current) return
+    restoredViewportRef.current = true
+    const stored = localStorage.getItem(VIEWPORT_KEY)
+    if (stored) {
+      try {
+        const vp = JSON.parse(stored) as { x: number; y: number; zoom: number }
+        reactFlowInstance.setViewport(vp)
+      } catch (e) {
+        console.error("Failed to restore viewport:", e)
+      }
+    }
+  }, [reactFlowInstance])
+
+  const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!restoredViewportRef.current) return
+    if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
+    viewportTimerRef.current = setTimeout(() => {
+      localStorage.setItem(VIEWPORT_KEY, JSON.stringify({ x, y, zoom }))
+    }, 500)
+    return () => {
+      if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
+    }
+  }, [x, y, zoom])
+
+  const onZoom100 = useCallback(() => {
+    reactFlowInstance.zoomTo(1)
+  }, [reactFlowInstance])
+
   return (
     <ReactFlow
       nodeTypes={nodeTypes}
@@ -349,6 +386,7 @@ function GraphCanvasContent() {
       selectionOnDrag={true}
       selectionMode={SelectionMode.Partial}
       fitView
+      fitViewOptions={{ maxZoom: 1 }}
       connectionMode={ConnectionMode.Loose}
       snapToGrid
       snapGrid={[15, 15]}
@@ -360,6 +398,10 @@ function GraphCanvasContent() {
       <MiniMap pannable zoomable position="bottom-right" />
       <Panel position="bottom-right" style={{ marginBottom: 8 }}>
         <ButtonGroup>
+          <ButtonGroupText className="font-mono text-xs tabular-nums">
+            x: {x.toFixed(1)} y: {y.toFixed(1)} z: {Math.round(zoom * 100)}%
+          </ButtonGroupText>
+          <ButtonGroupSeparator />
           <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
             <ZoomIn data-icon />
           </Button>
@@ -368,6 +410,9 @@ function GraphCanvasContent() {
           </Button>
           <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
             <Maximize data-icon />
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Zoom to 100%" onClick={onZoom100}>
+            <span className="text-xs font-semibold tabular-nums">1:1</span>
           </Button>
         </ButtonGroup>
       </Panel>
