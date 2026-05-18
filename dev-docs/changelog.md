@@ -24,13 +24,14 @@ Use this to recover context after breaks.
 - **Impact:** Canvas cursor behavior now matches user expectations — pane is for selection/context-menu, nodes are grab-draggable, text is read-only until double-clicked.
 - **Archive:** `dev-docs/archive/m4/m4-prd0035-cursor-styles.md`
 
-### m4 - pane double-click + editTrigger fix (cursor-styles branch, unmerged)
+### m4 - prd0035b - pane double-click + node position fix (cursor-styles branch, unmerged)
 - **What:** Added pane double-click node creation + fixed layout merge to preserve `editTrigger`. Uses native DOM `dblclick` listener with `{ capture: true }` on the ReactFlow container (React Flow's synthetic `onDoubleClick` never fires — its internal handler calls `stopImmediatePropagation`). `zoomOnDoubleClick={false}` disables zoom. The handler skips double-clicks on nodes via `.closest('.react-flow__node')` check. Refactored `createNodeAtCenter` (button) and the listener into a shared `createNode(position)` helper. **Fixed node positioning**: `createNode` no longer calls `setNodes` immediately (the new node didn't exist in `nds` yet since `addEntity` hadn't triggered a re-render). Instead, it stores position in `pendingNodeRef`. The layout effect's merge catches new nodes in the `else` branch — if `pendingNodeRef` matches, the node enters with cursor position instead of Dagre's, all within the same `setNodes` call. Fixed the layout merge to preserve transient `data` fields (was `{ ...existing, data: layoutedNode.data }`, wiped `editTrigger`).
 - **Reason:** The roadmap item required both pane double-click and predictable viewport-center creation. The `editTrigger` bug meant new nodes never auto-opened the editor — they appeared silently at the right position but needed a manual double-click to edit.
 - **Files changed:**
   - `src/canvas/GraphCanvas.tsx`: Added native `dblclick` listener with capture phase, `zoomOnDoubleClick={false}` prop, `pendingNodeRef` for deferred position, refactored `createNode` as shared helper, fixed layout merge data spread
   - `dev-docs/plans/i1-graph-canvas/i1-roadmap.md`: Moved double-click item from Now to ✅ Done
 - **Impact:** Double-clicking on empty canvas pane creates a node at that exact position with auto-open editor. The "New Node" button now reliably positions at viewport center AND opens the editor too (both were silently broken — `setNodes` in the event handler couldn't find the new node in state yet, so positions and `editTrigger` were always overridden by the layout effect with Dagre defaults). Editor auto-opens for all new node creation paths.
+- **ADR:** `dev-docs/archive/m4/m4-prd0035b-pane-double-click-position-fix.md`
 
 ## 2026-05-17
 
