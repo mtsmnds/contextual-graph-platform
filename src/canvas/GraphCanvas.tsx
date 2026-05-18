@@ -33,10 +33,16 @@ const nodeTypes = { entity: EntityNode }
 function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
+  const savedPositions = useGraphStore((s) => s.canvas.positions)
 
   const layoutRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   if (layoutRef.current === null) {
-    layoutRef.current = getLayoutedElements({ entities, relations })
+    const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
+    const nodes = dagreNodes.map((n) => {
+      const saved = savedPositions[n.id]
+      return saved ? { ...n, position: saved } : n
+    })
+    layoutRef.current = { nodes, edges }
   }
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutRef.current.nodes)
@@ -61,24 +67,26 @@ function GraphCanvasContent() {
   } | null>(null)
 
   useEffect(() => {
-    const layouted = getLayoutedElements({ entities, relations })
+    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations })
+    const positions = useGraphStore.getState().canvas.positions
 
     setNodes((prev) => {
       const prevById = new Map(prev.map((n) => [n.id, n]))
-      const layoutedById = new Map(layouted.nodes.map((n) => [n.id, n]))
       const merged: Node[] = []
 
-      for (const [id, layoutedNode] of layoutedById) {
-        const existing = prevById.get(id)
-        if (existing) {
-          merged.push({ ...existing, data: { ...existing.data, ...layoutedNode.data } })
+      for (const dagreNode of dagreNodes) {
+        const existing = prevById.get(dagreNode.id)
+        const saved = positions[dagreNode.id]
+        const position = saved ?? dagreNode.position
+
+        const pending = pendingNodeRef.current
+        if (pending && pending.id === dagreNode.id) {
+          pendingNodeRef.current = null
+          merged.push({ ...dagreNode, position, data: { ...dagreNode.data, editTrigger: 1 } })
+        } else if (existing) {
+          merged.push({ ...existing, position, data: { ...existing.data, ...dagreNode.data } })
         } else {
-          const pending = pendingNodeRef.current
-          if (pending && pending.id === id) {
-            merged.push({ ...layoutedNode, position: pending.position, data: { ...layoutedNode.data, editTrigger: 1 } })
-          } else {
-            merged.push(layoutedNode)
-          }
+          merged.push({ ...dagreNode, position, data: dagreNode.data })
         }
       }
 
@@ -87,15 +95,14 @@ function GraphCanvasContent() {
 
     setEdges((prev) => {
       const prevById = new Map(prev.map((e) => [e.id, e]))
-      const layoutedById = new Map(layouted.edges.map((e) => [e.id, e]))
       const merged: Edge[] = []
 
-      for (const [id, layoutedEdge] of layoutedById) {
-        const existing = prevById.get(id)
+      for (const dagreEdge of dagreEdges) {
+        const existing = prevById.get(dagreEdge.id)
         if (existing) {
-          merged.push({ ...existing, label: layoutedEdge.label, data: layoutedEdge.data })
+          merged.push({ ...existing, label: dagreEdge.label, data: dagreEdge.data })
         } else {
-          merged.push(layoutedEdge)
+          merged.push(dagreEdge)
         }
       }
 
@@ -146,12 +153,22 @@ function GraphCanvasContent() {
     [],
   )
 
+  const setNodePosition = useGraphStore((s) => s.setNodePosition)
+
   const pendingNodeRef = useRef<{ id: string; position: { x: number; y: number } } | null>(null)
 
   const createNode = useCallback((position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("concept")
     pendingNodeRef.current = { id, position }
+    useGraphStore.getState().setNodePosition(id, position)
   }, [])
+
+  const onNodeDragStop = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      setNodePosition(node.id, node.position)
+    },
+    [setNodePosition],
+  )
 
   const createNodeAtCenter = useCallback(() => {
     const viewport = reactFlowInstance.screenToFlowPosition({
@@ -303,7 +320,7 @@ function GraphCanvasContent() {
       await storeInit(fsa)
     } else {
       const state = useGraphStore.getState()
-      const snapshot: GraphSnapshot = { version: 3, entities: state.entities, relations: state.relations }
+      const snapshot: GraphSnapshot = { version: 4, entities: state.entities, relations: state.relations, canvas: state.canvas }
       await fsa.saveGraph(snapshot)
       for (const entity of state.entities) {
         if (entity.kind === "container") {
@@ -320,14 +337,19 @@ function GraphCanvasContent() {
   const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
   const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
 
+  const __experimentalReLayout = false
+
   const onRelayout = useCallback(() => {
     const { entities, relations } = useGraphStore.getState()
     const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
+    const dagrePositions = Object.fromEntries(relayouted.map((n) => [n.id, n.position]))
+    useGraphStore.getState().setCanvasPositions(dagrePositions)
     setNodes(relayouted)
     setEdges(relayoutedEdges)
   }, [setNodes, setEdges])
 
-  const VIEWPORT_KEY = "react-roadmap:viewport"
+  const savedViewport = useGraphStore((s) => s.canvas.viewport)
+  const setViewport = useGraphStore((s) => s.setViewport)
 
   const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
   const [x, y, zoom] = transform
@@ -336,28 +358,22 @@ function GraphCanvasContent() {
   useEffect(() => {
     if (restoredViewportRef.current) return
     restoredViewportRef.current = true
-    const stored = localStorage.getItem(VIEWPORT_KEY)
-    if (stored) {
-      try {
-        const vp = JSON.parse(stored) as { x: number; y: number; zoom: number }
-        reactFlowInstance.setViewport(vp)
-      } catch (e) {
-        console.error("Failed to restore viewport:", e)
-      }
+    if (savedViewport) {
+      reactFlowInstance.setViewport(savedViewport)
     }
-  }, [reactFlowInstance])
+  }, [reactFlowInstance, savedViewport])
 
   const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (!restoredViewportRef.current) return
     if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
     viewportTimerRef.current = setTimeout(() => {
-      localStorage.setItem(VIEWPORT_KEY, JSON.stringify({ x, y, zoom }))
+      setViewport({ x, y, zoom })
     }, 500)
     return () => {
       if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
     }
-  }, [x, y, zoom])
+  }, [x, y, zoom, setViewport])
 
   const onZoom100 = useCallback(() => {
     reactFlowInstance.zoomTo(1)
@@ -375,6 +391,7 @@ function GraphCanvasContent() {
       onEdgesDelete={onEdgesDelete}
       onBeforeDelete={onBeforeDelete}
       onNodesDelete={onNodesDelete}
+      onNodeDragStop={onNodeDragStop}
       onEdgeDoubleClick={onEdgeDoubleClick}
       onNodeContextMenu={onNodeContextMenu}
       onEdgeContextMenu={onEdgeContextMenu}
@@ -425,9 +442,11 @@ function GraphCanvasContent() {
           <Button variant="outline" size="sm" onClick={onOpenFolder}>
             Open Folder
           </Button>
-          <Button variant="outline" size="sm" onClick={onRelayout}>
-            Re-layout
-          </Button>
+          {__experimentalReLayout && (
+            <Button variant="outline" size="sm" onClick={onRelayout}>
+              Re-layout
+            </Button>
+          )}
         </ButtonGroup>
       </Panel>
       <EdgeDialog

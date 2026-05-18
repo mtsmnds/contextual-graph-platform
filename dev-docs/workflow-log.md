@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd start — m4-prd0038-save-node-positions
+- **Source:** user text: "Save node positions — schema v4..."
+- **Branch at time:** prd0037-zoom-improvements (clean)
+- **User decision:** stacked on prd0037-zoom-improvements
+- **Branch name:** m4-prd0038-save-node-positions
+- **Scope:** full (single phase)
+- **Pre-commit guard:** committed ("docs")
+
 ### prd write — m4-prd0038-save-node-positions
 - **Source:** user text: "Save node positions — schema v4..."
 - **Branch at time:** prd0037-zoom-improvements (clean)
