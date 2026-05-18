@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-18
 
+### prd end — m4-prd0040-edge-inline-editing
+- **Source:** roadmap: "Edge inline editing"
+- **Branch at time:** m4-prd0040-edge-inline-editing (clean)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** no architectural changes
+- **Commit hash:** a9f12e7
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from prd start)
+
 ### prd start — m4-prd0040-edge-inline-editing
 - **Source:** roadmap: "Edge inline editing"
 - **Branch at time:** main (clean)
