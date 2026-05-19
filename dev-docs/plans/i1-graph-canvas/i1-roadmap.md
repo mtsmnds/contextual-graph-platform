@@ -56,15 +56,16 @@ everything structural depends on stable positions
 - **prd0039** - Cmd+drag to duplicate node — hold Cmd (Meta) while dragging a node → clone the node, position the copy at the drag endpoint. Creates a new entity in the store.
 
 ## Phase IV - Node & Edge Data Editing
+Core editing capability — the biggest current pain point (user couldn't edit metadata, relation types, or entity kinds).
+- **prd0040**- Edge inline editing: double-click edge label → inline text input with a dropdown of existing relation types (queried from `distinct type` values across all relations). User can pick an existing type or type a new one. Same commit pattern as node inline editing (Enter/blur to commit, Escape to cancel). **Replace EdgeDialog** (the modal) entirely — inline is faster and the dialog provides nothing extra.
+
 
 
 ## Now (ordered by dependency)
 
 #### Node & Edge Data Editing
 
-Core editing capability — the biggest current pain point (user couldn't edit metadata, relation types, or entity kinds).
 
-- **Edge inline editing**: double-click edge label → inline text input with a dropdown of existing relation types (queried from `distinct type` values across all relations). User can pick an existing type or type a new one. Same commit pattern as node inline editing (Enter/blur to commit, Escape to cancel). **Replace EdgeDialog** (the modal) entirely — inline is faster and the dialog provides nothing extra.
 - **Node inspector (NodeAppendix)**: when a node is selected, show a form card appended to the right side of the node using the NodeAppendix registry component. The form shows all Entity fields:
   - `content` — editable text (same as inline editing, but visible in the form too)
   - `kind` — dropdown of entity kinds (segment, container, annotation, concept, summary). Changing kind updates the entity and re-renders the node.
@@ -120,6 +121,10 @@ Former "now" items, deferred:
 - Book metadata, annotations, and content — import/management UI within the graph
 - Container-labeled group node refinement (SubFlows pattern for complex hierarchies)
 - Selection-based grouping: select multiple nodes → group them in a new container (creates `contains` relations)
+
+## Mega later
+
+- sort of input interface that easily transforms a lot of info into graph data (like gym training,)
 
 ### Deferred (not in scope until promoted)
 
