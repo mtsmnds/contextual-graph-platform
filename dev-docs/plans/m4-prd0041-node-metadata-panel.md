@@ -2,32 +2,32 @@
 
 ## Overview
 
-When a node is selected on the canvas (single click or context menu "Edit"), a **metadata node** appears to the right of the selected entity node, connected by a decorative dashed edge. The metadata node is a React Flow custom node type (`"metadata"`) containing a form card with editable fields: `content`, `kind`, `metadata` key-value table, and `id` (read-only).
+Each entity node can have a **metadata node** — toggled independently via the context menu action **"Metadata: Hidden"** / **"Metadata: Visible"**. When visible, a metadata node appears to the **left** of the entity node (opposite the normal left-to-right flow direction), connected by a decorative dashed edge. Multiple metadata nodes can be visible at once — the user keeps them open for as long as they need.
 
-The metadata node lives within React Flow's canvas — the user can drag it, resize it, and it participates in the existing canvas UX (zoom, pan, context menu). Its position is persisted per entity in `canvas.positions`. The connecting edge is view-only (not a domain relation) — it's decorative, rendered to show the association.
+The metadata node is a React Flow custom node type (`"metadata"`) containing a form card with editable fields: `content`, `kind`, `metadata` key-value table, and `id` (read-only). It lives within React Flow's canvas — the user can drag it, resize it, and it participates in the existing canvas UX (zoom, pan, context menu). Its position is persisted per entity in `canvas.positions`. The connecting edge is view-only (not a domain relation) — it's decorative, rendered to show the association.
 
-Context menu "Edit" opens the metadata node instead of triggering inline text editing. Inline text editing via double-click on the entity node body is preserved.
+Inline text editing via double-click on the entity node body is preserved and independent from the metadata node.
 
 ## Specification / Acceptance Criteria
 
-### 1. Metadata Node
+### 1. Metadata Node Lifecycle
 
 - A new React Flow node type `"metadata"` is registered alongside `"entity"` and `"edgelabel"`.
-- When an entity node is **selected** (single click), the metadata node is injected into the React Flow nodes array.
-- When the entity node is **deselected**, the metadata node is removed.
-- When a **different** entity node is selected, the current metadata node is replaced with one for the new entity.
-- **Only one metadata node** is visible at a time.
+- Context menu on an entity node shows **"Metadata: Hidden"** if no metadata node is visible for that entity, or **"Metadata: Visible"** if one is visible.
+- Clicking the toggle **shows** or **hides** the metadata node for that entity.
+- **Multiple metadata nodes** can be visible at once — each entity toggles its own independently. The user can keep metadata visible across multiple entities during long operations.
+- Deleting an entity removes its metadata node (if visible). Hiding the metadata node does not affect the entity's data — it only removes the view node and decorative edge.
 
 ### 2. Connecting Edge
 
 - A decorative dashed edge connects the entity node to its metadata node.
 - The edge is **view-only** — it does NOT correspond to a domain `Relation` in the store. It exists only in React Flow's edges state.
 - Edge type: `smoothstep` or `default` with dashed styling (`strokeDasharray: "5 5"`), muted color.
-- When the metadata node is removed (deselection), the decorative edge is removed too.
+- When the metadata node is removed (toggle hidden or entity deleted), the decorative edge is removed too.
 
 ### 3. Positioning
 
-- **Initial position:** If no saved position exists, the metadata node appears to the right of the selected entity node: `x = entityNode.position.x + entityNode.width + 40`, `y = entityNode.position.y`.
+- **Initial position:** If no saved position exists, the metadata node appears to the **left** of the entity node: `x = entityNode.position.x - metadataNode.width - 40`, `y = entityNode.position.y`. (Left side goes against the normal left-to-right flow direction, making the metadata node visually distinct and avoiding collision with downstream nodes.)
 - **Saved position:** Position is stored in `canvas.positions` under key `"metadata:{entityId}"`. On subsequent selection, the saved position is restored.
 - **Drag save:** When the user drags the metadata node, its new position is saved via `setCanvasPositions` (same debounced persist path as entity nodes).
 - **Resize:** The metadata node supports resize via `NodeResizeControl` on all edges (same pattern as EntityNode). Min width sufficient for the form content.
@@ -74,22 +74,29 @@ const EDGE_METADATA_KEYS: Record<string, {
 
 **Scope (v1):** Write path and read path for `author` are implemented. Other edge-derived keys can be added to the registry later without changing the panel UI.
 
-### 6. Context Menu "Edit"
+### 6. Context Menu Actions
 
-- The context menu "Edit" action on a node selects that node in React Flow (if not already selected), which triggers the metadata node to appear.
-- The inline text editing path (double-click on entity node body) is preserved and unchanged.
+- Right-clicking an entity node shows:
+  - **"Metadata: Hidden"** (if metadata node is not visible) — click to show it
+  - **"Metadata: Visible"** (if metadata node is visible) — click to hide it
+  - Existing actions: "Edit" (triggers inline text editing on double-click already), "Delete"
+- The **"Edit"** context menu action continues to trigger inline text editing (same as double-click on the node body). It is separate from the metadata toggle.
+- The inline text editing path (double-click on entity node body) is preserved and unchanged — it does not affect metadata visibility.
 
 ### 7. Edge Cases
 
-- **Delete entity with open metadata node:** Selecting a node via context menu that gets deleted — the metadata node is removed. If the user deletes the selected node (Backspace/Delete), the metadata node is also removed.
-- **Multi-selection:** If multiple nodes are selected, the metadata node shows data for the most recently selected node (React Flow's nodesSelectionActive behavior). If the user deselects all (clicking pane), metadata node closes.
-- **Metadata node itself:** The metadata node is NOT selectable in the normal sense — clicking inside it focuses form fields, but the canvas selection state keeps the entity node as the selected node. The metadata node does not appear in context menus and cannot be deleted independently.
+- **Delete entity with visible metadata node:** Deleting an entity via Backspace/Delete or context menu → its metadata node and decorative edge are also removed. The entity data is deleted from the store (existing cascade).
+- **Multiple metadata nodes visible:** Each entity toggles independently. No conflict — each metadata node reads from its own entity's data. Editing metadata on one entity has no effect on another entity's metadata node.
+- **Metadata node itself:** The metadata node is NOT selectable in the normal sense — clicking inside it focuses form fields, but the canvas keeps entity nodes as the selectable units. The metadata node does not appear in context menus and cannot be deleted independently. The only way to remove it is via the context menu toggle or deleting the parent entity.
+- **Viewport pan/zoom while metadata visible:** The metadata node is a regular React Flow node — it pans and zooms with the canvas. Its position is saved on drag, surviving pan/zoom changes.
+- **Re-layout:** Running Dagre re-layout overwrites all positions. The metadata node positions are also reset (they're in `canvas.positions` under `metadata:{entityId}` keys). The user would need to toggle metadata off and on to recalculate the default left offset, or drag them back into place.
 
 ## Files Changed (inferred)
 
 - `src/canvas/nodes/MetadataNode.tsx` (new) — Custom React Flow node component with content textarea, kind select, metadata key-value table, id display, NodeResizeControl
-- `src/canvas/nodes/EntityNode.tsx` — Keep inline editing via double-click, remove editTrigger from context menu path
-- `src/canvas/GraphCanvas.tsx` — Register `"metadata"` node type; inject/remove metadata node based on selection state; inject/remove decorative connecting edge; rewire context menu "Edit" to select node; handle deletion cascade
+- `src/canvas/nodes/EntityNode.tsx` — Keep inline editing via double-click (unchanged)
+- `src/canvas/GraphCanvas.tsx` — Register `"metadata"` node type; manage visible metadata nodes set per entity; inject/remove metadata nodes and decorative edges on toggle; handle deletion cascade (removes metadata node + decorative edge when entity is deleted)
+- `src/canvas/GraphContextMenu.tsx` — Add "Metadata: Hidden" / "Metadata: Visible" toggle action for entity nodes
 - `src/engine/edge-metadata.ts` (new) — Edge-derived metadata registry + resolve/write functions
 - `src/store/useGraphStore.ts` — (potentially) add `getOrCreateEntityByContent` helper for edge-derived metadata write path
 - `src/index.css` — Styles for metadata node, decorative edge, metadata form fields
@@ -110,4 +117,4 @@ This PRD closes out i1 (the graph canvas initiative) and serves as the bridge in
 
 1. **Custom node types beyond entities** — The `"metadata"` node proves the pattern for future view-only nodes (thread headers, group containers, roadmap milestones).
 2. **Edge-derived metadata** — The registry pattern (`edge-metadata.ts`) extends naturally to other context-revealing keys.
-3. **Select-triggered view nodes** — The select→inject→deselect→remove lifecycle is reused by future node types (inspector, thread preview, annotation panel).
+3. **Toggle-triggered view nodes** — The context menu toggle → inject/remove lifecycle is reused by future node types (inspector, thread preview, annotation panel).
