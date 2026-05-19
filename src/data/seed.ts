@@ -240,5 +240,5 @@ export const SEED_DATA: GraphSnapshot = {
     },
   ],
   relations: [],
-  canvas: { positions: {} },
+  canvas: { positions: {}, dimensions: {} },
 };

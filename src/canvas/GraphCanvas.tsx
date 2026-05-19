@@ -35,6 +35,7 @@ function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
   const savedPositions = useGraphStore((s) => s.canvas.positions)
+  const savedDimensions = useGraphStore((s) => s.canvas.dimensions)
 
   const __experimentalNoDagre = true
 
@@ -51,12 +52,14 @@ function GraphCanvasContent() {
           console.warn(`[layout] No saved position for "${entity.id}" — applying fallback`)
           position = { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 }
         }
+        const savedDims = savedDimensions[entity.id]
         return {
           id: entity.id,
           type: "entity",
           position,
           data: { content, kind: entity.kind, id: entity.id },
-          style: { width: 200 },
+          style: { width: savedDims?.width ?? 200 },
+          ...(savedDims ? { width: savedDims.width, height: savedDims.height } : {}),
         }
       })
       const edges: Edge[] = relations.map((rel) => ({
@@ -95,7 +98,7 @@ function GraphCanvasContent() {
   } | null>(null)
 
   useEffect(() => {
-    const positions = useGraphStore.getState().canvas.positions
+    const { positions, dimensions: savedDims } = useGraphStore.getState().canvas
 
     if (__experimentalNoDagre) {
       setNodes((prev) => {
@@ -103,8 +106,23 @@ function GraphCanvasContent() {
         const merged = [...prev]
 
         for (const entity of entities) {
-          if (!prevById.has(entity.id)) {
-            const content = entity.content || entity.kind || entity.id
+          const newContent = entity.content || entity.kind || entity.id
+          const existing = prevById.get(entity.id)
+          if (existing) {
+            if (existing.data.content !== newContent || existing.data.kind !== entity.kind) {
+              const idx = merged.findIndex((n) => n.id === entity.id)
+              if (idx !== -1) {
+                merged[idx] = { ...merged[idx], data: { ...merged[idx].data, content: newContent, kind: entity.kind } }
+              }
+            }
+            const storedDims = savedDims[entity.id]
+            if (storedDims) {
+              const idx = merged.findIndex((n) => n.id === entity.id)
+              if (idx !== -1 && merged[idx].style) {
+                merged[idx] = { ...merged[idx], style: { ...merged[idx].style, width: storedDims.width } }
+              }
+            }
+          } else {
             const saved = positions[entity.id]
             let position: { x: number; y: number }
             if (saved) {
@@ -113,12 +131,14 @@ function GraphCanvasContent() {
               console.warn(`[layout] No saved position for new entity "${entity.id}" — applying fallback`)
               position = { x: merged.length * 30, y: merged.length * 30 }
             }
+            const entityDims = savedDims[entity.id]
             const newNode: Node = {
               id: entity.id,
               type: "entity",
               position,
-              data: { content, kind: entity.kind, id: entity.id },
-              style: { width: 200 },
+              data: { content: newContent, kind: entity.kind, id: entity.id },
+              style: { width: entityDims?.width ?? 200 },
+              ...(entityDims ? { width: entityDims.width, height: entityDims.height } : {}),
             }
 
             const pending = pendingNodeRef.current
@@ -200,6 +220,26 @@ function GraphCanvasContent() {
     })
   }, [entities, relations, setNodes, setEdges])
 
+  useEffect(() => {
+    const dims: Record<string, { width: number; height: number }> = {}
+    for (const node of nodes) {
+      const w = node.measured?.width ?? node.width
+      const h = node.measured?.height ?? node.height
+      if (w != null && h != null) {
+        dims[node.id] = { width: w, height: h }
+      }
+    }
+    const keys = Object.keys(dims).sort()
+    let key = ""
+    for (const k of keys) {
+      key += `${k}:${dims[k].width},${dims[k].height};`
+    }
+    if (key !== dimensionsKeyRef.current) {
+      dimensionsKeyRef.current = key
+      useGraphStore.getState().setCanvasDimensions(dims)
+    }
+  }, [nodes])
+
   const onConnect = useCallback(
     (connection: Connection) => {
       useGraphStore.getState().addRelation(
@@ -256,6 +296,8 @@ function GraphCanvasContent() {
       originalPosition: { x: number; y: number }
     }>
   } | null>(null)
+
+  const dimensionsKeyRef = useRef<string>("")
 
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, node: Node) => {

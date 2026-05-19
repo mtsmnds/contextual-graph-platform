@@ -13,7 +13,7 @@ const contentCache: Record<string, Record<string, unknown>> = {};
 function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relations: Relation[]; canvas?: CanvasState }): GraphSnapshot {
   let entities = snapshot.entities
   let relations = snapshot.relations
-  let canvas: CanvasState = snapshot.canvas ?? { positions: {} }
+  let canvas: CanvasState = snapshot.canvas ?? { positions: {}, dimensions: {} }
   let version = snapshot.version as number
 
   if (version < 2) {
@@ -52,8 +52,12 @@ function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relati
   }
 
   if (version < 4) {
-    canvas = { positions: {} }
+    canvas = { positions: {}, dimensions: {} }
     version = 4
+  }
+
+  if (!canvas.dimensions) {
+    canvas = { ...canvas, dimensions: {} }
   }
 
   return { version: version as 4, entities, relations, canvas }
@@ -91,13 +95,14 @@ interface GraphStore {
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
   setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
   replaceCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
+  setCanvasDimensions: (dimensions: Record<string, { width: number; height: number }>) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 }
 
 const storeInitializer = (set: any, get: any): GraphStore => ({
   entities: [],
   relations: [],
-  canvas: { positions: {} },
+  canvas: { positions: {}, dimensions: {} },
   view: {
     focusedEntityId: null,
     anchorEntityId: null,
@@ -145,14 +150,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         version: 4,
         entities: SEED_DATA.entities,
         relations: SEED_DATA.relations,
-        canvas: { positions: {} },
+        canvas: { positions: {}, dimensions: {} },
       };
       adapter.saveGraph(seedSnapshot).catch(() => {});
 
       set({
         entities: SEED_DATA.entities,
         relations: SEED_DATA.relations,
-        canvas: { positions: {} },
+        canvas: { positions: {}, dimensions: {} },
         contentLoaded: Object.fromEntries(containers.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
@@ -291,6 +296,12 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   getContent: (id: string) => {
     return contentCache[id] ?? null;
+  },
+
+  setCanvasDimensions: (dimensions: Record<string, { width: number; height: number }>) => {
+    set((state: GraphStore) => ({
+      canvas: { ...state.canvas, dimensions },
+    }));
   },
 
   saveContent: (id: string, data: Record<string, unknown>) => {

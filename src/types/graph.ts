@@ -32,6 +32,7 @@ type ViewState = {
 
 type CanvasState = {
   positions: Record<string, { x: number; y: number }>;
+  dimensions: Record<string, { width: number; height: number }>;
   viewport?: { x: number; y: number; zoom: number };
 };
 
