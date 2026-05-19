@@ -1,13 +1,137 @@
-vision voice note transciption: 
+# i2 — View Data as Threads and Groups
 
-Okay, so first thing is, let's think about the node metadata panel. It might need different ways to be viewed depending on to which node that metadata that we are seeing belongs to. So, and then a thing about the metadata we need to go in is that sometimes things might look like metadata, but sometimes they will be edges. So the first idea I want to to express is the author. If we are looking at the metadata of a book, we should see the author, the author is an edge connection (between the book node and the author node) but we don't necessarily need to see that edge, but it should show in the metadata that this book's author is someone. So for, I think we we can do a full experimentation with uh with the book Hamlet because it is in the public domain and we can start testing with it a lot of the information we will try to manipulate. we don't necessarily need to see all the edges from Shakespeare to his books, and we don't need necessarily need to see the edge from Hamlet to Shakespeare. We might just need to see the author as part of that metadata in in the table like we talked, or even in a json, it's informative and enough. And maybe uh we create the experience of growing, uh expanding the context to show the the other edges. So if the user really wants to navigate to uh the author Shakespeare, they could do it and then we would open uh the edges uh related to it. So that's the first thing we have to have in our mind.
+## What this is
 
-Continuing on what I just said, I am talking from a frame of reference that we would not load all the graph at once, like we couldn't do in the canvas. We would be loading only the contextually relevant part of a graph. So continuing with Hamlet, that is something we can start testing. We might be just seeing the book Hamlet and everything that's related to book Hamlet. The main thing we're going to see when we try to look at the context of a book will be the book metadata. It is the author name, the year it was published, the amount of pages it has, in what language it was originally written. It might have other metadata about the book and we will have also reading metadata, like the date started reading, the date we finished reading, in what language we have read. This is important because we were going to build other visualizations with all that information, but they are not necessarily edges at this point. And then we're going to see the book content and we're going to see the book annotations. So here I think the idea of grouping becomes important because for the book, we'll be grouping by everything that is related to that book and the relation type is contains. And these containers, which is something we will have to work on, these containers, they are able to nest. And that will be really important and really transparent because, for example, the book annotations will be a container within book Hamlet and the content of the book Hamlet will be a container. So these things are like nested, not in the graph. It's all just edges, but we will show them as nested. And inside the book contents, we will have the acts are containers and then the chapters or the scenes are containers. And then there will be a final child nodes that are just the paragraphs of each scene in Hamlet.
+A refinement of the Contextual Graph Platform vision from i1 — moving from a flat node-and-edge canvas toward structured views where data is organized as threaded sequences inside nested containers. The same Entity/Relation graph produces different visual layouts depending on what the user is looking at. Some metadata fields are really edges in disguise. The graph is not fully loaded at once — only the contextually relevant subgraph around the focused entity.
 
-And so we will need to devise a logic to not load everything at once. In that case, I think some things are already clear, like we don't need to load the author or all the connections to the book Hamlet. We might want to decide to draw like a connection that's one edge away. So if we decide that the author would show and the year would show, like the immediate metadata, maybe that's it. Or also if a paragraph has an annotation, it would also show, right? But let's compartmentalize this idea. The idea is that we can decide how much of the context we are seeing by the amount of connections away from the object we are seeing. And also the content of the book might be a lot of stuff, right? So we don't want to load all of that. So I'll talk a little about threading, which I think will be really important as well, and something that is an idea from the very start of the project, but I think now is the point where we can work on threading.
+This is not a pivot. It builds directly on the i1 graph canvas infrastructure: schema v4 (with `sortOrder` and `canvas.positions`), the query engine (`getContainerChildren`, `queryThread`), React Flow custom nodes/edges, and the persistence layer.
 
-And the idea of threading is, considering the content of Hamlet, of a single scene, these paragraphs in the scene, or all the nodes that are the text of the scene, they need to be threaded. They need to be in a certain order that every time we call this book in whatever view, we know the order of the paragraphs, right? So this is really important, and that's why we already talked about, I don't know if we implemented, but we talked about the fractional indexing so that we preserve the order, even if for some reason, or in another document that's not a book, we create something in the middle, a node in the between two nodes, and we conserve the index of those objects. So things like the paragraphs of a scene in Hamlet, they need to be in that certain order. And if we look at the scenes, the scenes also need to be threaded because there is an order to them. Scene two comes after scene one, et cetera. And all the scenes, they are inside acts. The acts also need to be threaded because we have Act 1, then Act 2, then Act 3, et cetera. So there is an order to them. And then they all are inside the book. There might be other things that are in the same level as the acts, you know, like the title page, the part where we explain who the characters are. So and in other books, there might be other things too. So we are not creating semantic containers. We're just stating that if a node has container relationships with other things, we need those things to be indexed. fractionally, in a way that we keep the order of those items. And then we're going to display these nodes much like, you know, a normal displaying vertically, the nodes need to be one below the other, the other. And that all comes to the idea that we also explore in the roadmap of grouping. So if I have a node, let's say so scene one of act one is a node that shows in the front end as a like a fig jam section, you know, like a grouping label that will have inside it all the paragraphs of scene one. And scene, act one will have all the scenes grouped. I think something that might be really important for us to explore as well in this point is an accordion behavior to container nodes. So we can just, you know, close it, and it just shows its title, so for the text it has inside it. Let's not work with titles. So scene one has a text, scene one, something, something. And if we, but if we close the accordion, we can not see all the paragraphs. And if we close all the accordions, act one will be just the thread of all the scenes one by one. I think that that's more or less the idea about groups and threads.
+## Core Concepts
 
-So, this threading and grouping idea will be also very important for annotations, or let's think, user-written content. Because different from Hamlet, that is well-structured and complete, we're not going to be editing the text of Hamlet as much as we are going to be editing the text of annotations, which are the user's original thoughts and connections. But the important thing about annotations, so they use the same threading logic, right? The user will write a paragraph and then will write another and they might want these paragraphs to retain their order and they might be nested within chapters or sections of their annotations. Or, well, this will complicate things, but I think we can think about it later, but if they add an annotation about something not in the view later, they can just see all the annotations and if we are fractionally indexing, naturally an annotation goes in the right order, right? What will complicate things here is that if I'm looking at the whole Hamlet text, it will not match in length with the annotations. So, but if I'm looking, if my focus is the Hamlet text, I want that an annotation that has an edge with a certain paragraph to be horizontally aligned with this annotation. Annotation and paragraph both are horizontally aligned. Because my focus is reading Hamlet, but if I'm just reading the annotations on Hamlet, I don't need all that space between annotations that would be generated by Hamlet's text being so long, and I only having a few annotations to a few paragraphs, right? I'm not annotating every paragraph of Hamlet, so if my focus is the notes, I should see the notes threaded and organized linearly and not see the whole Hamlet text. The way I think about it, honestly, the easiest way to think about it right now, is that we just create something of a checkbox. I don't know where that experience should live, where should the user click in the UI, but I'm imagining if you can select to see the whole Hamlet text or not, next to the whole annotations, so this would change how we see the annotations, how they are shown in the graph. But then something very important that I mentioned earlier becomes important. We are not seeing the whole graph, we're just seeing connections, right? So I imagine, so if I'm reading the annotations, I might need an indicator saying that this annotation is related to something. And maybe if I hover or click that indicator, then we show the edge that is related to that, the edge and the node. We show that that is related to that annotation node. We show it in a non-editable way, and the user can see or not see. Maybe they have this functionality to say, hey, I wanna see plus one node, one edge away. So they are going to see all the annotations, edges related to their annotations. I don't know if I'm very clear about this, but this is really important. This is the main use, I think, of this system because as the user is writing his annotations, he just wants to say, oh, this is related to something else. And then he will create that relationship and continue moving on. And when they are checking the annotations, they wanna see the edges that were created, but they don't need to see the full context of these other things, like the full books and the full text that is contained in those other things. So I think we are creating the contextual part of the project, the part that says, we're not looking at the full graph, we're looking at the graph from a projection of the graph, a fraction of it that is centered around. Some main thing that we wanna see.
+### 1. Metadata as Edges
 
-Lastly, I want to mention this because this might be an avenue for us testing as well. I think grouping will be really important because it will serve all sorts of things, right? These nodes that contain other nodes, and then we display them as a group of some sort, and React flow has an approach to this. I think that's very similar to the FigJam approach. So the third example I want to give is the roadmap. We could represent our own roadmap with this logic now, because we can consider that the I'll consider PRDs as atomic right now, but I know there are tasks within the PRDs, but if we consider the PRD and atomic thing, we have the, we will basically have PRDs related to each other as in a line of uh I did this as a requirement of to that. So there is a line, a relation there saying this was done first, and it unblocks because it was a requirement to do that other thing. And so that's very linear, and the roadmap is different from the books, the annotations that we talked about because it, we are gonna see it horizontally, right? We, we see it, we see one node, then to the right, another node, and et cetera, et cetera. But we might group it in different ways, right? We, we have the. in the milestones, for example, we might have phases, sometimes we use it phases, we might have the initiatives. So we might want to see the roadmap, those groupings, or if we don't see them, we can at least know from the metadata, similar to the other thing, we can know that those are related to this. They are grouped by this other node that is like the initiative. And this node initiative, it doesn't show on the roadmap view of the canvas, but it would maybe provide a title or be just a group. And if we really want to see the initiative, click on it, I think then we would see the initiative is not linear like the roadmap, it has a vision, it has a bunch of PRDs, so we might be exploring the documents that are related to this initiative or this milestone, if you get my idea. And maybe we are moving from canvas views when we are clicking on those things. So the grouping will be really important because it will empower this type of relationship, a visualization of the roadmap, and I think we can start exploring how we see our own roadmap in our canvas
+Some metadata displayed on an entity isn't stored as `metadata.key` — it's projected from a relation.
+
+Example: a book entity shows **Author: William Shakespeare** in its metadata panel. This value comes from a `contains` edge between an author entity ("William Shakespeare") and the book entity ("Hamlet"). The edge exists in the graph, but the user sees it collapsed into the metadata display as a simple key-value pair — the author's name, not the edge itself.
+
+Other metadata is pure data: year published, page count, original language, reading start/finish dates. Some of this will become visualizations later, but it's not edge-derived at this point.
+
+The metadata panel starts as a key-value editor. Edge-derived metadata is resolved at read time and written through both the relation store and the metadata field. From the beginning, certain keys (like `author`) equate to edges.
+
+### 2. Contextual Loading
+
+The graph canvas loads everything at once, which works at the current scale (~100 entities). But for a book with hundreds of paragraphs, annotations, and cross-references, loading the entire graph isn't practical.
+
+The model: load by **hop distance** from the focused entity.
+
+- **1 edge away** = immediate metadata + direct children. For a book, this means the author, the acts, any top-level annotations.
+- **2+ edges away** = annotations on paragraphs, author's other works, concepts referenced by annotations.
+- The user can **expand context** to load more: click an entity to add its 1-edge neighborhood to the visible set.
+
+This replaces the canvas's "load everything" approach with a contextual projection that only assembles what's relevant.
+
+### 3. Threading
+
+Every container's children are **threaded** — ordered by `sortOrder` using fractional indexing. This already exists in the query engine (`getContainerChildren` sorts by `sortOrder`), but the vision applies it universally:
+
+- **Paragraphs** in a scene are threaded (paragraph 2 comes after paragraph 1)
+- **Scenes** in an act are threaded (Scene II after Scene I)
+- **Acts** in a book are threaded (Act II after Act I)
+- **Annotations** on a book are threaded (the user's notes in the order they were written)
+
+Threading is not semantic. We don't name containers "act" or "scene" in the data model. We state: _if a node has `contains` relations to other nodes, those children are ordered._ The vertical display follows the order.
+
+### 4. Container Grouping
+
+`contains` relations become visual groupings. A container entity renders as a section header that encloses its threaded children — like FigJam sections or nested folder views.
+
+```
+Book: Hamlet
+├── Title Page
+├── Dramatis Personae
+├── Act I (container)
+│   ├── Scene I (container)
+│   │   ├── Paragraph 1
+│   │   ├── Paragraph 2
+│   │   └── ...
+│   └── Scene II
+│       └── ...
+├── Act II
+│   └── ...
+├── Annotations (container)
+│   ├── Note on Act I Scene I
+│   ├── Note on character development
+│   └── ...
+└── ...
+```
+
+**Key principle:** nesting is visual, not graph-structural. It's all flat edges (`contains` from parent to child). The hierarchy is a projection — the rendering layer follows the `contains` chain recursively and lays out children inside parents.
+
+React Flow supports this natively via `parentId` on nodes and `extent: "parent"` for containment. Group nodes get a custom component with a header, padded child area, and resize handles. Collective drag works out of the box.
+
+### 5. Multi-Projection Views
+
+The same Entity/Relation graph supports different layouts depending on the **projection context**:
+
+| Context | Layout | Example |
+|---------|--------|---------|
+| Book reading | Vertical nested containers | Hamlet text threaded top-to-bottom, annotations in a parallel column |
+| Annotations focus | Vertical list (collapsed text) | Only annotation containers, no empty space from missing text paragraphs |
+| Roadmap | Horizontal chain | PRDs connected left-to-right, grouped by milestone/initiative |
+
+The layout direction is a property of the projection, not the data. A book is read vertically; a timeline is read horizontally. Both use the same `contains` relations, `sortOrder`, and container nesting — just projected differently.
+
+### 6. View Toggling
+
+When the user's **focus** changes, the view adapts:
+
+- **Focus: reading Hamlet** → see full text + annotations aligned horizontally next to their anchored paragraphs. The view is driven by the text; annotations appear where they attach.
+- **Focus: annotations on Hamlet** → see only the annotation containers, threaded linearly. The full Hamlet text is collapsed/hidden — no empty space between annotations that are spaced far apart in the source text.
+
+The UX for this is a toggle (checkbox, tab, or mode switch). The user selects whether the full source text is visible or whether they're in "annotations-only" mode. This is a projection-level concern — it filters which entities are included in the visible set, not how the data is stored.
+
+## Concrete Example: Hamlet Book View
+
+When the user opens the Hamlet book:
+
+1. **Metadata panel** shows author (edge-derived), year, language, pages, reading dates
+2. **Container groups** render the structure: Title Page → Dramatis Personae → Act I → Act II → ...
+3. **Threaded paragraphs** inside each scene, ordered by `sortOrder`
+4. **Annotations** appear in a parallel column, aligned next to their source paragraphs
+5. **Only immediate context loads** — the author's other works and the full annotation network are not loaded until the user expands
+
+## Concrete Example: Roadmap View
+
+When the user views the project roadmap:
+
+1. **PRDs as nodes** connected horizontally by dependency edges (unblocks / requires)
+2. **Milestones as group containers** that enclose related PRDs
+3. **Initiative nodes** provide a title/label for a group without rendering as a visible node — they exist as metadata on the grouping
+4. **Metadata panel** on a PRD shows status, assignee, links to implementation
+5. **Clicking an initiative node** opens it in a different projection: a non-linear exploration of vision docs, PRDs, and ADRs grouped under that initiative
+
+## Design Stance
+
+The graph is the interface, but the interface is contextual. Metadata hides the edge graph by default. Structure is always one interaction away: click an edge-derived field to expand the full edge context. The user can see the model or stay in the comfortable view — the choice is theirs, not the system's.
+
+## Relationship to Existing Work
+
+| Concept | Status in codebase |
+|---------|-------------------|
+| `sortOrder` (fractional indexing) | Implemented (schema v3+) |
+| `getContainerChildren` (recursive, sorted) | Implemented |
+| `queryThread` (filter by target+type) | Implemented |
+| `resolveContainer` (walk to root) | Implemented |
+| `getContainerBreadcrumb` | Implemented |
+| `metadata: Record<string, unknown>` on Entity+Relation | Implemented, unused in UI |
+| Custom nodes/edges (EntityNode, EdgeLabel) | Implemented |
+| Canvas positions persistence (schema v4) | Implemented |
+| Context menu system | Implemented |
+| Metadata panel UI | **Not built** (target: prd0042) |
+| Edge-derived metadata resolution | **Not built** (target: prd0043) |
+| Contextual subgraph loading | **Not built** (target: prd0044) |
+| React Flow group nodes | **Not built** (target: prd0045) |
+| Threaded container view | **Not built** (target: prd0046) |
+| View toggling | **Not built** (target: prd0048) |
+| Roadmap projection | **Not built** (target: prd0049) |
+
