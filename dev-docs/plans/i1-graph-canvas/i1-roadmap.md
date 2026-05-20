@@ -77,17 +77,6 @@ Core editing capability — the biggest current pain point (user couldn't edit m
   - `id` — read-only display
 - **Context menu "Edit"** currently triggers inline text editing; change it to open the NodeAppendix inspector. Inline editing stays available via double-click on the node body.
 
-#### Undo/Redo
-
-Cross-cutting history system for graph operations.
-
-- Zustand action history: snapshot wrapper around store `set()` calls, or command-pattern history that records entity/relation mutations. Captures create/update/delete for entities and relations.
-- Keyboard: Cmd+Z (undo), Cmd+Shift+Z (redo) via React Flow's `useKeyPress`
-- UI: Undo/redo buttons in the top-right panel (or rely on keyboard only)
-- Debounced position changes are NOT captured in undo history (too noisy). Only explicit mutations (create/update/delete entity/relation).
-
-Could be done at any point, but harder to retrofit once more store actions accumulate.
-
 
 
 #### Structural Container Grouping
@@ -106,10 +95,9 @@ Depends on: PRD0035 (positions + schema v4 for `canvas.positions`).
 
 Cross-cutting history system for graph operations.
 
-- Zustand action history: snapshot wrapper around store `set()` calls, or command-pattern history that records entity/relation mutations. Captures create/update/delete for entities and relations.
-- Keyboard: Cmd+Z (undo), Cmd+Shift+Z (redo) via React Flow's `useKeyPress`
-- UI: Undo/redo buttons in the top-right panel (or rely on keyboard only)
-- Debounced position changes are NOT captured in undo history (too noisy). Only explicit mutations (create/update/delete entity/relation).
+- Snapshot-based history: capture `{ entities, relations, canvas }` before each tracked mutation. Full state restore on undo/redo. Re-layout is undoable; drag position changes are excluded.
+- Keyboard: Cmd+Z (undo), Cmd+Shift+Z (redo) via `document.addEventListener('keydown')` with focus guard
+- UI: Undo/redo buttons in the top-right panel via nested ButtonGroup, left of existing buttons
 
 Could be done at any point, but harder to retrofit once more store actions accumulate.
 
