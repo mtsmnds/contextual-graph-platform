@@ -101,6 +101,15 @@ Cross-cutting history system for graph operations.
 
 Could be done at any point, but harder to retrofit once more store actions accumulate.
 
+#### Backups
+
+Full-workspace checkpoints stored in `<workspace>/backups/<id>/` sub-directories. Requires FS Access adapter.
+
+- Snapshot-based: copies `graph.json` and all container `documents/{id}.json` into a timestamped sub-directory
+- Create, restore, and delete via a popover menu from the top-right panel (Phosphor `FloppyDisk` button)
+- Restore replaces the entire live workspace with the backup's state (with confirmation dialog)
+- Hidden in IndexedDB mode (no directory structure available)
+
 #### Cleanup polish
 
 Former "now" items, deferred:

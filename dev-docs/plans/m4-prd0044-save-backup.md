@@ -1,109 +1,164 @@
-# m4-prd0043 — Save / Backup
+# m4-prd0044 — Backups
 
 ## Overview
 
-A button in the top-right panel opens a floating menu (popover) listing saved graph backups. The user can create a new backup (snapshot of the full graph state), see them listed newest-to-oldest with timestamp and size, and delete individual backups with a confirmation modal.
+A button in the top-right panel opens a popover listing saved workspace backups. Backups are full copies of the current workspace — entities, relations, canvas positions, and all container content documents — stored in `<workspace>/backups/<id>/` sub-directories. The user can create, restore, and delete backups.
 
-This is a safety net — useful during testing, before large refactors, and as a manual checkpoint. Backups are independent from auto-save: auto-save continues to write the live workspace; backups are explicit user snapshots that don't interfere.
+This is a safety net: checkpoint before large refactors, experiment safely, recover from mistakes. Backups are independent from auto-save and never overwrite the live workspace unless the user explicitly restores one.
+
+Backups require the FS Access adapter (the workspace lives on disk in a user-chosen folder). In IndexedDB mode, the backup button is hidden.
 
 ## Specification / Acceptance Criteria
 
 ### 1. Backup Storage
 
-Backups are stored in the existing IndexedDB database (`react-roadmap`) in a new `backups` table:
+Each backup is a sub-directory inside the workspace folder's `backups/` directory, mirroring the workspace structure:
 
-```ts
-// IndexedDB table: backups
-// Key: backup id (string)
-// Value: { id, timestamp, snapshot: GraphSnapshot }
-
-type BackupEntry = {
-  id: string         // uuid or timestamp-based
-  timestamp: number   // Date.now() at time of create
-  snapshot: GraphSnapshot  // { version, entities, relations, canvas }
-}
+```
+~/my-workspace/
+  graph.json                          ← live workspace
+  documents/
+    doc_1720000000000.json
+  backups/
+    1716220920123/                    ← backup id = timestamp
+      graph.json                      ← full GraphSnapshot at backup time
+      documents/                      ← all container content at backup time
+        doc_1720000000000.json
+    1716221000000/
+      graph.json
+      documents/
+        doc_1720000000000.json
 ```
 
-- The `backups` table is versioned in the Dexie schema alongside existing `graph` and `documents` tables.
-- Backups **do not** include container content documents (TipTap JSON). Those are large and the graph structure (entities + relations + positions) is sufficient for recovery. Title bar shows a note: "Backups save graph structure only (not container contents)."
-- The live workspace (auto-save) is never affected by backup operations.
+**What gets copied into a backup:**
 
-### 2. Create Backup
+- `graph.json` — full `GraphSnapshot`: `{ version, entities, relations, canvas }`
+- `documents/` — every container entity's Tiptap JSON content from `contentCache` at the time of backup
 
-- Trigger: clicking the **"+"** button (first item in the backup list).
-- Action: snapshots the current store state (`entities`, `relations`, `canvas`) into a `GraphSnapshot`, assigns a timestamp-based ID, stores in IndexedDB.
-- Feedback: new entry appears at the top of the list with a brief highlight/flash.
+**What does NOT get backed up:**
 
-### 3. List Backups
+- In-memory-only state (undo/redo history, view state, `hydrated` flag)
+- The `backups/` directory itself (no recursive backups of backups)
 
-- Visible in a floating popover/dropdown menu, anchored to the backup button.
-- List ordered **newest to oldest** (most recent backup at top).
+### 2. Adapter Integration
+
+- **FS Access mode:** Backup button is visible and functional. The engine uses the root `FileSystemDirectoryHandle` to manage the `backups/` sub-directory.
+- **IndexedDB mode:** Backup button is hidden. IndexedDB is a single-file store with no directory structure — sub-folder backups don't apply.
+- To give the backup engine access to the root handle, `FSAccessAdapter` exposes a `getRootHandle(): FileSystemDirectoryHandle | null` method. `useGraphStore` delegates to it via a `getAdapterHandle()` method. `IndexedDBAdapter.getRootHandle()` returns `null`.
+
+### 3. Create Backup
+
+- **Trigger:** "+" button (first item at the top of the backup list in the popover).
+- **Guard:** The button is disabled when the workspace has no entities (empty canvas — nothing to back up).
+- **Action:**
+  1. Gather current state: `useGraphStore.getState().entities`, `.relations`, `.canvas`
+  2. Gather all container content from `contentCache`: `useGraphStore.getState().getContent(id)` for each container entity
+  3. Create `backups/<timestamp>/` directory via `FileSystemDirectoryHandle`
+  4. Write `graph.json` + `documents/{id}.json` into the backup directory
+- **Loading state:** On click, the "+" button's icon swaps to `Hourglass` and the button becomes `disabled`. It stays in this state until the backup write completes and the list refreshes. This prevents double-clicks (the ID is timestamp-based, but the UX guard is cleaner).
+- **Feedback:** After completion, the new backup appears at the top of the list. The button re-enables.
+
+### 4. List Backups
+
+- Visible inside a shadcn `Popover` anchored to the backup button in the top-right Panel.
+- List ordered **newest to oldest** (sorted by timestamp, descending).
 - Each entry shows:
-  - **Timestamp**: formatted as locale date + time (e.g., "May 19, 2026, 14:32:05")
-  - **Size**: JSON byte length of the snapshot, formatted as KB (e.g., "12.4 KB")
-  - **Delete button** (trash can icon) on the right
+  - **Timestamp** — locale-formatted date + time (e.g., "May 19, 2026, 14:32:05")
+  - **Size** — approximate size of the backup directory (sum of `graph.json` + all document files), formatted as KB (e.g., "12.4 KB"). If exact size is hard to get from the File System Access API, estimate from JSON byte length of the snapshot.
+  - **Restore button** — Phosphor `ArrowCounterClockwise` icon (or `ClockCounterClockwise`), tooltip "Restore this backup"
+  - **Delete button** — Phosphor `Trash` icon, tooltip "Delete backup"
+- Scrollable if many backups exist (max height ~320px with `overflow-y: auto`).
+- Empty state: "No backups yet. Create one with the + button above."
+- Popover closes on click-outside or Escape.
 
-### 4. Delete Backup
+### 5. Restore Backup
 
-- Clicking the trash icon opens a **confirmation modal** (dialog).
-- Modal content:
+- Clicking the restore icon (or the backup entry row itself) opens a confirmation dialog.
+- Dialog content:
+  - Title: "Restore backup?"
+  - Body: "Your current workspace will be replaced with the state from {timestamp}. This cannot be undone."
+  - Buttons: "Cancel" (outline) / "Restore" (primary/default)
+- On confirm:
+  1. Read `graph.json` from the backup directory
+  2. Read all `documents/{id}.json` files
+  3. Call `useGraphStore.setState({ entities, relations, canvas })` with the backup's snapshot
+  4. Load all document content into `contentCache` — either via `saveContent` or direct cache writes
+  5. Auto-save fires normally (300ms debounce), persisting the restored state to the live workspace
+- After restore: popover closes, canvas re-renders with restored data.
+- The backup itself is NOT deleted on restore (it remains available for future use).
+
+### 6. Delete Backup
+
+- Clicking the trash icon opens a confirmation dialog.
+- Dialog content:
   - Title: "Delete backup?"
-  - Body: "This action cannot be undone. The backup from {timestamp} will be permanently deleted."
-  - Buttons: "Cancel" (outline) / "Delete" (destructive/red)
-- On confirm: deletes the backup from IndexedDB. Entry disappears from the list.
-- Modal uses a shadcn `AlertDialog` or simple window.confirm-style dialog.
+  - Body: "The backup from {timestamp} will be permanently deleted. This cannot be undone."
+  - Buttons: "Cancel" (outline) / "Delete" (destructive variant)
+- On confirm: `rootHandle.removeEntry("backups/{id}", { recursive: true })` deletes the entire backup sub-directory. Entry disappears from the list.
+- Dialog uses the existing `@/components/ui/dialog` component (built on `@base-ui/react/dialog`).
 
-### 5. UI Layout
+### 7. UI Layout
 
-**Backup button** in the top-right panel button group (same group as "New Node", "Open Folder"):
+**Backup button** in the top-right panel, inside the main `ButtonGroup`:
 
 ```
 [Undo] [Redo] | [Backup] [New Node] [Open Folder]
 ```
 
-Using a **FloppyDisk / Save / Archive** icon from `lucide-react`. Button variant: `outline`, `size="sm"`.
+- Icon: Phosphor `FloppyDisk`
+- Button: shadcn `Button` variant `outline`, `size="sm"`
+- Tooltip on hover: "Backups"
+- Hidden entirely (not just disabled) when `getAdapterHandle()` returns `null` (IndexedDB mode)
 
-**Popover:** Opens below the button. Uses shadcn `Popover` or a manual positioned `<div>` with `position: fixed` (similar to the existing context menu pattern). Contains:
+**Popover:** Uses the existing shadcn `Popover` component (`@/components/ui/popover.tsx`, built on `@base-ui/react/popover`). Anchored to the backup button, opens below.
 
-```
-┌─────────────────────────────────────┐
-│  Backups                            │
-├─────────────────────────────────────┤
-│  +  Create backup                   │  ← first item, always present
-├─────────────────────────────────────┤
-│  May 19, 2026, 14:32:05   12.4 KB 🗑│
-│  May 19, 2026, 11:15:22    8.1 KB 🗑│
-│  May 18, 2026, 23:01:10   10.2 KB 🗑│
-│  ...                                │
-└─────────────────────────────────────┘
-```
+**Confirmation dialogs (restore + delete):** Use the existing shadcn `Dialog` component (`@/components/ui/dialog.tsx`).
 
-- Popover closes on click-outside or Escape.
-- Scrollable if many backups exist (max height ~300px with overflow-y).
-- Empty state (no backups yet): show "No backups yet. Create one with the + button above."
+### 8. Edge Cases
 
-### 6. Future-Only Scope
+- **Workspace folder has no `backups/` directory yet:** First backup creates it. List returns empty until then.
+- **User switches folders:** `init()` resets the store — the backup list reflects the new folder's `backups/` directory on next open.
+- **Permission error:** If the File System Access handle loses permission (e.g., user revokes it), show the list as stale and disable create. The backup button can show a Phosphor `WarningCircle` overlay. This is a rare edge case — the FS Access adapter already handles reconnection.
+- **Backup directory is huge:** List still scrollable. No size limit enforced in v1.
+- **Empty workspace:** "+" button disabled, show "Nothing to back up yet — the workspace is empty."
+
+## Future-Only Scope
 
 **NOT included in v1:**
-- Restore backup (load a backup into the active workspace). This is a natural next step but adds complexity (confirmation, overwrite risk). The user can manually inspect backup data via DevTools if needed.
-- Export/download backup as JSON file.
+- Export/download a backup as a ZIP file.
 - Backup auto-rotation / max count limit.
-- Container content inclusion.
+- Differential backups (only store changes since last backup).
+- Backup name/label (user-customized description beyond timestamp).
 
-These are noted for future PRDs.
+## Files Changed
 
-## Files Changed (inferred)
-
-- `src/engine/backup.ts` (new) — `createBackup(snapshot)`, `listBackups()`, `deleteBackup(id)`, `getBackupSize(snapshot)` functions. Uses Dexie directly via the existing `react-roadmap` database (add `backups` table).
-- `src/store/persistence/indexeddb-adapter.ts` — Add `backups` table to Dexie schema (version bump: v1 → v2 with new table).
-- `src/canvas/GraphCanvas.tsx` — Add backup button + popover component to top-right Panel; wire create/list/delete actions.
-- `src/canvas/panels/BackupMenu.tsx` (new) — Backup popover component with list rendering, create button, delete trash icons, confirmation dialog.
-- `src/index.css` — Minimal styles for backup popover (positioning, list item hover, scrollable container).
+| File | Change |
+|------|--------|
+| `src/engine/backup.ts` (new) | Engine functions: `createBackup(handle, snapshot, contentCache)`, `listBackups(handle)`, `deleteBackup(handle, id)`, `restoreBackup(handle, id)`. All take `FileSystemDirectoryHandle` as first parameter. Uses File System Access API directly — no Dexie/IndexedDB. |
+| `src/store/persistence/types.ts` | Add `getRootHandle?(): FileSystemDirectoryHandle \| null` to `PersistenceAdapter` interface |
+| `src/store/persistence/fs-access-adapter.ts` | Implement `getRootHandle()` — returns the stored `rootHandle` |
+| `src/store/persistence/indexeddb-adapter.ts` | Implement `getRootHandle()` — returns `null` |
+| `src/store/useGraphStore.ts` | Add `getAdapterHandle(): FileSystemDirectoryHandle \| null` to store interface, delegating to `_adapter?.getRootHandle?.()` |
+| `src/canvas/GraphCanvas.tsx` | Add backup button + popover to top-right Panel; wrap in conditional check for `getAdapterHandle()` |
+| `src/canvas/panels/BackupMenu.tsx` (new) | Popover with create/list/restore/delete UI. Manages local state for backup list, open/close, confirmation dialogs. Calls engine functions. Uses shadcn `Popover`, `Button`, `Dialog`. |
+| `src/canvas/GraphContextMenu.tsx` | No changes |
+| `src/canvas/edges/EdgeLabel.tsx` | No changes |
 
 ## Phases
 
-Single pass — one new engine module, one new UI component, wiring in GraphCanvas.
+Single pass — one engine module, one UI component, adapter interface additions, wiring in GraphCanvas.
 
 ## Size Advisory
 
-~4 files modified/created. The engine module uses existing Dexie infrastructure. The UI reuses shadcn Popover/AlertDialog patterns. Straightforward.
+`src/engine/backup.ts` (~80 lines), `src/canvas/panels/BackupMenu.tsx` (~150 lines), adapter additions (~10 lines each), GraphCanvas wiring (~20 lines). The engine module uses only the File System Access API (no new dependencies). The UI reuses existing shadcn Popover, Dialog, Button, and ButtonGroup components.
+
+## Icon Map (all Phosphor)
+
+| Usage | Icon |
+|-------|------|
+| Backup button | `FloppyDisk` |
+| Create backup (list "+") | `Plus` |
+| Restore backup | `ArrowCounterClockwise` |
+| Delete backup | `Trash` |
+| Button during save | `Hourglass` (temporary, swapped back after completion) |
+| Permission error | `WarningCircle` |

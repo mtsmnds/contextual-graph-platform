@@ -6,6 +6,8 @@
 
 **Anti-Overengineering Guardrail:** Don't implement Next or Later items unless promoted to Now. Speculative ideas get one bullet, then move on.
 
+**PRD numbering:** PRD numbers in this document are non-final. They shift as PRDs are added, removed, or reordered across milestones.
+
 ---
 
 ## Now (ordered by dependency)
