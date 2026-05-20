@@ -275,6 +275,13 @@ body {
 
 
 
+.react-flow__edge.metadata-edge .react-flow__edge-path {
+  stroke: var(--muted-foreground);
+  stroke-dasharray: 5 5;
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
 .react-flow__minimap.bottom.right {
   bottom: calc(26px + 16px) !important;
 }

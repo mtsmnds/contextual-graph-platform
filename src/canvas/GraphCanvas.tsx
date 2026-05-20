@@ -26,9 +26,10 @@ import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import GraphContextMenu from "./GraphContextMenu"
 import EntityNode from "./nodes/EntityNode"
+import MetadataNode from "./nodes/MetadataNode"
 import EdgeLabel from "./edges/EdgeLabel"
 
-const nodeTypes = { entity: EntityNode }
+const nodeTypes = { entity: EntityNode, metadata: MetadataNode }
 const edgeTypes = { edgelabel: EdgeLabel }
 
 function GraphCanvasContent() {
@@ -97,6 +98,8 @@ function GraphCanvasContent() {
     edgeId?: string
   } | null>(null)
 
+  const [visibleMetadataNodeIds, setVisibleMetadataNodeIds] = useState<Set<string>>(new Set())
+
   useEffect(() => {
     const { positions, dimensions: savedDims } = useGraphStore.getState().canvas
 
@@ -151,6 +154,55 @@ function GraphCanvasContent() {
           }
         }
 
+        const metaNodeWidth = 260
+        const metaEntityIds = new Set(visibleMetadataNodeIds)
+        const entityIdSet = new Set(entities.map((e) => e.id))
+
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const n = merged[i]
+          if (n.type === "metadata" && n.data.entityId
+            && (!metaEntityIds.has(n.data.entityId as string) || !entityIdSet.has(n.data.entityId as string))) {
+            merged.splice(i, 1)
+          }
+        }
+
+        for (const metaEntityId of metaEntityIds) {
+          const metaId = `meta:${metaEntityId}`
+          const metaExisting = prevById.get(metaId)
+          const entityNode = prevById.get(metaEntityId) ?? merged.find((n) => n.id === metaEntityId)
+          if (!entityNode) continue
+
+          const savedMetaPos = positions[metaId]
+          let metaPos: { x: number; y: number }
+          if (savedMetaPos) {
+            metaPos = savedMetaPos
+          } else if (metaExisting) {
+            metaPos = metaExisting.position
+          } else {
+            metaPos = {
+              x: entityNode.position.x - metaNodeWidth - 40,
+              y: entityNode.position.y,
+            }
+          }
+
+          if (metaExisting) {
+            const idx = merged.findIndex((n) => n.id === metaId)
+            if (idx !== -1) {
+              merged[idx] = { ...merged[idx], position: metaExisting.position }
+            }
+          } else {
+            merged.push({
+              id: metaId,
+              type: "metadata",
+              position: metaPos,
+              data: { entityId: metaEntityId },
+              style: { width: metaNodeWidth },
+              selectable: false,
+              draggable: true,
+            })
+          }
+        }
+
         return merged
       })
 
@@ -168,6 +220,33 @@ function GraphCanvasContent() {
               targetHandle: rel.metadata?.targetHandle as string | undefined,
               label: rel.type,
               type: "edgelabel",
+            })
+          }
+        }
+
+        const metaEdgeIds = new Set(visibleMetadataNodeIds)
+
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const e = merged[i]
+          if (e.id?.startsWith("meta-edge:")) {
+            const entityId = e.id.slice("meta-edge:".length)
+            if (!metaEdgeIds.has(entityId)) {
+              merged.splice(i, 1)
+            }
+          }
+        }
+
+        for (const metaEntityId of metaEdgeIds) {
+          const edgeId = `meta-edge:${metaEntityId}`
+          if (!prevById.has(edgeId)) {
+            merged.push({
+              id: edgeId,
+              source: metaEntityId,
+              target: `meta:${metaEntityId}`,
+              type: "smoothstep",
+              selectable: false,
+              interactionWidth: 0,
+              className: "metadata-edge",
             })
           }
         }
@@ -218,7 +297,7 @@ function GraphCanvasContent() {
 
       return merged
     })
-  }, [entities, relations, setNodes, setEdges])
+  }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds])
 
   useEffect(() => {
     const dims: Record<string, { width: number; height: number }> = {}
@@ -279,6 +358,14 @@ function GraphCanvasContent() {
       for (const node of deletedNodes) {
         useGraphStore.getState().deleteEntity(node.id)
       }
+      setVisibleMetadataNodeIds((prev) => {
+        const next = new Set(prev)
+        for (const node of deletedNodes) {
+          next.delete(node.id)
+        }
+        if (next.size === prev.size) return prev
+        return next
+      })
     },
     [],
   )
@@ -445,9 +532,26 @@ function GraphCanvasContent() {
 
   const contextMenuItems = useMemo(() => {
     if (!contextMenu) return []
+    const toggleMetadata = (entityId: string) => {
+      setVisibleMetadataNodeIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(entityId)) {
+          next.delete(entityId)
+        } else {
+          next.add(entityId)
+        }
+        return next
+      })
+    }
     switch (contextMenu.type) {
       case "node":
         return [
+          {
+            label: visibleMetadataNodeIds.has(contextMenu.nodeId!) ? "Metadata: Visible" : "Metadata: Hidden",
+            action: () => {
+              if (contextMenu.nodeId) toggleMetadata(contextMenu.nodeId)
+            },
+          },
           {
             label: "Edit",
             action: () => {
@@ -466,6 +570,11 @@ function GraphCanvasContent() {
             label: "Delete",
             action: () => {
               if (contextMenu.nodeId) {
+                setVisibleMetadataNodeIds((prev) => {
+                  const next = new Set(prev)
+                  next.delete(contextMenu.nodeId!)
+                  return next
+                })
                 useGraphStore.getState().deleteEntity(contextMenu.nodeId)
               }
             },
@@ -490,7 +599,7 @@ function GraphCanvasContent() {
           },
         ]
     }
-  }, [contextMenu, entities, relations, setNodes])
+  }, [contextMenu, entities, relations, setNodes, visibleMetadataNodeIds])
 
   const onCreateNode = useCallback(() => {
     createNodeAtCenter()
