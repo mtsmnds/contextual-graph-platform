@@ -57,7 +57,11 @@ everything structural depends on stable positions
 
 ## Phase IV - Node & Edge Data Editing
 Core editing capability — the biggest current pain point (user couldn't edit metadata, relation types, or entity kinds).
-- **prd0040**- Edge inline editing: double-click edge label → inline text input with a dropdown of existing relation types (queried from `distinct type` values across all relations). User can pick an existing type or type a new one. Same commit pattern as node inline editing (Enter/blur to commit, Escape to cancel). **Replace EdgeDialog** (the modal) entirely — inline is faster and the dialog provides nothing extra.
+
+- **prd0040** - Edge inline editing: double-click edge label → inline text input with a dropdown of existing relation types (queried from `distinct type` values across all relations). User can pick an existing type or type a new one. Same commit pattern as node inline editing (Enter/blur to commit, Escape to cancel). **Replace EdgeDialog** (the modal) entirely — inline is faster and the dialog provides nothing extra.
+
+- **PRD0042** - fixes to resize and text persistence
+
 
 
 
@@ -72,6 +76,19 @@ Core editing capability — the biggest current pain point (user couldn't edit m
   - `metadata` — key-value editor (add/remove/edit metadata entries)
   - `id` — read-only display
 - **Context menu "Edit"** currently triggers inline text editing; change it to open the NodeAppendix inspector. Inline editing stays available via double-click on the node body.
+
+#### Undo/Redo
+
+Cross-cutting history system for graph operations.
+
+- Zustand action history: snapshot wrapper around store `set()` calls, or command-pattern history that records entity/relation mutations. Captures create/update/delete for entities and relations.
+- Keyboard: Cmd+Z (undo), Cmd+Shift+Z (redo) via React Flow's `useKeyPress`
+- UI: Undo/redo buttons in the top-right panel (or rely on keyboard only)
+- Debounced position changes are NOT captured in undo history (too noisy). Only explicit mutations (create/update/delete entity/relation).
+
+Could be done at any point, but harder to retrofit once more store actions accumulate.
+
+
 
 #### Structural Container Grouping
 
