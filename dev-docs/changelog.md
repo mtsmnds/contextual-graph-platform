@@ -12,6 +12,21 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-22
+
+### m4 — prd0041 — node metadata panel
+- **What:** Custom `"metadata"` React Flow node type with editable entity fields (content textarea, kind select, metadata key-value table, read-only ID). Toggled per-entity via context menu "Metadata: Hidden" / "Metadata: Visible". Connected to the entity node by a decorative dashed `smoothstep` edge (view-only, not a domain relation). Position persisted in `canvas.positions["metadata:{entityId}"]` with default left-offset. Resize on all 4 edges. Edge-derived metadata: `author` key creates/updates a `contains` relation to an author entity (`src/engine/edge-metadata.ts` with declarative registry).
+- **Reason:** Entities had `metadata: Record<string, unknown>` but no UI to edit it. The metadata-as-node approach avoids viewport transform issues of floating cards and gives the user drag/resize for free. Edge-derived metadata makes relations visible as metadata fields.
+- **Files changed:**
+  - `src/engine/edge-metadata.ts` (new): Registry mapping metadata keys → relation config, `resolveEdgeValue()`, `writeEdgeValue()`, auto-creates connected entities
+  - `src/canvas/nodes/MetadataNode.tsx` (new): Custom React Flow node with form fields, 4-edge NodeResizeControl, hidden Handles for edge routing
+  - `src/canvas/GraphCanvas.tsx`: Registered `"metadata"` node type; `visibleMetadataNodeIds` state; metadata node injection/removal in layout effect; decorative edge injection/removal with `.metadata-edge` CSS class; context menu toggle; delete cascade cleanup
+  - `src/index.css`: `.metadata-edge` rules for dashed muted decorative edges
+  - `src/components/ui/select.tsx`, `src/components/ui/label.tsx` (new): shadcn components installed
+- **Impact:** Users can now inspect and edit entity metadata directly on the canvas. The `"metadata"` node type establishes the pattern for future view-only nodes (thread headers, group containers). Edge-derived metadata registry extends naturally to more keys.
+- **Archive:** `dev-docs/archive/m4/m4-prd0041-node-metadata-panel.md`
+- **ADR:** `dev-docs/archive/m4/2026-05-22-prd0041-node-metadata-panel-adr.md`
+
 ## 2026-05-18
 
 ### m4 — prd0040 — edge inline editing

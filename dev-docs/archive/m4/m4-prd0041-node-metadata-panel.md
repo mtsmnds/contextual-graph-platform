@@ -1,5 +1,11 @@
 # m4-prd0041 — Node Metadata Panel
 
+> **Completion note (2026-05-22):**
+> - **What was built:** Custom `"metadata"` React Flow node with content textarea, kind select, metadata key-value table, id display, and 4-edge resize. Toggled via context menu "Metadata: Hidden/Visible". Connected to entity node by decorative dashed edge. Positions persisted in `canvas.positions["metadata:{entityId}"]`. Edge-derived metadata registry (`edge-metadata.ts`) maps `author` key to `contains` relation.
+> - **Key decisions:** Metadata as a React Flow node (not floating card). Toggle lifecycle (not selection-based). Hidden `<Handle>` components required for decorative edge rendering. Edge-derived metadata uses declarative registry in `src/engine/edge-metadata.ts`.
+> - **Deviations from plan:** Node positioning changed from right to left (against normal flow direction). Lifecycle changed from selection-based to context-menu toggle (supports multiple visible at once). Edge-derived metadata `author` key implemented in v1 (not deferred).
+> - **Postponed:** Additional edge-derived keys beyond `author`.
+
 ## Overview
 
 Each entity node can have a **metadata node** — toggled independently via the context menu action **"Metadata: Hidden"** / **"Metadata: Visible"**. When visible, a metadata node appears to the **left** of the entity node (opposite the normal left-to-right flow direction), connected by a decorative dashed edge. Multiple metadata nodes can be visible at once — the user keeps them open for as long as they need.

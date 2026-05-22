@@ -5,6 +5,17 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-05-22
+
+### prd end — m4-prd0041-node-metadata-panel
+- **Source:** roadmap: "Node metadata panel (NodeAppendix)"
+- **Branch at time:** main (not on PRD branch — implemented directly)
+- **User decision:** classification: Feature change + Architecture change
+- **Change classification:** Feature change + Architecture change
+- **ADR type:** full (new node type, edge-metadata engine module, edge-derived metadata data flow)
+- **Commit hash:** pending
+- **Pre-commit guard:** no changes
+
 ## 2026-05-18
 
 ### prd merge — m4-prd0040-edge-inline-editing
