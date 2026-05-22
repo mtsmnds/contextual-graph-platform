@@ -14,6 +14,14 @@ Use this to recover context after breaks.
 
 ## 2026-05-22
 
+### fix: seed ID collision + folder open position override
+- **What:** Two fixes. (1) When seeding a new folder, entities now get timestamp-unique IDs (e.g. `1745270400000-about-this-workspace`) instead of hardcoded `about-workspace` / `editor-playground`, preventing ID collision between seed nodes and user nodes. (2) When opening an existing folder via `init()`, any entity with an ID matching a seed ID that also exists in the current in-memory store gets remapped to a new timestamp-unique ID on load. Relations and content documents are migrated. The remapped graph is saved back to the adapter immediately so subsequent loads don't re-trigger the collision.
+- **Reason:** Opening a folder that was previously seeded overwrote user-placed node positions because the seed IDs matched exactly between the two stores. The position-fallback approach was session-only — on page reload, dagre re-laid-out the nodes. The ID-remap is permanent: after one load, the folder's seed nodes get unique IDs and never collide again.
+- **Files changed:**
+  - `src/store/useGraphStore.ts`: Seed path generates timestamped IDs; load path detects and remaps seed-ID collisions, migrates relations/docs, saves remapped graph back
+- **Impact:** Opening a seeded folder no longer overrides existing node positions. First-time seed no longer uses collision-prone hardcoded IDs. Existing folders get auto-migrated on first open.
+- **ADR:** `dev-docs/archive/2026-05-22-seed-id-collision-fix-adr.md`
+
 ### m4 — prd0041 — node metadata panel
 - **What:** Custom `"metadata"` React Flow node type with editable entity fields (content textarea, kind select, metadata key-value table, read-only ID). Toggled per-entity via context menu "Metadata: Hidden" / "Metadata: Visible". Connected to the entity node by a decorative dashed `smoothstep` edge (view-only, not a domain relation). Position persisted in `canvas.positions["metadata:{entityId}"]` with default left-offset. Resize on all 4 edges. Edge-derived metadata: `author` key creates/updates a `contains` relation to an author entity (`src/engine/edge-metadata.ts` with declarative registry).
 - **Reason:** Entities had `metadata: Record<string, unknown>` but no UI to edit it. The metadata-as-node approach avoids viewport transform issues of floating cards and gives the user drag/resize for free. Edge-derived metadata makes relations visible as metadata fields.

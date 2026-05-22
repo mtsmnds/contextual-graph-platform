@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-22
 
+### prd write — m4-prd0043-undo-redo-and-backup (merged)
+- **Source:** user observation — m4-prd0043 (undo/redo) and m4-prd0044 (backups) overlap on snapshot mechanism
+- **Branch at time:** main (clean)
+- **User decision:** merged both features into one PRD. Common foundation: snapshot-based history with in-memory undo stack (50 entries, Cmd+Z) + disk-persisted auto-backups (10 most recent, 2s idle guard, include documents) + manual FS saves. Backup panel shows manual saves (with date/time, restore, delete) and recent snapshots (with relative timestamps, restore only).
+- **Old files deleted:** `m4-prd0043-undo-redo.md`, `m4-prd0044-save-backup.md`
+- **New file:** `dev-docs/plans/m4-prd0043-undo-redo-and-backup.md`
+- **Pre-commit guard:** no changes
+
 ### prd end — m4-prd0041-node-metadata-panel
 - **Source:** roadmap: "Node metadata panel (NodeAppendix)"
 - **Branch at time:** main (not on PRD branch — implemented directly)
