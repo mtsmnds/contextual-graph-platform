@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useRef, useEffect } from "react"
-import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId } from "@xyflow/react"
+import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId, Handle } from "@xyflow/react"
 import { useGraphStore } from "@/store/useGraphStore"
 import { isEdgeKey, writeEdgeValue } from "@/engine/edge-metadata"
 import type { EntityKind } from "@/types/graph"
@@ -161,6 +161,10 @@ function MetadataNode({ data }: NodeProps<MetadataNodeType>) {
         minHeight={120}
       />
       <div className="metadata-node bg-card text-card-foreground rounded-md border border-dashed border-muted-foreground/30 w-full">
+        <Handle type="source" position={Position.Top} id="top" style={{ visibility: "hidden" }} />
+        <Handle type="source" position={Position.Right} id="right" style={{ visibility: "hidden" }} />
+        <Handle type="source" position={Position.Bottom} id="bottom" style={{ visibility: "hidden" }} />
+        <Handle type="source" position={Position.Left} id="left" style={{ visibility: "hidden" }} />
         <header className="px-3 py-2 border-b border-dashed border-muted-foreground/20">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Metadata
