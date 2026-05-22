@@ -13,7 +13,7 @@ Append-only, newest on top within same-day groupings.
 - **User decision:** classification: Feature change + Architecture change
 - **Change classification:** Feature change + Architecture change
 - **ADR type:** full (new node type, edge-metadata engine module, edge-derived metadata data flow)
-- **Commit hash:** pending
+- **Commit hash:** 64ee3e8
 - **Pre-commit guard:** no changes
 
 ## 2026-05-18
