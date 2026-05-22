@@ -1,0 +1,99 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": { "level": 1 },
+      "content": [{ "type": "text", "text": "About This Workspace" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Welcome to your reading workspace. This tool helps you organize, annotate, and connect your reading materials — from books and articles to research papers and project documents."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "How It Works" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Pages are the building blocks of your workspace. Each page is a container that holds rich text content. You can link pages together using @mentions to create a web of knowledge."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "Features" }]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rich Text Editing" },
+                { "type": "text", "text": " — Format text with headings, bold, italic, lists, and more" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Page Linking" },
+                { "type": "text", "text": " — Use @mentions to reference other pages" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Visual Graph" },
+                { "type": "text", "text": " — See your knowledge structure as an interactive map" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Auto-save" },
+                { "type": "text", "text": " — Changes save automatically" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Get started by exploring the " },
+        { "type": "text", "marks": [{ "type": "bold" }], "text": "Editor Playground" },
+        { "type": "text", "text": " page, or create a new page of your own." }
+      ]
+    }
+  ]
+}

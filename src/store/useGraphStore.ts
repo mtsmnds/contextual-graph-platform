@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
 import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState } from "../types/graph";
-import { generateUniqueId } from "../engine/ids";
+import { generateUniqueId, slugify } from "../engine/ids";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import type { PersistenceAdapter } from "./persistence";
 
@@ -127,38 +127,102 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         if (doc) contentCache[entity.id] = doc;
       }
 
+      const currentEntities: Entity[] = get().entities;
+      const existingIds: Set<string> = new Set(currentEntities.map((e) => e.id));
+      const idMap = new Map<string, string>();
+
+      const remappedEntities = migrated.entities.map((e) => {
+        const isSeedCollision = SEED_DATA.entities.some((s) => s.id === e.id) && existingIds.has(e.id);
+        if (!isSeedCollision) return e;
+        const suffix = slugify(e.content || e.kind);
+        let id = `${Date.now()}-${suffix}`;
+        let counter = 1;
+        while (existingIds.has(id)) {
+          id = `${Date.now()}-${suffix}-${counter++}`;
+        }
+        existingIds.add(id);
+        idMap.set(e.id, id);
+        return { ...e, id, updatedAt: Date.now() };
+      });
+
+      for (const [oldId, newId] of idMap) {
+        const doc = contentCache[oldId] ?? await adapter.loadDocument(oldId).catch(() => null);
+        if (doc) {
+          contentCache[newId] = doc;
+          delete contentCache[oldId];
+          adapter.saveDocument(newId, doc).catch(() => {});
+          adapter.deleteDocument(oldId).catch(() => {});
+        }
+      }
+
+      const currentPositions = get().canvas.positions;
+      const positions = { ...migrated.canvas.positions };
+      for (const entity of remappedEntities) {
+        if (currentPositions[entity.id]) {
+          positions[entity.id] = currentPositions[entity.id];
+        }
+      }
+
+      const relations = migrated.relations.map((r) => ({
+        ...r,
+        source: idMap.get(r.source) ?? r.source,
+        target: idMap.get(r.target) ?? r.target,
+      }));
+
       set({
-        entities: migrated.entities,
-        relations: migrated.relations,
-        canvas: migrated.canvas,
-        contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
+        entities: remappedEntities,
+        relations,
+        canvas: { ...migrated.canvas, positions },
+        contentLoaded: Object.fromEntries(remappedEntities.filter((e) => e.kind === "container").map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
       });
-    } else {
-      const containers = SEED_DATA.entities.filter((e) => e.kind === "container")
 
-      for (const entity of containers) {
+      if (idMap.size > 0) {
+        adapter.saveGraph({ version: 4, entities: remappedEntities, relations, canvas: { ...migrated.canvas, positions } }).catch(() => {});
+      }
+    } else {
+      const existingIds = new Set<string>()
+      const idMap = new Map<string, string>()
+      const now = Date.now()
+
+      const seedEntities = SEED_DATA.entities.map((e) => {
+        const suffix = e.content ? slugify(e.content) : e.kind
+        let id = `${now}-${suffix}`
+        let counter = 1
+        while (existingIds.has(id)) {
+          id = `${now}-${suffix}-${counter++}`
+        }
+        existingIds.add(id)
+        idMap.set(e.id, id)
+        return { ...e, id, createdAt: now, updatedAt: now }
+      })
+
+      const containerEntities = seedEntities.filter((e) => e.kind === "container")
+
+      for (const entity of SEED_DATA.entities.filter((e) => e.kind === "container")) {
+        const newId = idMap.get(entity.id)
+        if (!newId) continue
         const doc = SEED_CONTAINER_CONTENT[entity.id]
         if (doc) {
-          contentCache[entity.id] = doc
-          adapter.saveDocument(entity.id, doc).catch(() => {})
+          contentCache[newId] = doc
+          adapter.saveDocument(newId, doc).catch(() => {})
         }
       }
 
       const seedSnapshot: GraphSnapshot = {
         version: 4,
-        entities: SEED_DATA.entities,
+        entities: seedEntities,
         relations: SEED_DATA.relations,
         canvas: { positions: {}, dimensions: {} },
       };
       adapter.saveGraph(seedSnapshot).catch(() => {});
 
       set({
-        entities: SEED_DATA.entities,
+        entities: seedEntities,
         relations: SEED_DATA.relations,
         canvas: { positions: {}, dimensions: {} },
-        contentLoaded: Object.fromEntries(containers.map((e) => [e.id, true])),
+        contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
       });
