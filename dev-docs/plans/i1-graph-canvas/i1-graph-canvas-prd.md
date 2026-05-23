@@ -2,9 +2,12 @@
 
 ## Overview
 
-Two-phase initiative running in parallel with m3 (Tiptap). Phase I isolates the current product behind a router so the graph canvas can grow without destabilizing the editor. Phase II builds the graph canvas itself — React Flow rendering, node/edge CRUD, query-driven thread views, and a query builder UI.
+Two-phase initiative running in parallel with m3 (Tiptap). Phase I isolates the current product behind a router so the graph canvas can grow without destabilizing the editor. Phase II builds the graph canvas itself — React Flow rendering, node/edge CRUD, ~~query-driven thread views, and a query builder UI.~~ (moved to i2)
 
 The core thesis: documents are projections of graph queries. Every paragraph is an entity with a stable UUID. Every connection between entities is a typed, directed relation with sort order. What we call a "document" is `queryThread({ target, relationType })` rendered as an ordered list.
+
+## Update
+
 
 ---
 
@@ -30,13 +33,13 @@ The Tiptap editor and its reading viewport infrastructure live under `/tiptap-ed
 
 `WorkspaceRoot.tsx` shares `SidebarProvider`, `AppSidebar`, `SidebarTrigger` with the legacy app but renders the graph canvas (or a placeholder) in the main content area. This shell is the permanent app frame — different "renderers" (graph canvas, thread view, editor) swap into the content slot.
 
-### I.4 Install MongoDB / migrate from DexieJS
+### ~~I.4 Install MongoDB / migrate from DexieJS~~ - deffered: using dexiejs until there is need for more, better, or different approach
 
-**Open question** (see review above): server vs. local vs. embedded. The goal is to replace DexieJS with a more robust storage layer that supports queries across entities and relations without loading the entire graph into memory. The persistence adapter interface (`src/store/persistence/`) was designed for exactly this kind of swap — a MongoDB adapter implements `PersistenceAdapter` and the store doesn't change.
+~~**Open question** (see review above): server vs. local vs. embedded. The goal is to replace DexieJS with a more robust storage layer that supports queries across entities and relations without loading the entire graph into memory. The persistence adapter interface (`src/store/persistence/`) was designed for exactly this kind of swap — a MongoDB adapter implements `PersistenceAdapter` and the store doesn't change.~~
 
-If MongoDB is the target, the adapter pattern means we can defer implementation and build the data API (step I.6) against DexieJS first, then swap the adapter later.
+~~If MongoDB is the target, the adapter pattern means we can defer implementation and build the data API (step I.6) against DexieJS first, then swap the adapter later.~~
 
-**Move to Later** if consensus is to validate the graph canvas on existing persistence first.
+~~**Move to Later** if consensus is to validate the graph canvas on existing persistence first.~~
 
 ---
 

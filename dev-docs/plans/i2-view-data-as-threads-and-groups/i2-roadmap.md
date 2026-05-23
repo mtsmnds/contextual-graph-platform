@@ -12,21 +12,6 @@
 
 ## Now (ordered by dependency)
 
-### 1. Node Metadata Panel — Key-Value Editor
-
-**PRD:** `m5-prd0042-node-metadata-panel`
-
-When a node is selected on the canvas, a form card appears showing editable entity fields:
-- `content` — textarea
-- `kind` — select dropdown (segment, container, annotation, concept, summary)
-- `metadata` — two-column key-value table (add/remove/edit rows)
-- `id` — read-only display
-
-Context menu "Edit" opens this panel. Inline text editing via double-click on the node body is preserved. Panel uses NodeAppendix registry pattern or positioned overlay relative to the selected node.
-
-Pure `metadata: Record<string, unknown>` CRUD. No edge resolution yet. Ships on the existing canvas with zero schema changes.
-
-**Testable by:** Manual local dev — select a node, edit metadata in panel, verify persistence on reload. Change kind, verify node re-renders.
 
 ---
 
