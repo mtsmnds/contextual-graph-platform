@@ -1,5 +1,11 @@
 # m4-prd0043 — Undo/Redo + Backups
 
+> **Completion note (2026-05-23):**
+> - **What was built:** Unified snapshot-based undo/redo (50 entries, depth-counter batching) + auto-backup persistence (2s idle guard, 10 recent entries) + manual backups (FS Access). UI merged into `WorkspaceMenu.tsx` three-dot menu with undo/redo buttons, Open Folder, and backup sections. Cmd+Z/Cmd+Shift+Z with focus guard. Batch wrapping on all tracked mutations, onNodesDelete, onEdgesDelete, and Cmd+drag. PRD0044 (schema v5) implemented immediately after on same branch.
+> - **Key decisions:** Used snapshots over command pattern for zero-maintenance undo. Auto-backup piggybacks on existing auto-save with 2s idle guard. Backup storage split into `auto/` (rotated) and `manual/` (persist forever). UI consolidated into three-dot menu per user request (replaced multi-button panel).
+> - **Deviations from plan:** Backup panel changed from separate `BackupMenu.tsx` popover to merged `WorkspaceMenu.tsx`. Undo/redo buttons moved inside the three-dot menu instead of standalone in the panel. "New Node" button removed (double-click handles creation). The original PRD called `ArrowURightDown` for redo; switched to `ArrowUUpRight` (proper mirror of `ArrowUUpLeft`).
+> - **Postponed:** Nothing.
+
 ## Overview
 
 A unified snapshot-based system powering both undo/redo and workspace backups. The same mechanism — capturing the full domain state (`entities`, `relations`, `canvas`) before each tracked mutation — serves two purposes: intra-session recovery via Cmd+Z and cross-session safety via disk-persisted snapshots.

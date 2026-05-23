@@ -61,6 +61,8 @@ Core editing capability — the biggest current pain point (user couldn't edit m
 - **prd0040** - Edge inline editing: double-click edge label → inline text input with a dropdown of existing relation types (queried from `distinct type` values across all relations). User can pick an existing type or type a new one. Same commit pattern as node inline editing (Enter/blur to commit, Escape to cancel). **Replace EdgeDialog** (the modal) entirely — inline is faster and the dialog provides nothing extra.
 
 - **PRD0042** - fixes to resize and text persistence
+- **PRD0043** - Undo/redo + backups: snapshot-based undo/redo system with batch grouping, Cmd+Z/Cmd+Shift+Z shortcuts, workspace backups (auto + manual) via Notion-style three-dot menu
+- **PRD0044** - Schema v5: positions and dimensions moved onto Entity as `canvasData`, removing the `canvas.positions` reconciliation layer. All position mutations (drag-end, resize-end, keyboard move) tracked by undo.
 
 
 
@@ -89,26 +91,7 @@ Making the `contains` relation visible by rendering containers as visual groups 
 - Layout engine (`layout.ts`) updated to handle sub-flows: Dagre lays out children within their parent bounds, then positions are translated to relative coordinates.
 - **Collective drag** of children is handled natively by React Flow's group system — dragging a parent moves all children.
 
-Depends on: PRD0035 (positions + schema v4 for `canvas.positions`).
-
-#### Undo/Redo
-
-Cross-cutting history system for graph operations.
-
-- Snapshot-based history: capture `{ entities, relations, canvas }` before each tracked mutation. Full state restore on undo/redo. Re-layout is undoable; drag position changes are excluded.
-- Keyboard: Cmd+Z (undo), Cmd+Shift+Z (redo) via `document.addEventListener('keydown')` with focus guard
-- UI: Undo/redo buttons in the top-right panel via nested ButtonGroup, left of existing buttons
-
-Could be done at any point, but harder to retrofit once more store actions accumulate.
-
-#### Backups
-
-Full-workspace checkpoints stored in `<workspace>/backups/<id>/` sub-directories. Requires FS Access adapter.
-
-- Snapshot-based: copies `graph.json` and all container `documents/{id}.json` into a timestamped sub-directory
-- Create, restore, and delete via a popover menu from the top-right panel (Phosphor `FloppyDisk` button)
-- Restore replaces the entire live workspace with the backup's state (with confirmation dialog)
-- Hidden in IndexedDB mode (no directory structure available)
+Depends on: PRD0038 (positions + schema v4 for `canvas.positions`), PRD0044 (schema v5).
 
 #### Cleanup polish
 

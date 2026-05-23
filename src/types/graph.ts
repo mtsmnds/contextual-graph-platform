@@ -5,6 +5,13 @@ type EntityKind =
   | "concept"
   | "summary";
 
+type CanvasData = {
+  x: number
+  y: number
+  width?: number
+  height?: number
+}
+
 type Entity = {
   id: string;
   kind: EntityKind;
@@ -12,6 +19,7 @@ type Entity = {
   metadata: Record<string, unknown>;
   createdAt: number;
   updatedAt: number;
+  canvasData: CanvasData;
 };
 
 type Relation = {
@@ -31,23 +39,37 @@ type ViewState = {
 };
 
 type CanvasState = {
-  positions: Record<string, { x: number; y: number }>;
-  dimensions: Record<string, { width: number; height: number }>;
   viewport?: { x: number; y: number; zoom: number };
 };
 
 type GraphSnapshot = {
-  version: 4;
+  version: 5;
   entities: Entity[];
   relations: Relation[];
   canvas: CanvasState;
 };
 
+type HistoryEntry = {
+  entities: Entity[];
+  relations: Relation[];
+  canvas: CanvasState;
+  description: string;
+  timestamp: number;
+  version: number;
+};
+
+type AutoBackupEntry = HistoryEntry & {
+  documents: Record<string, Record<string, unknown>>;
+};
+
 export type {
   EntityKind,
+  CanvasData,
   Entity,
   Relation,
   ViewState,
   GraphSnapshot,
   CanvasState,
+  HistoryEntry,
+  AutoBackupEntry,
 };

@@ -15,16 +15,18 @@ import {
   type Connection,
   type Node,
   type Edge,
+  type NodeChange,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
-import type { EntityKind, GraphSnapshot } from "../types/graph"
+import type { EntityKind, GraphSnapshot, CanvasData } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import GraphContextMenu from "./GraphContextMenu"
+import WorkspaceMenu from "./panels/WorkspaceMenu"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
 import EdgeLabel from "./edges/EdgeLabel"
@@ -35,8 +37,6 @@ const edgeTypes = { edgelabel: EdgeLabel }
 function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
-  const savedPositions = useGraphStore((s) => s.canvas.positions)
-  const savedDimensions = useGraphStore((s) => s.canvas.dimensions)
 
   const __experimentalNoDagre = true
 
@@ -45,22 +45,17 @@ function GraphCanvasContent() {
     if (__experimentalNoDagre) {
       const nodes: Node[] = entities.map((entity, idx) => {
         const content = entity.content || entity.kind || entity.id
-        const saved = savedPositions[entity.id]
-        let position: { x: number; y: number }
-        if (saved) {
-          position = saved
-        } else {
-          console.warn(`[layout] No saved position for "${entity.id}" — applying fallback`)
-          position = { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 }
-        }
-        const savedDims = savedDimensions[entity.id]
+        const saved = entity.canvasData
+        const position: { x: number; y: number } = saved.x !== undefined && saved.y !== undefined
+          ? { x: saved.x, y: saved.y }
+          : { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 }
         return {
           id: entity.id,
           type: "entity",
           position,
           data: { content, kind: entity.kind, id: entity.id },
-          style: { width: savedDims?.width ?? 200 },
-          ...(savedDims ? { width: savedDims.width, height: savedDims.height } : {}),
+          style: { width: saved.width ?? 200 },
+          ...(saved.width != null && saved.height != null ? { width: saved.width, height: saved.height } : {}),
         }
       })
       const edges: Edge[] = relations.map((rel) => ({
@@ -76,8 +71,9 @@ function GraphCanvasContent() {
     } else {
       const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
       const nodes = dagreNodes.map((n) => {
-        const saved = savedPositions[n.id]
-        return saved ? { ...n, position: saved } : n
+        const saved = entities.find((e) => e.id === n.id)?.canvasData
+        if (saved && saved.x !== undefined) return { ...n, position: { x: saved.x, y: saved.y } }
+        return n
       })
       layoutRef.current = { nodes, edges }
     }
@@ -85,6 +81,9 @@ function GraphCanvasContent() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutRef.current.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutRef.current.edges)
+
+  const keyboardMoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const keyboardMoveIdsRef = useRef<Set<string>>(new Set())
 
   const reactFlowInstance = useReactFlow()
   const storeInit = useGraphStore((s) => s.init)
@@ -101,51 +100,46 @@ function GraphCanvasContent() {
   const [visibleMetadataNodeIds, setVisibleMetadataNodeIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const { positions, dimensions: savedDims } = useGraphStore.getState().canvas
-
     if (__experimentalNoDagre) {
       setNodes((prev) => {
         const prevById = new Map(prev.map((n) => [n.id, n]))
         const merged = [...prev]
+        const entityIdSet = new Set(entities.map((e) => e.id))
 
         for (const entity of entities) {
           const newContent = entity.content || entity.kind || entity.id
           const existing = prevById.get(entity.id)
           if (existing) {
-            if (existing.data.content !== newContent || existing.data.kind !== entity.kind) {
-              const idx = merged.findIndex((n) => n.id === entity.id)
-              if (idx !== -1) {
-                merged[idx] = { ...merged[idx], data: { ...merged[idx].data, content: newContent, kind: entity.kind } }
-              }
-            }
-            const storedDims = savedDims[entity.id]
-            if (storedDims) {
-              const idx = merged.findIndex((n) => n.id === entity.id)
-              if (idx !== -1 && merged[idx].style) {
-                merged[idx] = { ...merged[idx], style: { ...merged[idx].style, width: storedDims.width } }
+            const idx = merged.findIndex((n) => n.id === entity.id)
+            if (idx === -1) continue
+
+            const posChanged = existing.position.x !== entity.canvasData.x || existing.position.y !== entity.canvasData.y
+            const contentChanged = existing.data.content !== newContent || existing.data.kind !== entity.kind
+            const w = entity.canvasData.width
+
+            if (posChanged || contentChanged || w != null) {
+              merged[idx] = {
+                ...merged[idx],
+                position: { x: entity.canvasData.x, y: entity.canvasData.y },
+                data: { ...merged[idx].data, content: newContent, kind: entity.kind },
+                style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? 200 },
               }
             }
           } else {
-            const saved = positions[entity.id]
-            let position: { x: number; y: number }
-            if (saved) {
-              position = saved
-            } else {
-              console.warn(`[layout] No saved position for new entity "${entity.id}" — applying fallback`)
-              position = { x: merged.length * 30, y: merged.length * 30 }
-            }
-            const entityDims = savedDims[entity.id]
+            const position = { x: entity.canvasData.x, y: entity.canvasData.y }
             const newNode: Node = {
               id: entity.id,
               type: "entity",
               position,
               data: { content: newContent, kind: entity.kind, id: entity.id },
-              style: { width: entityDims?.width ?? 200 },
-              ...(entityDims ? { width: entityDims.width, height: entityDims.height } : {}),
+              style: { width: entity.canvasData.width ?? 200 },
+              ...(entity.canvasData.width != null && entity.canvasData.height != null
+                ? { width: entity.canvasData.width, height: entity.canvasData.height }
+                : {}),
             }
 
             const pending = pendingNodeRef.current
-            if (pending && pending.id === entity.id) {
+            if (pending === entity.id) {
               pendingNodeRef.current = null
               newNode.data = { ...newNode.data, editTrigger: 1 }
             }
@@ -154,9 +148,15 @@ function GraphCanvasContent() {
           }
         }
 
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const n = merged[i]
+          if (n.type === "entity" && !entityIdSet.has(n.id) && !n.id.startsWith("__ghost_")) {
+            merged.splice(i, 1)
+          }
+        }
+
         const metaNodeWidth = 260
         const metaEntityIds = new Set(visibleMetadataNodeIds)
-        const entityIdSet = new Set(entities.map((e) => e.id))
 
         for (let i = merged.length - 1; i >= 0; i--) {
           const n = merged[i]
@@ -172,11 +172,8 @@ function GraphCanvasContent() {
           const entityNode = prevById.get(metaEntityId) ?? merged.find((n) => n.id === metaEntityId)
           if (!entityNode) continue
 
-          const savedMetaPos = positions[metaId]
           let metaPos: { x: number; y: number }
-          if (savedMetaPos) {
-            metaPos = savedMetaPos
-          } else if (metaExisting) {
+          if (metaExisting) {
             metaPos = metaExisting.position
           } else {
             metaPos = {
@@ -188,7 +185,7 @@ function GraphCanvasContent() {
           if (metaExisting) {
             const idx = merged.findIndex((n) => n.id === metaId)
             if (idx !== -1) {
-              merged[idx] = { ...merged[idx], position: metaExisting.position }
+              merged[idx] = { ...merged[idx], position: metaPos }
             }
           } else {
             merged.push({
@@ -209,6 +206,7 @@ function GraphCanvasContent() {
       setEdges((prev) => {
         const prevById = new Map(prev.map((e) => [e.id, e]))
         const merged = [...prev]
+        const relationIdSet = new Set(relations.map((r) => r.id))
 
         for (const rel of relations) {
           if (!prevById.has(rel.id)) {
@@ -221,6 +219,13 @@ function GraphCanvasContent() {
               label: rel.type,
               type: "edgelabel",
             })
+          }
+        }
+
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const e = merged[i]
+          if (!e.id?.startsWith("meta-edge:") && !relationIdSet.has(e.id)) {
+            merged.splice(i, 1)
           }
         }
 
@@ -265,11 +270,11 @@ function GraphCanvasContent() {
 
       for (const dagreNode of dagreNodes) {
         const existing = prevById.get(dagreNode.id)
-        const saved = positions[dagreNode.id]
-        const position = saved ?? dagreNode.position
+        const saved = entities.find((e) => e.id === dagreNode.id)?.canvasData
+        const position = (saved && saved.x !== undefined) ? { x: saved.x, y: saved.y } : dagreNode.position
 
         const pending = pendingNodeRef.current
-        if (pending && pending.id === dagreNode.id) {
+        if (pending && pending === dagreNode.id) {
           pendingNodeRef.current = null
           merged.push({ ...dagreNode, position, data: { ...dagreNode.data, editTrigger: 1 } })
         } else if (existing) {
@@ -300,22 +305,20 @@ function GraphCanvasContent() {
   }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds])
 
   useEffect(() => {
-    const dims: Record<string, { width: number; height: number }> = {}
+    const dims: Record<string, CanvasData> = {}
+    const currentStore = useGraphStore.getState()
     for (const node of nodes) {
+      const entity = currentStore.entities.find((e) => e.id === node.id)
+      if (!entity) continue
+      if (entity.canvasData.width != null && entity.canvasData.height != null) continue
       const w = node.measured?.width ?? node.width
       const h = node.measured?.height ?? node.height
       if (w != null && h != null) {
-        dims[node.id] = { width: w, height: h }
+        dims[node.id] = { x: entity.canvasData.x, y: entity.canvasData.y, width: w, height: h }
       }
     }
-    const keys = Object.keys(dims).sort()
-    let key = ""
-    for (const k of keys) {
-      key += `${k}:${dims[k].width},${dims[k].height};`
-    }
-    if (key !== dimensionsKeyRef.current) {
-      dimensionsKeyRef.current = key
-      useGraphStore.getState().setCanvasDimensions(dims)
+    if (Object.keys(dims).length > 0) {
+      currentStore.applyMeasuredDimensions(dims)
     }
   }, [nodes])
 
@@ -341,9 +344,12 @@ function GraphCanvasContent() {
 
   const onEdgesDelete = useCallback(
     (edgesToDelete: Edge[]) => {
+      const s = useGraphStore.getState()
+      s.beginBatch(`Delete ${edgesToDelete.length} edges`)
       for (const edge of edgesToDelete) {
-        useGraphStore.getState().removeRelation(edge.id)
+        s.removeRelation(edge.id)
       }
+      s.endBatch()
     },
     [],
   )
@@ -355,8 +361,11 @@ function GraphCanvasContent() {
 
   const onNodesDelete = useCallback(
     (deletedNodes: Node[]) => {
+      const s = useGraphStore.getState()
+      const count = deletedNodes.filter((n) => n.type === "entity").length
+      s.beginBatch(`Delete ${count} nodes`)
       for (const node of deletedNodes) {
-        useGraphStore.getState().deleteEntity(node.id)
+        s.deleteEntity(node.id)
       }
       setVisibleMetadataNodeIds((prev) => {
         const next = new Set(prev)
@@ -366,13 +375,12 @@ function GraphCanvasContent() {
         if (next.size === prev.size) return prev
         return next
       })
+      s.endBatch()
     },
     [],
   )
 
-  const setCanvasPositions = useGraphStore((s) => s.setCanvasPositions)
-
-  const pendingNodeRef = useRef<{ id: string; position: { x: number; y: number } } | null>(null)
+  const pendingNodeRef = useRef<string | null>(null)
 
   const dragStateRef = useRef<{
     originals: Array<{
@@ -380,11 +388,49 @@ function GraphCanvasContent() {
       kind: EntityKind
       content: string
       metadata: Record<string, unknown>
+      canvasData: CanvasData
       originalPosition: { x: number; y: number }
     }>
   } | null>(null)
 
-  const dimensionsKeyRef = useRef<string>("")
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    onNodesChange(changes)
+
+    if (dragStateRef.current) return
+
+    for (const change of changes) {
+      if (change.type === "position" && !change.dragging) {
+        keyboardMoveIdsRef.current.add(change.id)
+      }
+    }
+
+    if (keyboardMoveIdsRef.current.size > 0) {
+      if (keyboardMoveTimerRef.current) clearTimeout(keyboardMoveTimerRef.current)
+      keyboardMoveTimerRef.current = setTimeout(() => {
+        const s = useGraphStore.getState()
+        const ids = new Set(keyboardMoveIdsRef.current)
+        keyboardMoveIdsRef.current = new Set()
+
+        if (ids.size > 0) {
+          const allNodes = reactFlowInstance.getNodes()
+          s.beginBatch(`Move ${ids.size} nodes`)
+          for (const id of ids) {
+            const node = allNodes.find((n) => n.id === id)
+            if (!node) continue
+            s.updateEntity(id, {
+              canvasData: {
+                x: node.position.x,
+                y: node.position.y,
+                width: node.measured?.width ?? node.width ?? undefined,
+                height: node.measured?.height ?? node.height ?? undefined,
+              },
+            })
+          }
+          s.endBatch()
+        }
+      }, 300)
+    }
+  }, [onNodesChange, reactFlowInstance])
 
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -397,15 +443,20 @@ function GraphCanvasContent() {
       const selectedIds = new Set(allNodes.filter((n) => n.selected).map((n) => n.id))
       selectedIds.add(node.id)
 
+      const s = useGraphStore.getState()
       const originals = allNodes
         .filter((n) => selectedIds.has(n.id))
-        .map((n) => ({
-          id: n.id,
-          kind: n.data.kind as EntityKind,
-          content: n.data.content as string,
-          metadata: (n.data.metadata as Record<string, unknown>) ?? {},
-          originalPosition: { ...n.position },
-        }))
+        .map((n) => {
+          const entity = s.entities.find((e) => e.id === n.id)
+          return {
+            id: n.id,
+            kind: n.data.kind as EntityKind,
+            content: n.data.content as string,
+            metadata: (n.data.metadata as Record<string, unknown>) ?? {},
+            canvasData: entity?.canvasData ?? { x: n.position.x, y: n.position.y },
+            originalPosition: { ...n.position },
+          }
+        })
 
       dragStateRef.current = { originals }
 
@@ -416,7 +467,7 @@ function GraphCanvasContent() {
           type: "entity" as const,
           position: o.originalPosition,
           data: { content: o.content, kind: o.kind, id: `__ghost_${o.id}` },
-          style: { width: 200 },
+          style: { width: o.canvasData.width ?? 200 },
           className: "ghost-node",
           selectable: false,
         })),
@@ -426,13 +477,20 @@ function GraphCanvasContent() {
   )
 
   const createNode = useCallback((position: { x: number; y: number }) => {
-    const id = useGraphStore.getState().addEntity("concept")
-    pendingNodeRef.current = { id, position }
-    useGraphStore.getState().setNodePosition(id, position)
+    const id = useGraphStore.getState().addEntity("concept", {
+      canvasData: { x: position.x, y: position.y },
+    })
+    pendingNodeRef.current = id
   }, [])
 
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent) => {
+      if (keyboardMoveTimerRef.current) {
+        clearTimeout(keyboardMoveTimerRef.current)
+        keyboardMoveTimerRef.current = null
+      }
+      keyboardMoveIdsRef.current = new Set()
+
       const allNodes = reactFlowInstance.getNodes()
 
       const dragState = dragStateRef.current
@@ -441,20 +499,33 @@ function GraphCanvasContent() {
 
         const ghostIds = new Set(dragState.originals.map((o) => `__ghost_${o.id}`))
 
-        const store = useGraphStore.getState()
-        const positions = { ...store.canvas.positions }
+        const s = useGraphStore.getState()
+        s.beginBatch(`Duplicate ${dragState.originals.length} nodes`)
 
         for (const orig of dragState.originals) {
           const droppedNode = allNodes.find((n) => n.id === orig.id)
           if (!droppedNode) continue
 
-          const cloneId = store.addEntity(orig.kind, { content: orig.content, metadata: orig.metadata })
-          store.setNodePosition(cloneId, droppedNode.position)
-          positions[cloneId] = droppedNode.position
+          s.addEntity(orig.kind, {
+            content: orig.content,
+            metadata: orig.metadata,
+            canvasData: {
+              x: droppedNode.position.x,
+              y: droppedNode.position.y,
+              width: orig.canvasData.width,
+              height: orig.canvasData.height,
+            },
+          })
 
-          store.setNodePosition(orig.id, orig.originalPosition)
-          positions[orig.id] = orig.originalPosition
+          s.updateEntity(orig.id, {
+            canvasData: {
+              x: orig.originalPosition.x,
+              y: orig.originalPosition.y,
+            },
+          })
         }
+
+        s.endBatch()
 
         setNodes((nds) =>
           nds
@@ -465,17 +536,36 @@ function GraphCanvasContent() {
             }),
         )
 
-        setCanvasPositions(positions)
         return
       }
 
-      const positions: Record<string, { x: number; y: number }> = {}
-      for (const n of allNodes) {
-        positions[n.id] = n.position
+      const s = useGraphStore.getState()
+      const movedIds = allNodes
+        .filter((n) => {
+          const entity = s.entities.find((e) => e.id === n.id)
+          if (!entity) return false
+          return entity.canvasData.x !== n.position.x || entity.canvasData.y !== n.position.y
+        })
+        .map((n) => n.id)
+
+      if (movedIds.length > 0) {
+        s.beginBatch(`Move ${movedIds.length} nodes`)
+        for (const id of movedIds) {
+          const node = allNodes.find((n) => n.id === id)
+          if (!node) continue
+          s.updateEntity(id, {
+            canvasData: {
+              x: node.position.x,
+              y: node.position.y,
+              width: node.measured?.width ?? node.width ?? undefined,
+              height: node.measured?.height ?? node.height ?? undefined,
+            },
+          })
+        }
+        s.endBatch()
       }
-      setCanvasPositions(positions)
     },
-    [reactFlowInstance, setCanvasPositions, setNodes],
+    [reactFlowInstance, setNodes],
   )
 
   const createNodeAtCenter = useCallback(() => {
@@ -505,6 +595,25 @@ function GraphCanvasContent() {
     el.addEventListener("dblclick", handler, { capture: true })
     return () => el.removeEventListener("dblclick", handler, { capture: true })
   }, [reactFlowInstance, createNode])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return
+
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod || e.key.toLowerCase() !== "z") return
+
+      e.preventDefault()
+      if (e.shiftKey) {
+        useGraphStore.getState().redo()
+      } else {
+        useGraphStore.getState().undo()
+      }
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [])
 
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent, node: Node) => {
@@ -601,10 +710,6 @@ function GraphCanvasContent() {
     }
   }, [contextMenu, entities, relations, setNodes, visibleMetadataNodeIds])
 
-  const onCreateNode = useCallback(() => {
-    createNodeAtCenter()
-  }, [createNodeAtCenter])
-
   const onOpenFolder = useCallback(async () => {
     const fsa = getFSAccessInstance()
     const picked = await fsa.initFromPicker()
@@ -616,7 +721,7 @@ function GraphCanvasContent() {
       await storeInit(fsa)
     } else {
       const state = useGraphStore.getState()
-      const snapshot: GraphSnapshot = { version: 4, entities: state.entities, relations: state.relations, canvas: state.canvas }
+      const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
       await fsa.saveGraph(snapshot)
       for (const entity of state.entities) {
         if (entity.kind === "container") {
@@ -632,17 +737,6 @@ function GraphCanvasContent() {
   const onZoomIn = useCallback(() => reactFlowInstance.zoomIn(), [reactFlowInstance])
   const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
   const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
-
-  const __experimentalReLayout = false
-
-  const onRelayout = useCallback(() => {
-    const { entities, relations } = useGraphStore.getState()
-    const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
-    const dagrePositions = Object.fromEntries(relayouted.map((n) => [n.id, n.position]))
-    useGraphStore.getState().replaceCanvasPositions(dagrePositions)
-    setNodes(relayouted)
-    setEdges(relayoutedEdges)
-  }, [setNodes, setEdges])
 
   const hydrated = useGraphStore((s) => s.hydrated)
   const savedViewport = useGraphStore((s) => s.canvas.viewport)
@@ -684,7 +778,7 @@ function GraphCanvasContent() {
       nodeTypes={nodeTypes}
       nodes={nodes}
       edges={edges}
-      onNodesChange={onNodesChange}
+      onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       isValidConnection={isValidConnection}
@@ -734,19 +828,7 @@ function GraphCanvasContent() {
         </div>
       </Panel>
       <Panel position="top-right">
-        <ButtonGroup>
-          <Button variant="outline" size="sm" onClick={onCreateNode}>
-            New Node
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            Open Folder
-          </Button>
-          {__experimentalReLayout && (
-            <Button variant="outline" size="sm" onClick={onRelayout}>
-              Re-layout
-            </Button>
-          )}
-        </ButtonGroup>
+        <WorkspaceMenu onOpenFolder={onOpenFolder} />
       </Panel>
       <GraphContextMenu
         open={contextMenu !== null}

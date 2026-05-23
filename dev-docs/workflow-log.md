@@ -5,7 +5,50 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-05-23
+
+### prd end — m4-prd0043-undo-redo-and-backup
+- **Source:** user request — merged PRD for undo/redo + backups
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (clean)
+- **User decision:** classification: Architecture change + Feature change
+- **Change classification:** Architecture change + Feature change
+- **ADR type:** full (snapshot engine, batch system, backup engine, new modules)
+- **Commit hash:** 503b781
+- **Pre-commit guard:** no changes
+
+### prd end — m4-prd0044-schema-v5-canvas-data-on-entity
+- **Source:** user request — positions and dimensions cause bugs in every feature touching them
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (dirty — implemented stacked)
+- **User decision:** classification: Architecture change + Feature change
+- **Change classification:** Architecture change + Feature change
+- **ADR type:** full (schema v5, data model contract change)
+- **Commit hash:** 1b3889a
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
+### prd start — m4-prd0044-schema-v5-canvas-data-on-entity
+- **Source:** user request — resolve position reconciliation gap permanently
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (clean, committed)
+- **User decision:** stacked on existing m4-prd0043 branch
+- **Branch name:** m4-prd0043-undo-redo-and-backup (reused)
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
+
 ## 2026-05-22
+
+### prd write — m4-prd0044-schema-v5-canvas-data-on-entity
+- **Source:** user request — positions and dimensions cause bugs in every feature touching them (undo, restore, save, drag)
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (clean, committed)
+- **User decision:** move positions/dimensions onto Entity as `canvasData: { x, y, width?, height? }`. Schema v4→v5 migration. Remove `canvas.positions`/`canvas.dimensions` from `CanvasState`. All user actions tracked by undo — specifically drag-ends and resize-ends now create undo entries. Auto-measurement bypasses tracking (system init, not user action).
+- **PRD file:** `dev-docs/plans/m4-prd0044-schema-v5-canvas-data-on-entity.md`
+- **Pre-commit guard:** committed wip ("m4: prd0043 - undo/redo + backups")
+
+### prd start — m4-prd0043-undo-redo-and-backup
+- **Source:** user text — merged PRD for undo/redo + backups
+- **Branch at time:** main (clean)
+- **User decision:** branch from main
+- **Branch name:** m4-prd0043-undo-redo-and-backup
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
 
 ### prd write — m4-prd0043-undo-redo-and-backup (merged)
 - **Source:** user observation — m4-prd0043 (undo/redo) and m4-prd0044 (backups) overlap on snapshot mechanism

@@ -220,7 +220,7 @@ export const SEED_CONTAINER_CONTENT: Record<string, Record<string, unknown>> = {
 };
 
 export const SEED_DATA: GraphSnapshot = {
-  version: 4,
+  version: 5,
   entities: [
     {
       id: "about-workspace",
@@ -229,6 +229,7 @@ export const SEED_DATA: GraphSnapshot = {
       createdAt: SEED_TS,
       updatedAt: SEED_TS,
       metadata: {},
+      canvasData: { x: 0, y: 0 },
     },
     {
       id: "editor-playground",
@@ -237,8 +238,9 @@ export const SEED_DATA: GraphSnapshot = {
       createdAt: SEED_TS,
       updatedAt: SEED_TS,
       metadata: {},
+      canvasData: { x: 0, y: 0 },
     },
   ],
   relations: [],
-  canvas: { positions: {}, dimensions: {} },
+  canvas: {},
 };
