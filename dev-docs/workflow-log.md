@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-23
 
+### prd merge — m4-prd0043-undo-redo-and-backup (includes 0044)
+- **Branch at time:** main (clean)
+- **User decision:** merge single branch containing both 0043 and 0044
+- **Merge order:** m4-prd0043-undo-redo-and-backup (0043 + 0044)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly (19 files changed)
+- **Pre-commit guard:** no changes
+
 ### prd end — m4-prd0043-undo-redo-and-backup
 - **Source:** user request — merged PRD for undo/redo + backups
 - **Branch at time:** m4-prd0043-undo-redo-and-backup (clean)
