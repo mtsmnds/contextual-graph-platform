@@ -15,6 +15,7 @@ import {
   type Connection,
   type Node,
   type Edge,
+  type NodeChange,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
@@ -80,6 +81,9 @@ function GraphCanvasContent() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutRef.current.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutRef.current.edges)
+
+  const keyboardMoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const keyboardMoveIdsRef = useRef<Set<string>>(new Set())
 
   const reactFlowInstance = useReactFlow()
   const storeInit = useGraphStore((s) => s.init)
@@ -389,6 +393,45 @@ function GraphCanvasContent() {
     }>
   } | null>(null)
 
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    onNodesChange(changes)
+
+    if (dragStateRef.current) return
+
+    for (const change of changes) {
+      if (change.type === "position" && !change.dragging) {
+        keyboardMoveIdsRef.current.add(change.id)
+      }
+    }
+
+    if (keyboardMoveIdsRef.current.size > 0) {
+      if (keyboardMoveTimerRef.current) clearTimeout(keyboardMoveTimerRef.current)
+      keyboardMoveTimerRef.current = setTimeout(() => {
+        const s = useGraphStore.getState()
+        const ids = new Set(keyboardMoveIdsRef.current)
+        keyboardMoveIdsRef.current = new Set()
+
+        if (ids.size > 0) {
+          const allNodes = reactFlowInstance.getNodes()
+          s.beginBatch(`Move ${ids.size} nodes`)
+          for (const id of ids) {
+            const node = allNodes.find((n) => n.id === id)
+            if (!node) continue
+            s.updateEntity(id, {
+              canvasData: {
+                x: node.position.x,
+                y: node.position.y,
+                width: node.measured?.width ?? node.width ?? undefined,
+                height: node.measured?.height ?? node.height ?? undefined,
+              },
+            })
+          }
+          s.endBatch()
+        }
+      }, 300)
+    }
+  }, [onNodesChange, reactFlowInstance])
+
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, node: Node) => {
       if (!_.metaKey) {
@@ -442,6 +485,12 @@ function GraphCanvasContent() {
 
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent) => {
+      if (keyboardMoveTimerRef.current) {
+        clearTimeout(keyboardMoveTimerRef.current)
+        keyboardMoveTimerRef.current = null
+      }
+      keyboardMoveIdsRef.current = new Set()
+
       const allNodes = reactFlowInstance.getNodes()
 
       const dragState = dragStateRef.current
@@ -729,7 +778,7 @@ function GraphCanvasContent() {
       nodeTypes={nodeTypes}
       nodes={nodes}
       edges={edges}
-      onNodesChange={onNodesChange}
+      onNodesChange={handleNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       isValidConnection={isValidConnection}

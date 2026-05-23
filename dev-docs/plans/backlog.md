@@ -1,4 +1,9 @@
 
+
+recent snapshots
+- clickable
+- persist after reload
+
 question, plan mode:
  - i thought the current states in "recent snapshots" would be clickable like manual saves.
  - i didn't understand what the "You have unsaved snapshots from your last session." means. 
