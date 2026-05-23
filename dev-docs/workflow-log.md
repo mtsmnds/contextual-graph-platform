@@ -13,7 +13,7 @@ Append-only, newest on top within same-day groupings.
 - **User decision:** classification: Architecture change + Feature change
 - **Change classification:** Architecture change + Feature change
 - **ADR type:** full (snapshot engine, batch system, backup engine, new modules)
-- **Commit hash:** (to be filled)
+- **Commit hash:** 503b781
 - **Pre-commit guard:** no changes
 
 ### prd end — m4-prd0044-schema-v5-canvas-data-on-entity
