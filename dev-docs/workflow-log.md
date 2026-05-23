@@ -7,6 +7,21 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-22
 
+### prd write — m4-prd0044-schema-v5-canvas-data-on-entity
+- **Source:** user request — positions and dimensions cause bugs in every feature touching them (undo, restore, save, drag)
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (clean, committed)
+- **User decision:** move positions/dimensions onto Entity as `canvasData: { x, y, width?, height? }`. Schema v4→v5 migration. Remove `canvas.positions`/`canvas.dimensions` from `CanvasState`. All user actions tracked by undo — specifically drag-ends and resize-ends now create undo entries. Auto-measurement bypasses tracking (system init, not user action).
+- **PRD file:** `dev-docs/plans/m4-prd0044-schema-v5-canvas-data-on-entity.md`
+- **Pre-commit guard:** committed wip ("m4: prd0043 - undo/redo + backups")
+
+### prd start — m4-prd0043-undo-redo-and-backup
+- **Source:** user text — merged PRD for undo/redo + backups
+- **Branch at time:** main (clean)
+- **User decision:** branch from main
+- **Branch name:** m4-prd0043-undo-redo-and-backup
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
+
 ### prd write — m4-prd0043-undo-redo-and-backup (merged)
 - **Source:** user observation — m4-prd0043 (undo/redo) and m4-prd0044 (backups) overlap on snapshot mechanism
 - **Branch at time:** main (clean)
