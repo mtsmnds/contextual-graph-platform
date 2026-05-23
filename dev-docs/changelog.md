@@ -15,6 +15,24 @@ Use this to recover context after breaks.
 ## 2026-05-23
 
 ### m4 — prd0044 — schema v5: canvas data on entity
+
+### m4 — prd0043 — undo/redo + backups
+- **What:** Unified snapshot-based undo/redo system with batch grouping and a workspace backup panel. Snapshot-based history (50 entries in-memory) captures full domain state on every tracked mutation. Batch grouping via `beginBatch`/`endBatch` with depth-counter merges multi-step actions (multi-select delete, Cmd+drag duplicate) into one undo step. Auto-backup persists 10 most recent undo entries to disk on 2s idle pause. Manual backups (FS Access only) store full workspace in `backups/manual/`. UI merged into a Notion-style three-dot menu (`WorkspaceMenu.tsx`) with undo/redo buttons, Open Folder, and backup sections (manual saves + recent snapshots with relative timestamps). Cmd+Z/Cmd+Shift+Z keyboard shortcuts with input focus guard.
+- **Reason:** Critical safety gap — users could not recover from accidental deletes, bad edits, or relation changes. Snapshot approach chosen over command pattern because it requires zero per-mutation logic: every new feature is automatically undoable. Backups added as a crash-recovery net and pre-refactor checkpoint.
+- **Files changed:**
+  - `src/store/useGraphStore.ts`: Added undo/redo stacks, batch depth state, `beginBatch`/`endBatch`, wrapped 7 mutators, auto-save extended with 2s idle guard + auto-backup persist, `getAdapterHandle`, `loadContentDirect`
+  - `src/engine/backup.ts`: New — manual and auto backup engine (create/list/delete/restore) using FS Access API
+  - `src/canvas/panels/WorkspaceMenu.tsx`: New — three-dot menu with undo/redo, Open Folder, backup sections, confirmation dialogs
+  - `src/canvas/GraphCanvas.tsx`: Added keyboard listener, batch wrapping for deletes/duplicates, replaced multi-button Panel with WorkspaceMenu
+  - `src/store/persistence/types.ts`: Added `getRootHandle?()` to interface
+  - `src/store/persistence/fs-access-adapter.ts`, `indexeddb-adapter.ts`: Implemented `getRootHandle()`
+  - `src/types/fs-access.d.ts`: Extended `FileSystemHandle` with `name`/`kind`, added directory methods
+  - `src/types/graph.ts`: Added `HistoryEntry`, `AutoBackupEntry` types
+- **Impact:** All graph mutations are now undoable via Cmd+Z. Workspace backups survive page reload and workspace switches. Batch grouping makes multi-delete and duplicate actions one undo step. Three-dot menu consolidates workspace controls.
+- **Archive:** `dev-docs/archive/m4/m4-prd0043-undo-redo-and-backup.md`
+- **ADR:** `dev-docs/archive/m4/2026-05-23-prd0043-undo-redo-and-backup-adr.md`
+
+### m4 — prd0044 — schema v5: canvas data on entity
 - **What:** Schema v5 — added `canvasData: { x, y, width?, height? }` to `Entity`. Stripped `positions` and `dimensions` from `CanvasState` (now only `viewport`). Removed `setNodePosition`, `setCanvasPositions`, `replaceCanvasPositions` — all replaced by `updateEntity(id, { canvasData })` wrapped in batch descriptions. Drag-end creates "Move N nodes" undo entry. Resize-end creates "Resize node" undo entry. Auto-measurement uses non-tracked `applyMeasuredDimensions`. v4→v5 migration in `migrateSnapshot`. Backup restore runs through migration for v4 compat.
 - **Reason:** Every feature touching positions (undo, restore, save, Cmd+drag) had bugs from the `canvas.positions` reconciliation gap. Industry products (Figma, Obsidian Canvas, Miro) store position as a fundamental node property. Moving position onto the entity eliminates the reconciliation layer entirely — undo snapshots automatically capture positions.
 - **Files changed:**

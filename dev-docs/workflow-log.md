@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-23
 
+### prd end — m4-prd0043-undo-redo-and-backup
+- **Source:** user request — merged PRD for undo/redo + backups
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (clean)
+- **User decision:** classification: Architecture change + Feature change
+- **Change classification:** Architecture change + Feature change
+- **ADR type:** full (snapshot engine, batch system, backup engine, new modules)
+- **Commit hash:** (to be filled)
+- **Pre-commit guard:** no changes
+
 ### prd end — m4-prd0044-schema-v5-canvas-data-on-entity
 - **Source:** user request — positions and dimensions cause bugs in every feature touching them
 - **Branch at time:** m4-prd0043-undo-redo-and-backup (dirty — implemented stacked)
