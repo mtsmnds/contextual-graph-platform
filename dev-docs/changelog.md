@@ -12,6 +12,22 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-23
+
+### m4 — prd0044 — schema v5: canvas data on entity
+- **What:** Schema v5 — added `canvasData: { x, y, width?, height? }` to `Entity`. Stripped `positions` and `dimensions` from `CanvasState` (now only `viewport`). Removed `setNodePosition`, `setCanvasPositions`, `replaceCanvasPositions` — all replaced by `updateEntity(id, { canvasData })` wrapped in batch descriptions. Drag-end creates "Move N nodes" undo entry. Resize-end creates "Resize node" undo entry. Auto-measurement uses non-tracked `applyMeasuredDimensions`. v4→v5 migration in `migrateSnapshot`. Backup restore runs through migration for v4 compat.
+- **Reason:** Every feature touching positions (undo, restore, save, Cmd+drag) had bugs from the `canvas.positions` reconciliation gap. Industry products (Figma, Obsidian Canvas, Miro) store position as a fundamental node property. Moving position onto the entity eliminates the reconciliation layer entirely — undo snapshots automatically capture positions.
+- **Files changed:**
+  - `src/types/graph.ts`: Added `CanvasData`, `canvasData` on `Entity`, stripped `CanvasState`, v5, `HistoryEntry.version`
+  - `src/store/useGraphStore.ts`: v4→v5 migration, removed position setters, non-tracked `applyMeasuredDimensions`, exported `migrateSnapshot`, `addEntity`/`updateEntity` handle canvasData
+  - `src/canvas/GraphCanvas.tsx`: Simplified effect (2 slices instead of 4), position from `entity.canvasData`, drag-end batch, Cmd+drag uses canvasData on `addEntity`, auto-measure calls `applyMeasuredDimensions`
+  - `src/canvas/nodes/EntityNode.tsx`: Resize-end calls `beginBatch("Resize node")` + `updateEntity`
+  - `src/engine/backup.ts`: Creates v5 snapshots, restore runs through `migrateSnapshot`
+  - `src/data/seed.ts`: Entities get `canvasData: { x: 0, y: 0 }`
+- **Impact:** Position bugs in undo, restore, Cmd+drag permanently fixed. Every user action is undoable (including drag and resize). GraphCanvas reconciliation complexity reduced. Schema v4 data auto-migrates on load and on backup restore.
+- **Archive:** `dev-docs/archive/m4/m4-prd0044-schema-v5-canvas-data-on-entity.md`
+- **ADR:** `dev-docs/archive/m4/2026-05-23-prd0044-schema-v5-canvas-data-on-entity-adr.md`
+
 ## 2026-05-22
 
 ### fix: seed ID collision + folder open position override

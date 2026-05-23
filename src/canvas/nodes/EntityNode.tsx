@@ -80,6 +80,20 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
     }
   }, [editValue, isEditing, data.id, updateNodeInternals])
 
+  const handleResizeEnd = useCallback((_: unknown, params: { x: number; y: number; width: number; height: number }) => {
+    const store = useGraphStore.getState()
+    store.beginBatch("Resize node")
+    store.updateEntity(data.id, {
+      canvasData: {
+        x: params.x,
+        y: params.y,
+        width: params.width,
+        height: params.height,
+      },
+    })
+    store.endBatch()
+  }, [data.id])
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Escape") {
       e.currentTarget.blur()
@@ -107,6 +121,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
         variant={ResizeControlVariant.Line}
         position={Position.Right}
         minWidth={60}
+        onResizeEnd={handleResizeEnd}
       />
       <BaseNode className="w-full" onDoubleClick={handleDoubleClick}>
         <BaseNodeHeader>

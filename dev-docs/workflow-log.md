@@ -5,6 +5,25 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-05-23
+
+### prd end — m4-prd0044-schema-v5-canvas-data-on-entity
+- **Source:** user request — positions and dimensions cause bugs in every feature touching them
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (dirty — implemented stacked)
+- **User decision:** classification: Architecture change + Feature change
+- **Change classification:** Architecture change + Feature change
+- **ADR type:** full (schema v5, data model contract change)
+- **Commit hash:** (to be filled)
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
+### prd start — m4-prd0044-schema-v5-canvas-data-on-entity
+- **Source:** user request — resolve position reconciliation gap permanently
+- **Branch at time:** m4-prd0043-undo-redo-and-backup (clean, committed)
+- **User decision:** stacked on existing m4-prd0043 branch
+- **Branch name:** m4-prd0043-undo-redo-and-backup (reused)
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
+
 ## 2026-05-22
 
 ### prd write — m4-prd0044-schema-v5-canvas-data-on-entity

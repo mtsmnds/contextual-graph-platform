@@ -1,4 +1,5 @@
 import type { Entity, Relation, CanvasState, AutoBackupEntry } from "../types/graph"
+import { migrateSnapshot } from "../store/useGraphStore"
 
 type ManualBackupInfo = {
   id: string
@@ -70,7 +71,7 @@ export async function createManualBackup(
   const backupDir = await ensureDir(manualDir, backupId)
   const docsDir = await ensureDir(backupDir, "documents")
 
-  await writeFile(backupDir, "graph.json", { version: 4, entities, relations, canvas })
+  await writeFile(backupDir, "graph.json", { version: 5, entities, relations, canvas })
 
   for (const [id, content] of Object.entries(contentCache)) {
     await writeFile(docsDir, `${id}.json`, content)
@@ -128,12 +129,13 @@ export async function restoreManualBackup(
     const backupDir = await manualDir.getDirectoryHandle(backupId)
 
     const graphFile = await backupDir.getFileHandle("graph.json")
-    const graph = await readJSON<{
+    const raw = await readJSON<{
       version: number
-      entities: Entity[]
-      relations: Relation[]
-      canvas: CanvasState
+      entities: Record<string, unknown>[]
+      relations: Record<string, unknown>[]
+      canvas: Record<string, unknown>
     }>(graphFile)
+    const graph = migrateSnapshot(raw)
 
     const documents: Record<string, Record<string, unknown>> = {}
 
@@ -227,7 +229,10 @@ export async function restoreAutoSnapshot(
   try {
     const backupsDir = await rootHandle.getDirectoryHandle(BACKUPS_DIR)
     const autoDir = await backupsDir.getDirectoryHandle("auto")
-    return getOrNull(autoDir, filename, readJSON<AutoBackupEntry>)
+    const raw = await getOrNull(autoDir, filename, readJSON<AutoBackupEntry>)
+    if (!raw) return null
+    const graph = migrateSnapshot(raw)
+    return { ...raw, entities: graph.entities, relations: graph.relations, canvas: graph.canvas }
   } catch {
     return null
   }

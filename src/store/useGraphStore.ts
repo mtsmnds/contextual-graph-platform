@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
-import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState, HistoryEntry, AutoBackupEntry } from "../types/graph";
+import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
@@ -11,10 +11,15 @@ let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
-function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relations: Relation[]; canvas?: CanvasState }): GraphSnapshot {
+export function migrateSnapshot(snapshot: {
+  version: number;
+  entities: Record<string, unknown>[];
+  relations: Record<string, unknown>[];
+  canvas?: Record<string, unknown>;
+}): GraphSnapshot {
   let entities = snapshot.entities
   let relations = snapshot.relations
-  let canvas: CanvasState = snapshot.canvas ?? { positions: {}, dimensions: {} }
+  let canvas: Record<string, unknown> = snapshot.canvas ?? {}
   let version = snapshot.version as number
 
   if (version < 2) {
@@ -33,22 +38,21 @@ function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relati
 
   if (version < 3) {
     entities = entities.map((e) => {
-      const old = e as Record<string, unknown>
-      const oldTitle = old.title as string | undefined
-      const oldContent = old.content as string | undefined
+      const oldTitle = e.title as string | undefined
+      const oldContent = e.content as string | undefined
 
       if (oldTitle && oldContent) {
         return {
           ...e,
           content: oldContent,
-          metadata: { ...e.metadata, title: oldTitle },
-        } as Entity
+          metadata: { ...(e.metadata as Record<string, unknown> ?? {}), title: oldTitle },
+        }
       }
       return {
         ...e,
         content: oldContent || oldTitle || "",
-      } as Entity
-    }) as Entity[]
+      }
+    })
     version = 3
   }
 
@@ -61,7 +65,32 @@ function migrateSnapshot(snapshot: { version: number; entities: Entity[]; relati
     canvas = { ...canvas, dimensions: {} }
   }
 
-  return { version: version as 4, entities, relations, canvas }
+  if (version < 5) {
+    const positions = (canvas.positions as Record<string, { x: number; y: number }>) ?? {}
+    const dimensions = (canvas.dimensions as Record<string, { width: number; height: number }>) ?? {}
+    entities = entities.map((e) => {
+      const id = e.id as string
+      const pos = positions[id]
+      const dim = dimensions[id]
+      return {
+        ...e,
+        canvasData: {
+          x: pos?.x ?? 0,
+          y: pos?.y ?? 0,
+          ...(dim ? { width: dim.width, height: dim.height } : {}),
+        },
+      }
+    })
+    canvas = { viewport: canvas.viewport }
+    version = 5
+  }
+
+  return {
+    version: version as 5,
+    entities: entities as unknown as Entity[],
+    relations: relations as unknown as Relation[],
+    canvas: canvas as unknown as CanvasState,
+  }
 }
 
 interface GraphStore {
@@ -88,7 +117,7 @@ interface GraphStore {
   redo: () => void;
   getAdapterHandle: () => FileSystemDirectoryHandle | null;
 
-  addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
+  addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => string;
@@ -107,17 +136,14 @@ interface GraphStore {
   clearContent: (id: string) => void;
   refreshFolderName: () => void;
 
-  setNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
-  setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
-  replaceCanvasPositions: (positions: Record<string, { x: number; y: number }>) => void;
-  setCanvasDimensions: (dimensions: Record<string, { width: number; height: number }>) => void;
+  applyMeasuredDimensions: (dimensions: Record<string, CanvasData>) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 }
 
 const storeInitializer = (set: any, get: any): GraphStore => ({
   entities: [],
   relations: [],
-  canvas: { positions: {}, dimensions: {} },
+  canvas: {},
   view: {
     focusedEntityId: null,
     anchorEntityId: null,
@@ -156,15 +182,16 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       const remappedEntities = migrated.entities.map((e) => {
         const isSeedCollision = SEED_DATA.entities.some((s) => s.id === e.id) && existingIds.has(e.id);
         if (!isSeedCollision) return e;
+        const currentEntity = currentEntities.find((ce) => ce.id === e.id);
         const suffix = slugify(e.content || e.kind);
-        let id = `${Date.now()}-${suffix}`;
+        let newId = `${Date.now()}-${suffix}`;
         let counter = 1;
-        while (existingIds.has(id)) {
-          id = `${Date.now()}-${suffix}-${counter++}`;
+        while (existingIds.has(newId)) {
+          newId = `${Date.now()}-${suffix}-${counter++}`;
         }
-        existingIds.add(id);
-        idMap.set(e.id, id);
-        return { ...e, id, updatedAt: Date.now() };
+        existingIds.add(newId);
+        idMap.set(e.id, newId);
+        return { ...e, id: newId, updatedAt: Date.now(), canvasData: currentEntity?.canvasData ?? e.canvasData };
       });
 
       for (const [oldId, newId] of idMap) {
@@ -177,14 +204,6 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         }
       }
 
-      const currentPositions = get().canvas.positions;
-      const positions = { ...migrated.canvas.positions };
-      for (const entity of remappedEntities) {
-        if (currentPositions[entity.id]) {
-          positions[entity.id] = currentPositions[entity.id];
-        }
-      }
-
       const relations = migrated.relations.map((r) => ({
         ...r,
         source: idMap.get(r.source) ?? r.source,
@@ -194,7 +213,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       set({
         entities: remappedEntities,
         relations,
-        canvas: { ...migrated.canvas, positions },
+        canvas: migrated.canvas,
         contentLoaded: Object.fromEntries(remappedEntities.filter((e) => e.kind === "container").map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
@@ -204,7 +223,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       });
 
       if (idMap.size > 0) {
-        adapter.saveGraph({ version: 4, entities: remappedEntities, relations, canvas: { ...migrated.canvas, positions } }).catch(() => {});
+        adapter.saveGraph({ version: 5, entities: remappedEntities, relations, canvas: migrated.canvas }).catch(() => {});
       }
     } else {
       const existingIds = new Set<string>()
@@ -236,17 +255,17 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       }
 
       const seedSnapshot: GraphSnapshot = {
-        version: 4,
+        version: 5,
         entities: seedEntities,
         relations: SEED_DATA.relations,
-        canvas: { positions: {}, dimensions: {} },
+        canvas: {},
       };
       adapter.saveGraph(seedSnapshot).catch(() => {});
 
       set({
         entities: seedEntities,
         relations: SEED_DATA.relations,
-        canvas: { positions: {}, dimensions: {} },
+        canvas: {},
         contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
@@ -270,6 +289,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         canvas: state.canvas,
         description,
         timestamp: Date.now(),
+        version: 5,
       };
       set({ _pendingSnapshot: snapshot, batchDepth: 1, lastMutationTime: Date.now() });
     } else {
@@ -314,6 +334,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       canvas: state.canvas,
       description: "Current state",
       timestamp: Date.now(),
+      version: 5,
     };
 
     set({
@@ -338,6 +359,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       canvas: state.canvas,
       description: "Current state",
       timestamp: Date.now(),
+      version: 5,
     };
 
     set({
@@ -353,7 +375,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     return _adapter?.getRootHandle?.() ?? null;
   },
 
-  addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown> }, parentId: string | null = null) => {
+  addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId: string | null = null) => {
     get().beginBatch("Create node");
     const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
     const siblingCount = parentId
@@ -369,6 +391,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       metadata: data?.metadata ?? {},
       createdAt: now,
       updatedAt: now,
+      canvasData: data?.canvasData ?? { x: 0, y: 0 },
     };
     set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
     get().endBatch();
@@ -396,7 +419,13 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => ({
       entities: state.entities.map((e) =>
         e.id === resolvedId
-          ? { ...e, ...data, metadata: { ...e.metadata, ...(data.metadata ?? {}) }, updatedAt: Date.now() }
+          ? {
+              ...e,
+              ...data,
+              canvasData: data.canvasData ? { ...e.canvasData, ...data.canvasData } : e.canvasData,
+              metadata: { ...e.metadata, ...(data.metadata ?? {}) },
+              updatedAt: Date.now(),
+            }
           : e,
       ),
     }));
@@ -504,9 +533,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     }));
   },
 
-  setCanvasDimensions: (dimensions: Record<string, { width: number; height: number }>) => {
+  applyMeasuredDimensions: (dimensions: Record<string, CanvasData>) => {
     set((state: GraphStore) => ({
-      canvas: { ...state.canvas, dimensions },
+      entities: state.entities.map((e) => {
+        const dim = dimensions[e.id];
+        if (!dim) return e;
+        if (e.canvasData.width != null && e.canvasData.height != null) return e;
+        return { ...e, canvasData: { ...e.canvasData, ...dim } };
+      }),
     }));
   },
 
@@ -553,6 +587,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
             metadata: { sourceContainer: id, label },
             createdAt: now,
             updatedAt: now,
+            canvasData: { x: 0, y: 0 },
           });
         }
       }
@@ -586,29 +621,6 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set({ folderName: name, adapterId });
   },
 
-  setNodePosition: (nodeId: string, position: { x: number; y: number }) => {
-    set((state: GraphStore) => ({
-      canvas: {
-        ...state.canvas,
-        positions: { ...state.canvas.positions, [nodeId]: position },
-      },
-    }));
-  },
-
-  setCanvasPositions: (positions: Record<string, { x: number; y: number }>) => {
-    set((state: GraphStore) => ({
-      canvas: { ...state.canvas, positions: { ...state.canvas.positions, ...positions } },
-    }));
-  },
-
-  replaceCanvasPositions: (positions: Record<string, { x: number; y: number }>) => {
-    get().beginBatch("Re-layout");
-    set((state: GraphStore) => ({
-      canvas: { ...state.canvas, positions },
-    }));
-    get().endBatch();
-  },
-
   setViewport: (viewport: { x: number; y: number; zoom: number }) => {
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, viewport },
@@ -628,7 +640,7 @@ useGraphStore.subscribe((state, prevState) => {
 
   saveTimer = setTimeout(async () => {
     const { entities, relations, canvas } = useGraphStore.getState();
-    const snapshot: GraphSnapshot = { version: 4, entities, relations, canvas };
+    const snapshot: GraphSnapshot = { version: 5, entities, relations, canvas };
     _adapter!.saveGraph(snapshot).catch((err) => {
       console.error("Failed to save graph:", err);
     });
@@ -647,7 +659,7 @@ useGraphStore.subscribe((state, prevState) => {
                 if (doc) documents[entity.id] = doc;
               }
             }
-            return { ...entry, documents };
+            return { ...entry, version: 5, documents };
           });
           persistAutoSnapshots(rootHandle, entries).catch(() => {});
         }

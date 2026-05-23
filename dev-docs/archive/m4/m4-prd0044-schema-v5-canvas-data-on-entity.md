@@ -1,5 +1,11 @@
 # m4-prd0044 — Schema v5: Canvas Data on Entity
 
+> **Completion note (2026-05-23):**
+> - **What was built:** Schema v5 migration — `canvasData: { x, y, width?, height? }` added to `Entity`, `CanvasState` stripped to `viewport` only. All position/dimension APIs removed (`setNodePosition`, `setCanvasPositions`, `replaceCanvasPositions`). Drag-end and resize-end create undo entries via `updateEntity({ canvasData })`. Auto-measurement uses non-tracked `applyMeasuredDimensions`. Backup restore passes through `migrateSnapshot` for v4 compat.
+> - **Key decisions:** Resize-end handler placed in `EntityNode.tsx` (not GraphCanvas) since React Flow's `NodeResizeControl` only has `onResizeEnd` inside the node component. `updateEntity` now merges `canvasData` with spread to avoid overwriting width/height on drag-only updates.
+> - **Deviations from plan:** `onNodeResizeEnd` moved from GraphCanvas to EntityNode. Metadata node position for new panels uses entity canvasData directly instead of a separate saved position lookup.
+> - **Postponed:** Nothing.
+
 ## Overview
 
 Move node positions and dimensions from a separate `canvas.positions`/`canvas.dimensions` map onto the entity itself as `canvasData`. This eliminates the persistent reconciliation gap between domain state and view state that has caused bugs in every feature touching positions — save, undo, restore, Cmd+drag. After this change, position IS part of the entity, and the existing snapshot-based undo/redo system captures it automatically.
