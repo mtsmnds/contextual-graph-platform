@@ -93,6 +93,8 @@ After auto-measurement, only user-initiated resize writes `canvasData.width`/`ca
 - If not set → write the measured values directly via non-tracked `set()`
 - Never create an undo entry
 
+**Edge case — partial dimensions:** The skip check uses `AND` (both width and height must already be set). This is correct because resize always sets both dimensions together. If a bug were to produce a partial state (width set but height missing), the `AND` condition would re-measure and overwrite — but that bug shouldn't exist. The implementation must ensure `canvasData` is always written atomically (both width and height set together or neither).
+
 ### 6. GraphCanvas Simplification
 
 **Before (current):** The `useEffect` reads `entities`, `relations`, `canvas.positions`, and `canvas.dimensions` as four separate slices. It merges positions from the canvas map onto React Flow nodes, reconciles dimensions separately, and has complex stale-node/vs-new-node logic.
