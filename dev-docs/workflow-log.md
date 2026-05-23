@@ -13,7 +13,7 @@ Append-only, newest on top within same-day groupings.
 - **User decision:** classification: Architecture change + Feature change
 - **Change classification:** Architecture change + Feature change
 - **ADR type:** full (schema v5, data model contract change)
-- **Commit hash:** (to be filled)
+- **Commit hash:** 1b3889a
 - **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
 
 ### prd start — m4-prd0044-schema-v5-canvas-data-on-entity
