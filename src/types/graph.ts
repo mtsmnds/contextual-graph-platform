@@ -43,6 +43,18 @@ type GraphSnapshot = {
   canvas: CanvasState;
 };
 
+type HistoryEntry = {
+  entities: Entity[];
+  relations: Relation[];
+  canvas: CanvasState;
+  description: string;
+  timestamp: number;
+};
+
+type AutoBackupEntry = HistoryEntry & {
+  documents: Record<string, Record<string, unknown>>;
+};
+
 export type {
   EntityKind,
   Entity,
@@ -50,4 +62,6 @@ export type {
   ViewState,
   GraphSnapshot,
   CanvasState,
+  HistoryEntry,
+  AutoBackupEntry,
 };

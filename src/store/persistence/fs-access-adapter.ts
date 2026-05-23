@@ -84,6 +84,10 @@ export class FSAccessAdapter implements PersistenceAdapter {
     return this.dirName
   }
 
+  getRootHandle(): FileSystemDirectoryHandle | null {
+    return this.dir
+  }
+
   private async getFile(name: string, subdir?: string): Promise<FileSystemFileHandle | null> {
     const dir = this.ensureDir()
     if (!dir) return null

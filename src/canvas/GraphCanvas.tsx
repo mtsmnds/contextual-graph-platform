@@ -25,6 +25,7 @@ import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import GraphContextMenu from "./GraphContextMenu"
+import WorkspaceMenu from "./panels/WorkspaceMenu"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
 import EdgeLabel from "./edges/EdgeLabel"
@@ -108,6 +109,8 @@ function GraphCanvasContent() {
         const prevById = new Map(prev.map((n) => [n.id, n]))
         const merged = [...prev]
 
+        const entityIdSet = new Set(entities.map((e) => e.id))
+
         for (const entity of entities) {
           const newContent = entity.content || entity.kind || entity.id
           const existing = prevById.get(entity.id)
@@ -154,9 +157,15 @@ function GraphCanvasContent() {
           }
         }
 
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const n = merged[i]
+          if (n.type === "entity" && !entityIdSet.has(n.id) && !n.id.startsWith("__ghost_")) {
+            merged.splice(i, 1)
+          }
+        }
+
         const metaNodeWidth = 260
         const metaEntityIds = new Set(visibleMetadataNodeIds)
-        const entityIdSet = new Set(entities.map((e) => e.id))
 
         for (let i = merged.length - 1; i >= 0; i--) {
           const n = merged[i]
@@ -209,6 +218,7 @@ function GraphCanvasContent() {
       setEdges((prev) => {
         const prevById = new Map(prev.map((e) => [e.id, e]))
         const merged = [...prev]
+        const relationIdSet = new Set(relations.map((r) => r.id))
 
         for (const rel of relations) {
           if (!prevById.has(rel.id)) {
@@ -221,6 +231,13 @@ function GraphCanvasContent() {
               label: rel.type,
               type: "edgelabel",
             })
+          }
+        }
+
+        for (let i = merged.length - 1; i >= 0; i--) {
+          const e = merged[i]
+          if (!e.id?.startsWith("meta-edge:") && !relationIdSet.has(e.id)) {
+            merged.splice(i, 1)
           }
         }
 
@@ -341,9 +358,12 @@ function GraphCanvasContent() {
 
   const onEdgesDelete = useCallback(
     (edgesToDelete: Edge[]) => {
+      const store = useGraphStore.getState()
+      store.beginBatch(`Delete ${edgesToDelete.length} edges`)
       for (const edge of edgesToDelete) {
-        useGraphStore.getState().removeRelation(edge.id)
+        store.removeRelation(edge.id)
       }
+      store.endBatch()
     },
     [],
   )
@@ -355,8 +375,11 @@ function GraphCanvasContent() {
 
   const onNodesDelete = useCallback(
     (deletedNodes: Node[]) => {
+      const store = useGraphStore.getState()
+      const count = deletedNodes.filter((n) => n.type === "entity").length
+      store.beginBatch(`Delete ${count} nodes`)
       for (const node of deletedNodes) {
-        useGraphStore.getState().deleteEntity(node.id)
+        store.deleteEntity(node.id)
       }
       setVisibleMetadataNodeIds((prev) => {
         const next = new Set(prev)
@@ -366,6 +389,7 @@ function GraphCanvasContent() {
         if (next.size === prev.size) return prev
         return next
       })
+      store.endBatch()
     },
     [],
   )
@@ -442,6 +466,7 @@ function GraphCanvasContent() {
         const ghostIds = new Set(dragState.originals.map((o) => `__ghost_${o.id}`))
 
         const store = useGraphStore.getState()
+        store.beginBatch(`Duplicate ${dragState.originals.length} nodes`)
         const positions = { ...store.canvas.positions }
 
         for (const orig of dragState.originals) {
@@ -455,6 +480,8 @@ function GraphCanvasContent() {
           store.setNodePosition(orig.id, orig.originalPosition)
           positions[orig.id] = orig.originalPosition
         }
+
+        store.endBatch()
 
         setNodes((nds) =>
           nds
@@ -505,6 +532,25 @@ function GraphCanvasContent() {
     el.addEventListener("dblclick", handler, { capture: true })
     return () => el.removeEventListener("dblclick", handler, { capture: true })
   }, [reactFlowInstance, createNode])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return
+
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod || e.key.toLowerCase() !== "z") return
+
+      e.preventDefault()
+      if (e.shiftKey) {
+        useGraphStore.getState().redo()
+      } else {
+        useGraphStore.getState().undo()
+      }
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [])
 
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent, node: Node) => {
@@ -601,10 +647,6 @@ function GraphCanvasContent() {
     }
   }, [contextMenu, entities, relations, setNodes, visibleMetadataNodeIds])
 
-  const onCreateNode = useCallback(() => {
-    createNodeAtCenter()
-  }, [createNodeAtCenter])
-
   const onOpenFolder = useCallback(async () => {
     const fsa = getFSAccessInstance()
     const picked = await fsa.initFromPicker()
@@ -633,51 +675,12 @@ function GraphCanvasContent() {
   const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
   const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
 
-  const __experimentalReLayout = false
-
-  const onRelayout = useCallback(() => {
-    const { entities, relations } = useGraphStore.getState()
-    const { nodes: relayouted, edges: relayoutedEdges } = getLayoutedElements({ entities, relations })
-    const dagrePositions = Object.fromEntries(relayouted.map((n) => [n.id, n.position]))
-    useGraphStore.getState().replaceCanvasPositions(dagrePositions)
-    setNodes(relayouted)
-    setEdges(relayoutedEdges)
-  }, [setNodes, setEdges])
-
-  const hydrated = useGraphStore((s) => s.hydrated)
-  const savedViewport = useGraphStore((s) => s.canvas.viewport)
-  const setViewport = useGraphStore((s) => s.setViewport)
-
-  const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
-  const [x, y, zoom] = transform
-
-  const viewportRestoredRef = useRef(false)
-  useEffect(() => {
-    if (!hydrated || viewportRestoredRef.current) return
-    viewportRestoredRef.current = true
-
-    if (savedViewport) {
-      reactFlowInstance.setViewport(savedViewport)
-    } else {
-      reactFlowInstance.fitView({ maxZoom: 1 })
-    }
-  }, [hydrated, savedViewport, reactFlowInstance])
-
-  const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    if (!viewportRestoredRef.current) return
-    if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
-    viewportTimerRef.current = setTimeout(() => {
-      setViewport({ x, y, zoom })
-    }, 500)
-    return () => {
-      if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
-    }
-  }, [x, y, zoom, setViewport])
-
   const onZoom100 = useCallback(() => {
     reactFlowInstance.zoomTo(1)
   }, [reactFlowInstance])
+
+  const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
+  const [x, y, zoom] = transform
 
   return (
     <ReactFlow
@@ -734,19 +737,7 @@ function GraphCanvasContent() {
         </div>
       </Panel>
       <Panel position="top-right">
-        <ButtonGroup>
-          <Button variant="outline" size="sm" onClick={onCreateNode}>
-            New Node
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            Open Folder
-          </Button>
-          {__experimentalReLayout && (
-            <Button variant="outline" size="sm" onClick={onRelayout}>
-              Re-layout
-            </Button>
-          )}
-        </ButtonGroup>
+        <WorkspaceMenu onOpenFolder={onOpenFolder} />
       </Panel>
       <GraphContextMenu
         open={contextMenu !== null}

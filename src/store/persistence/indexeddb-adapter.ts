@@ -51,4 +51,8 @@ export class IndexedDBAdapter implements PersistenceAdapter {
   getFolderName(): string | null {
     return null
   }
+
+  getRootHandle(): FileSystemDirectoryHandle | null {
+    return null
+  }
 }

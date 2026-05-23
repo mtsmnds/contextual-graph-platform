@@ -17,4 +17,5 @@ export interface PersistenceAdapter {
   saveDocument(id: string, data: Record<string, unknown>): Promise<void>
   deleteDocument(id: string): Promise<void>
   getFolderName(): string | null
+  getRootHandle?(): FileSystemDirectoryHandle | null
 }

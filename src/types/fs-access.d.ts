@@ -1,6 +1,15 @@
-interface FileSystemDirectoryHandle {
+interface FileSystemHandle {
+  readonly name: string
+  readonly kind: "file" | "directory"
+}
+
+interface FileSystemDirectoryHandle extends FileSystemHandle {
   queryPermission(descriptor?: { mode: "read" | "readwrite" }): Promise<PermissionState>
   requestPermission(descriptor?: { mode: "read" | "readwrite" }): Promise<PermissionState>
+  getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>
+  getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>
+  removeEntry(name: string, options?: { recursive?: boolean }): Promise<void>
+  values(): AsyncIterableIterator<FileSystemFileHandle | FileSystemDirectoryHandle>
 }
 
 interface Window {
@@ -11,7 +20,8 @@ interface FileSystemPickerOptions {
   mode?: "read" | "readwrite"
 }
 
-interface FileSystemFileHandle {
+interface FileSystemFileHandle extends FileSystemHandle {
+  getFile(): Promise<File>
   createWritable(options?: FileSystemCreateWritableOptions): Promise<FileSystemWritableFileStream>
 }
 

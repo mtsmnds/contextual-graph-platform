@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
-import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState } from "../types/graph";
+import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
+import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
 
 let _adapter: PersistenceAdapter | null = null;
@@ -73,7 +74,20 @@ interface GraphStore {
   folderName: string | null;
   hydrated: boolean;
 
+  undoStack: HistoryEntry[];
+  redoStack: HistoryEntry[];
+  batchDepth: number;
+  batchDescription: string;
+  _pendingSnapshot: HistoryEntry | null;
+  lastMutationTime: number;
+
   init: (adapter: PersistenceAdapter) => Promise<void>;
+  beginBatch: (description: string) => void;
+  endBatch: () => void;
+  undo: () => void;
+  redo: () => void;
+  getAdapterHandle: () => FileSystemDirectoryHandle | null;
+
   addEntity: (kind: EntityKind, data?: Partial<Entity>, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
@@ -88,6 +102,7 @@ interface GraphStore {
   closePanel: (entityId: string) => void;
 
   getContent: (id: string) => Record<string, unknown> | null;
+  loadContentDirect: (documents: Record<string, Record<string, unknown>>) => void;
   saveContent: (id: string, data: Record<string, unknown>) => void;
   clearContent: (id: string) => void;
   refreshFolderName: () => void;
@@ -113,6 +128,13 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   adapterId: null,
   folderName: null,
   hydrated: false,
+
+  undoStack: [],
+  redoStack: [],
+  batchDepth: 0,
+  batchDescription: "",
+  _pendingSnapshot: null,
+  lastMutationTime: 0,
 
   init: async (adapter: PersistenceAdapter) => {
     _adapter = adapter;
@@ -176,6 +198,9 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         contentLoaded: Object.fromEntries(remappedEntities.filter((e) => e.kind === "container").map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
+        undoStack: [],
+        redoStack: [],
+        batchDepth: 0,
       });
 
       if (idMap.size > 0) {
@@ -225,6 +250,9 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
+        undoStack: [],
+        redoStack: [],
+        batchDepth: 0,
       });
     }
 
@@ -232,7 +260,101 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set({ hydrated: true });
   },
 
+  beginBatch: (description: string) => {
+    const state = get() as GraphStore;
+    const depth = state.batchDepth;
+    if (depth === 0) {
+      const snapshot: HistoryEntry = {
+        entities: state.entities,
+        relations: state.relations,
+        canvas: state.canvas,
+        description,
+        timestamp: Date.now(),
+      };
+      set({ _pendingSnapshot: snapshot, batchDepth: 1, lastMutationTime: Date.now() });
+    } else {
+      set({ batchDepth: depth + 1, lastMutationTime: Date.now() });
+    }
+  },
+
+  endBatch: () => {
+    const state = get() as GraphStore;
+    const depth = state.batchDepth;
+    if (depth <= 0) return;
+
+    if (depth === 1) {
+      const snapshot = state._pendingSnapshot;
+      if (snapshot) {
+        set({
+          undoStack: [...state.undoStack.slice(-49), snapshot].length > 50
+            ? [...state.undoStack.slice(-49), snapshot]
+            : [...state.undoStack, snapshot],
+          redoStack: [],
+          batchDepth: 0,
+          _pendingSnapshot: null,
+        });
+      } else {
+        set({ batchDepth: 0, redoStack: [] });
+      }
+    } else {
+      set({ batchDepth: depth - 1 });
+    }
+  },
+
+  undo: () => {
+    const state = get() as GraphStore;
+    if (state.undoStack.length === 0) return;
+
+    const newUndo = [...state.undoStack];
+    const entry = newUndo.pop()!;
+
+    const currentSnapshot: HistoryEntry = {
+      entities: state.entities,
+      relations: state.relations,
+      canvas: state.canvas,
+      description: "Current state",
+      timestamp: Date.now(),
+    };
+
+    set({
+      entities: entry.entities,
+      relations: entry.relations,
+      canvas: entry.canvas,
+      undoStack: newUndo,
+      redoStack: [...state.redoStack, currentSnapshot],
+    });
+  },
+
+  redo: () => {
+    const state = get() as GraphStore;
+    if (state.redoStack.length === 0) return;
+
+    const newRedo = [...state.redoStack];
+    const entry = newRedo.pop()!;
+
+    const currentSnapshot: HistoryEntry = {
+      entities: state.entities,
+      relations: state.relations,
+      canvas: state.canvas,
+      description: "Current state",
+      timestamp: Date.now(),
+    };
+
+    set({
+      entities: entry.entities,
+      relations: entry.relations,
+      canvas: entry.canvas,
+      undoStack: [...state.undoStack, currentSnapshot],
+      redoStack: newRedo,
+    });
+  },
+
+  getAdapterHandle: () => {
+    return _adapter?.getRootHandle?.() ?? null;
+  },
+
   addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown> }, parentId: string | null = null) => {
+    get().beginBatch("Create node");
     const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
     const siblingCount = parentId
       ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
@@ -249,12 +371,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       updatedAt: now,
     };
     set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
+    get().endBatch();
     return id;
   },
 
   updateEntity: (id: string, data: Partial<Entity>) => {
+    get().beginBatch("Edit node");
     const current = get().entities.find((e: Entity) => e.id === id);
-    if (!current) return;
+    if (!current) { get().endBatch(); return; }
 
     let resolvedId = id;
     if (data.id && data.id !== id) {
@@ -276,30 +400,38 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
           : e,
       ),
     }));
+    get().endBatch();
   },
 
   deleteEntity: (id: string) => {
+    get().beginBatch("Delete node");
     delete contentCache[id];
     _adapter?.deleteDocument(id).catch(() => {});
     set((state: GraphStore) => ({
       entities: state.entities.filter((e) => e.id !== id),
       relations: state.relations.filter((r) => r.source !== id && r.target !== id),
     }));
+    get().endBatch();
   },
 
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => {
+    get().beginBatch("Connect nodes");
     const id = `r_${Date.now()}`;
     const order = sortOrder ?? generateKeyBetween(null, null);
     const relation: Relation = { id, source, target, type, sortOrder: order, metadata: metadata ?? {} };
     set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
+    get().endBatch();
     return id;
   },
 
   removeRelation: (id: string) => {
+    get().beginBatch("Delete edge");
     set((state: GraphStore) => ({ relations: state.relations.filter((r) => r.id !== id) }));
+    get().endBatch();
   },
 
   updateRelation: (id: string, patch: Partial<Relation>) => {
+    get().beginBatch("Edit edge");
     set((state: GraphStore) => ({
       relations: state.relations.map((r) =>
         r.id === id
@@ -307,6 +439,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
           : r,
       ),
     }));
+    get().endBatch();
   },
 
   getEdgesForNode: (id: string, direction: "in" | "out" | "both" = "both") => {
@@ -362,6 +495,15 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     return contentCache[id] ?? null;
   },
 
+  loadContentDirect: (documents: Record<string, Record<string, unknown>>) => {
+    for (const [id, data] of Object.entries(documents)) {
+      contentCache[id] = data;
+    }
+    set((state: GraphStore) => ({
+      contentLoaded: { ...state.contentLoaded, ...Object.fromEntries(Object.keys(documents).map((k) => [k, true])) },
+    }));
+  },
+
   setCanvasDimensions: (dimensions: Record<string, { width: number; height: number }>) => {
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, dimensions },
@@ -377,7 +519,6 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       console.error("Failed to save content:", err);
     });
 
-    // Reconciliation: sync annotation entities with passageAnchor marks in the document
     const found = new Map<string, string>();
     function walk(node: Record<string, unknown>) {
       if (node.marks && Array.isArray(node.marks)) {
@@ -461,9 +602,11 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   replaceCanvasPositions: (positions: Record<string, { x: number; y: number }>) => {
+    get().beginBatch("Re-layout");
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, positions },
     }));
+    get().endBatch();
   },
 
   setViewport: (viewport: { x: number; y: number; zoom: number }) => {
@@ -483,11 +626,32 @@ useGraphStore.subscribe((state, prevState) => {
 
   if (saveTimer) clearTimeout(saveTimer);
 
-  saveTimer = setTimeout(() => {
+  saveTimer = setTimeout(async () => {
     const { entities, relations, canvas } = useGraphStore.getState();
     const snapshot: GraphSnapshot = { version: 4, entities, relations, canvas };
     _adapter!.saveGraph(snapshot).catch((err) => {
       console.error("Failed to save graph:", err);
     });
+
+    const currentState = useGraphStore.getState();
+    if (Date.now() - currentState.lastMutationTime >= 2000) {
+      const rootHandle = _adapter?.getRootHandle?.() ?? null;
+      if (rootHandle) {
+        const recentEntries = currentState.undoStack.slice(-10);
+        if (recentEntries.length > 0) {
+          const entries: AutoBackupEntry[] = recentEntries.map((entry) => {
+            const documents: Record<string, Record<string, unknown>> = {};
+            for (const entity of entry.entities) {
+              if (entity.kind === "container") {
+                const doc = contentCache[entity.id];
+                if (doc) documents[entity.id] = doc;
+              }
+            }
+            return { ...entry, documents };
+          });
+          persistAutoSnapshots(rootHandle, entries).catch(() => {});
+        }
+      }
+    }
   }, 300);
 });
