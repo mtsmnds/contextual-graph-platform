@@ -45,125 +45,47 @@ The Tiptap editor and its reading viewport infrastructure live under `/tiptap-ed
 
 ## Phase II — Graph Canvas
 
-### II.5 Define core data types in MongoDB
+### ~~II.5 Define core data types in MongoDB~~ — MongoDB deferred (see I.4). Schema changes (`sortOrder` on Relation, `createdAt`/`updatedAt` on Entity) implemented directly in Zustand store + `src/types/graph.ts`. Field renames (source→sourceId, type→relationType, metadata→meta) were not done — existing field names preserved.
 
-Mapping from the existing `Entity`/`Relation` types to the proposed schema:
+### ~~II.6 Data API layer~~ — not implemented as a separate `data-api.ts` module. `src/engine/queries.ts` handles query functions (`queryThread`, `getContainerChildren`, etc.) and the Zustand store handles CRUD directly (auto-sync to persistence adapter). No wrapping abstraction needed at this scale.
 
-```
-// Current (src/types/graph.ts)
-Entity  → { id, kind, title?, content?, metadata }
-Relation → { id, source, target, type, metadata }
+### ✅ II.7 Install React Flow, render static graph — done (PRD0026)
 
-// Proposed (extends current)
-Entity  → { id, kind, content?, meta (was metadata), createdAt, updatedAt }
-Relation → { id, sourceId (was source), targetId (was target),
-             relationType (was type), sortOrder (new), meta (was metadata) }
-```
+### ✅ II.8 Node and edge CRUD via React Flow — done (PRD0027, PRD0028a, PRD0028b). All mutations go through Zustand store actions. React Flow is a view, not source of truth.
 
-Key additions:
-- `sortOrder` on relations — enables ordered threads (paragraph order, chapter sequence)
-- `createdAt`/`updatedAt` on entities — enables sync and conflict resolution
-- UUID-based IDs (already the direction — current `generateUniqueId` produces semantic IDs; UUIDs make them stable across renames)
+### ✅ II.9 Implement queryThread — done as part of PRD0025 (schema + sortOrder + queryThread). Implemented in `src/engine/queries.ts`.
 
-**Decision needed:** Replace the existing types or extend them? `sortOrder` is the only structural gap.
+### ~~II.10 Thread view component~~ — moved to i2 (m7+)
 
-### II.6 Data API layer
+~~A vertical list component that renders the output of `queryThread`. Each block shows:~~
 
-A plain module (`src/engine/data-api.ts`), zero React imports. Wraps the store + persistence adapter behind a stable interface:
+~~1. **Node content** — plain text for now (Tiptap integration deferred to after m3 converges)~~
+~~2. **Metadata strip** — node ID (truncated), entity kind, edge count (number of other relations this node has)~~
+~~3. **Inline inspector** — clicking edge count expands to show all relations for this node~~
 
-```ts
-createNode(kind, content, meta?): string        // returns UUID
-updateNode(id, patch: Partial<Entity>): void     // partial update, bumps updatedAt
-deleteNode(id): void                              // cascades to edges
-createEdge(sourceId, targetId, relationType, sortOrder?): string
-deleteEdge(id): void
-getEdgesForNode(id, direction?: "in" | "out" | "both"): Relation[]
-queryThread(filter: { target: string; relationType: string }): Entity[]
-```
+~~Mount this as a panel alongside (or replacing) the React Flow canvas. Both are views of the same graph.~~
 
-`queryThread` is the foundation of the thread view:
-1. Find all edges where `target = filter.target AND type = filter.relationType`
-2. Sort by `edge.sortOrder`
-3. Return the source entities in that order
+### ~~II.11 Query builder UI~~ — moved to i2 (m7+)
 
-This API is CRUD-complete for the graph. Every UI operation (React Flow, thread view, query builder) goes through this layer.
+~~Dead simple — no query language:~~
 
-### II.7 Install React Flow, render static graph
+~~- **Dropdown 1:** Select target node (populated from all entities in the store)~~
+~~- **Dropdown 2:** Select relation type (populated from all distinct `relationType` values)~~
+~~- **Button:** "Show Thread" → calls `queryThread`, renders thread view~~
 
-Install `@xyflow/react` (already in package.json, stripped after PRD0015). Render nodes for every entity and edges for every relation. No interaction yet — just verify the graph renders.
+~~This is the primary user interaction: changing one dropdown switches between "book content" and "book notes" on the same target.~~
 
-Use Dagre for auto-layout (already in package.json as `@dagrejs/dagre`).
+### ~~II.12 Highlight active thread in the graph~~ — moved to i2 (m7+)
 
-### II.8 Node and edge CRUD via React Flow
-
-All mutations go through the data API (step II.6), not React Flow's internal state. React Flow is a view, not the source of truth.
-
-| Action | Gesture | Behavior |
-|--------|---------|----------|
-| Add node | Double-click empty space | Creates entity, opens inline edit for kind + content |
-| Edit node | Double-click existing node | Inline edit fields (kind, content, meta) |
-| Delete node | Select + Backspace, or right-click menu | Calls `deleteNode(id)` — cascades to all edges |
-| Add edge | Drag from handle to node | Prompts for `relationType`, assigns next `sortOrder` |
-| Edit edge | Click edge label | Inline edit for relationType and sortOrder |
-| Delete edge | Select + Backspace | Calls `deleteEdge(id)` |
-
-Edge labels are always visible (no hover state). Exposing the graph is a design principle.
-
-### II.9 Implement queryThread
-
-The function from step II.6, implemented and tested independently. Key behaviors:
-
-- `queryThread({ target: "book-moby-dick", relationType: "content" })` → all content paragraphs in order
-- `queryThread({ target: "book-moby-dick", relationType: "note" })` → all notes about the book
-- Returns `Entity[]` — the same type as any other entity, so rendering is uniform
-- Zero-knowledge about what the caller will render — pure data
-
-### II.10 Thread view component
-
-A vertical list component that renders the output of `queryThread`. Each block shows:
-
-1. **Node content** — plain text for now (Tiptap integration deferred to after m3 converges)
-2. **Metadata strip** — node ID (truncated), entity kind, edge count (number of other relations this node has)
-3. **Inline inspector** — clicking edge count expands to show all relations for this node
-
-Mount this as a panel alongside (or replacing) the React Flow canvas. Both are views of the same graph.
-
-### II.11 Query builder UI
-
-Dead simple — no query language:
-
-- **Dropdown 1:** Select target node (populated from all entities in the store)
-- **Dropdown 2:** Select relation type (populated from all distinct `relationType` values)
-- **Button:** "Show Thread" → calls `queryThread`, renders thread view
-
-This is the primary user interaction: changing one dropdown switches between "book content" and "book notes" on the same target.
-
-### II.12 Highlight active thread in the graph
-
-When a thread is shown in the thread view, the corresponding nodes and edges are highlighted in the React Flow canvas. This bridges the two views — the user sees the thread as a list and the same data highlighted in the graph.
+~~When a thread is shown in the thread view, the corresponding nodes and edges are highlighted in the React Flow canvas. This bridges the two views — the user sees the thread as a list and the same data highlighted in the graph.~~
 
 ---
 
-## Dependencies & Sequencing
+~~## Dependencies & Sequencing~~ — all implemented items completed. Remaining items (II.10–II.12) moved to i2.
 
-```
-Phase I:
-  I.1 ──→ I.2 ──→ I.3 ──→ I.4 (deferred to Later, or parallel)
-
-Phase II:
-  II.5 ──→ II.6 ──→ II.7 ──→ II.8
-                                   \
-                                    ──→ II.9 ──→ II.10 ──→ II.11 ──→ II.12
-```
-
-II.7 and II.8 can proceed independently once II.6 is stable. II.9–II.12 are sequential.
-
----
-
-## Open Decisions
-
-1. **MongoDB vs. DexieJS** — server vs. local vs. embedded. See review question #1.
-2. **Schema evolution** — extend existing `Entity`/`Relation` types or create new `Node`/`Edge` types?
-3. **`sortOrder` scope** — universal on all relation types, or specific to ordering relations?
-4. **Tiptap in thread view** — plain text blocks first, editor swap later, or wire Tiptap from the start?
-5. **Data API vs. store** — wrapper around Zustand or standalone query layer that bypasses it?
+~~## Open Decisions~~ — all resolved:
+1. ~~MongoDB vs. DexieJS~~ → DexieJS kept. MongoDB not needed at current scale.
+2. ~~Schema evolution~~ → Existing `Entity`/`Relation` types extended (not replaced). `sortOrder` and `createdAt`/`updatedAt` added.
+3. ~~`sortOrder` scope~~ → Universal on all relation types, using fractional indexing.
+4. ~~Tiptap in thread view~~ → Deferred to i2. Plain text first.
+5. ~~Data API vs. store~~ → Zustand store handles CRUD directly. Query functions in `src/engine/queries.ts`. No separate data-api layer.
