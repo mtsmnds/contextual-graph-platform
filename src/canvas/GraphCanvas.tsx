@@ -29,9 +29,10 @@ import GraphContextMenu from "./GraphContextMenu"
 import WorkspaceMenu from "./panels/WorkspaceMenu"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
+import ContainerGroupNode from "./nodes/ContainerGroupNode"
 import EdgeLabel from "./edges/EdgeLabel"
 
-const nodeTypes = { entity: EntityNode, metadata: MetadataNode }
+const nodeTypes = { entity: EntityNode, metadata: MetadataNode, containerGroup: ContainerGroupNode }
 const edgeTypes = { edgelabel: EdgeLabel }
 
 function GraphCanvasContent() {
@@ -43,20 +44,40 @@ function GraphCanvasContent() {
   const layoutRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   if (layoutRef.current === null) {
     if (__experimentalNoDagre) {
-      const nodes: Node[] = entities.map((entity, idx) => {
+      const nodes: Node[] = []
+
+      for (const entity of entities) {
         const content = entity.content || entity.type || entity.id
         const saved = entity.canvasData
+        const isContainer = entity.type === "container"
         const position: { x: number; y: number } = saved.x !== undefined && saved.y !== undefined
           ? { x: saved.x, y: saved.y }
-          : { x: (idx % 6) * 220 + 50, y: Math.floor(idx / 6) * 120 + 50 }
-        return {
+          : { x: (nodes.length % 6) * 220 + 50, y: Math.floor(nodes.length / 6) * 120 + 50 }
+
+        const node: Node = {
           id: entity.id,
-          type: "entity",
+          type: isContainer ? "containerGroup" : "entity",
           position,
           data: { content, type: entity.type, id: entity.id },
-          style: { width: saved.width ?? 200 },
+          style: { width: saved.width ?? (isContainer ? 400 : 200) },
           ...(saved.width != null && saved.height != null ? { width: saved.width, height: saved.height } : {}),
         }
+
+        if (entity.parentId) {
+          node.parentId = entity.parentId
+          node.extent = "parent"
+          node.expandParent = true
+        }
+
+        nodes.push(node)
+      }
+
+      // Parent-first ordering: container nodes before their children
+      nodes.sort((a, b) => {
+        const aIsChild = !!a.parentId
+        const bIsChild = !!b.parentId
+        if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
+        return 0
       })
       const edges: Edge[] = relations.map((rel) => ({
         id: rel.id,
@@ -115,27 +136,40 @@ function GraphCanvasContent() {
 
             const posChanged = existing.position.x !== entity.canvasData.x || existing.position.y !== entity.canvasData.y
             const contentChanged = existing.data.content !== newContent || existing.data.type !== entity.type
+            const parentChanged = (existing.parentId ?? undefined) !== (entity.parentId ?? undefined)
+            const typeChanged = existing.type !== (entity.type === "container" ? "containerGroup" : "entity")
             const w = entity.canvasData.width
 
-            if (posChanged || contentChanged || w != null) {
+            if (posChanged || contentChanged || parentChanged || typeChanged || w != null) {
               merged[idx] = {
                 ...merged[idx],
+                type: entity.type === "container" ? "containerGroup" : "entity",
                 position: { x: entity.canvasData.x, y: entity.canvasData.y },
                 data: { ...merged[idx].data, content: newContent, type: entity.type },
-                style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? 200 },
+                parentId: entity.parentId ?? undefined,
+                extent: entity.parentId ? "parent" : undefined,
+                expandParent: entity.parentId ? true : undefined,
+                style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? (entity.type === "container" ? 400 : 200) },
               }
             }
           } else {
             const position = { x: entity.canvasData.x, y: entity.canvasData.y }
+            const isContainer = entity.type === "container"
             const newNode: Node = {
               id: entity.id,
-              type: "entity",
+              type: isContainer ? "containerGroup" : "entity",
               position,
               data: { content: newContent, type: entity.type, id: entity.id },
-              style: { width: entity.canvasData.width ?? 200 },
+              style: { width: entity.canvasData.width ?? (isContainer ? 400 : 200) },
               ...(entity.canvasData.width != null && entity.canvasData.height != null
                 ? { width: entity.canvasData.width, height: entity.canvasData.height }
                 : {}),
+            }
+
+            if (entity.parentId) {
+              newNode.parentId = entity.parentId
+              newNode.extent = "parent"
+              newNode.expandParent = true
             }
 
             const pending = pendingNodeRef.current
@@ -150,7 +184,7 @@ function GraphCanvasContent() {
 
         for (let i = merged.length - 1; i >= 0; i--) {
           const n = merged[i]
-          if (n.type === "entity" && !entityIdSet.has(n.id) && !n.id.startsWith("__ghost_")) {
+          if ((n.type === "entity" || n.type === "containerGroup") && !entityIdSet.has(n.id) && !n.id.startsWith("__ghost_")) {
             merged.splice(i, 1)
           }
         }
@@ -199,6 +233,14 @@ function GraphCanvasContent() {
             })
           }
         }
+
+        // Parent-first ordering: containers before their children
+        merged.sort((a, b) => {
+          const aIsChild = !!a.parentId
+          const bIsChild = !!b.parentId
+          if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
+          return 0
+        })
 
         return merged
       })
@@ -483,6 +525,20 @@ function GraphCanvasContent() {
     pendingNodeRef.current = id
   }, [])
 
+  const createContainerNode = useCallback((position: { x: number; y: number }) => {
+    const id = useGraphStore.getState().addEntity("container", {
+      canvasData: { x: position.x, y: position.y, width: 400, height: 300 },
+    })
+    pendingNodeRef.current = id
+  }, [])
+
+  const createChildNode = useCallback((parentId: string, position: { x: number; y: number }) => {
+    const id = useGraphStore.getState().addEntity("segment", {
+      canvasData: { x: position.x, y: position.y },
+    }, parentId)
+    pendingNodeRef.current = id
+  }, [])
+
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent) => {
       if (keyboardMoveTimerRef.current) {
@@ -564,6 +620,40 @@ function GraphCanvasContent() {
         }
         s.endBatch()
       }
+
+      // Drag-to-assign: check if any moved node landed in a container
+      for (const node of allNodes) {
+        if (node.type !== "entity") continue
+        const containerNodes = allNodes.filter((n) => n.type === "containerGroup")
+        for (const container of containerNodes) {
+          const cw = (container.measured?.width ?? container.width ?? 400) as number
+          const ch = (container.measured?.height ?? container.height ?? 300) as number
+          if (
+            node.position.x >= container.position.x &&
+            node.position.x <= container.position.x + cw &&
+            node.position.y >= container.position.y &&
+            node.position.y <= container.position.y + ch &&
+            node.id !== container.id
+          ) {
+            const entity = s.entities.find((e) => e.id === node.id)
+            // Only assign if not already a child of this container
+            if (entity && entity.parentId !== container.id) {
+              const relativeX = node.position.x - container.position.x
+              const relativeY = node.position.y - container.position.y
+              s.updateEntity(node.id, {
+                parentId: container.id,
+                canvasData: {
+                  x: relativeX,
+                  y: relativeY,
+                  width: entity.canvasData.width,
+                  height: entity.canvasData.height,
+                },
+              })
+            }
+            break
+          }
+        }
+      }
     },
     [reactFlowInstance, setNodes],
   )
@@ -583,9 +673,32 @@ function GraphCanvasContent() {
     if (!el) return
     const handler = (e: MouseEvent) => {
       const el = e.target as HTMLElement
-      if (el.closest(".react-flow__node")) return
       if (el.closest(".react-flow__edge-label")) return
       if (el.closest(".react-flow__edge")) return
+
+      // Container child area: create child node (header stops its own propagation)
+      const containerEl = el.closest<HTMLElement>(".react-flow__node-containerGroup")
+      if (containerEl) {
+        if (el.closest("header")) return
+        const containerId = containerEl.getAttribute("data-id")
+        if (!containerId) return
+        const containerNode = reactFlowInstance.getNode(containerId)
+        if (!containerNode) return
+        const position = reactFlowInstance.screenToFlowPosition({
+          x: e.clientX,
+          y: e.clientY,
+        })
+        const relativePos = {
+          x: position.x - containerNode.position.x,
+          y: position.y - containerNode.position.y,
+        }
+        createChildNode(containerId, relativePos)
+        return
+      }
+
+      // Any other node: skip (handles its own double-click)
+      if (el.closest(".react-flow__node")) return
+
       const position = reactFlowInstance.screenToFlowPosition({
         x: e.clientX,
         y: e.clientY,
@@ -653,42 +766,92 @@ function GraphCanvasContent() {
       })
     }
     switch (contextMenu.type) {
-      case "node":
-        return [
-          {
+      case "node": {
+        const node = contextMenu.nodeId
+          ? nodes.find((n) => n.id === contextMenu.nodeId)
+          : undefined
+        const isContainer = node?.type === "containerGroup"
+        const isChild = !!node?.parentId
+        const items = []
+
+        if (!isContainer) {
+          items.push({
             label: visibleMetadataNodeIds.has(contextMenu.nodeId!) ? "Metadata: Visible" : "Metadata: Hidden",
             action: () => {
               if (contextMenu.nodeId) toggleMetadata(contextMenu.nodeId)
             },
-          },
-          {
-            label: "Edit",
+          })
+        }
+
+        if (isContainer) {
+          items.push({
+            label: "Add Child Node",
             action: () => {
               if (contextMenu.nodeId) {
-                setNodes((nds) =>
-                  nds.map((n) =>
-                    n.id === contextMenu.nodeId
-                      ? { ...n, data: { ...n.data, editTrigger: ((n.data.editTrigger as number) ?? 0) + 1 } }
-                      : n,
-                  ),
-                )
+                const id = useGraphStore.getState().addEntity("segment", {
+                  canvasData: { x: 20, y: 60 },
+                }, contextMenu.nodeId)
+                pendingNodeRef.current = id
               }
             },
-          },
-          {
-            label: "Delete",
+          })
+        }
+
+        if (isChild) {
+          items.push({
+            label: "Detach from Group",
             action: () => {
               if (contextMenu.nodeId) {
-                setVisibleMetadataNodeIds((prev) => {
-                  const next = new Set(prev)
-                  next.delete(contextMenu.nodeId!)
-                  return next
+                const s = useGraphStore.getState()
+                const entity = s.entities.find((e) => e.id === contextMenu.nodeId)
+                const parentNode = entity?.parentId ? nodes.find((n) => n.id === entity.parentId) : undefined
+                const absoluteX = (entity?.canvasData.x ?? 0) + (parentNode?.position.x ?? 0)
+                const absoluteY = (entity?.canvasData.y ?? 0) + (parentNode?.position.y ?? 0)
+                s.updateEntity(contextMenu.nodeId, {
+                  parentId: undefined,
+                  canvasData: {
+                    x: absoluteX,
+                    y: absoluteY,
+                    width: entity?.canvasData.width,
+                    height: entity?.canvasData.height,
+                  },
                 })
-                useGraphStore.getState().deleteEntity(contextMenu.nodeId)
               }
             },
+          })
+        }
+
+        items.push({
+          label: "Edit",
+          action: () => {
+            if (contextMenu.nodeId) {
+              setNodes((nds) =>
+                nds.map((n) =>
+                  n.id === contextMenu.nodeId
+                    ? { ...n, data: { ...n.data, editTrigger: ((n.data.editTrigger as number) ?? 0) + 1 } }
+                    : n,
+                ),
+              )
+            }
           },
-        ]
+        })
+
+        items.push({
+          label: "Delete",
+          action: () => {
+            if (contextMenu.nodeId) {
+              setVisibleMetadataNodeIds((prev) => {
+                const next = new Set(prev)
+                next.delete(contextMenu.nodeId!)
+                return next
+              })
+              useGraphStore.getState().deleteEntity(contextMenu.nodeId)
+            }
+          },
+        })
+
+        return items
+      }
       case "edge":
         return [
           {
@@ -706,9 +869,19 @@ function GraphCanvasContent() {
             label: "New Node",
             action: () => createNodeAtCenter(),
           },
+          {
+            label: "New Group",
+            action: () => {
+              const viewport = reactFlowInstance.screenToFlowPosition({
+                x: contextMenu.x,
+                y: contextMenu.y,
+              })
+              createContainerNode(viewport)
+            },
+          },
         ]
     }
-  }, [contextMenu, entities, relations, setNodes, visibleMetadataNodeIds])
+  }, [contextMenu, setNodes, visibleMetadataNodeIds, nodes])
 
   const onOpenFolder = useCallback(async () => {
     const fsa = getFSAccessInstance()

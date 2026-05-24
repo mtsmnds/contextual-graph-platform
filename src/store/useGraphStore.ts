@@ -396,6 +396,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const entity: Entity = {
       id,
       type,
+      parentId: parentId || undefined,
       content,
       metadata: data?.metadata ?? {},
       createdAt: now,
@@ -445,11 +446,36 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     get().beginBatch("Delete node");
     delete contentCache[id];
     _adapter?.deleteDocument(id).catch(() => {});
-    set((state: GraphStore) => ({
-      entities: state.entities.filter((e) => e.id !== id),
-      relations: state.relations.filter((r) => r.source !== id && r.target !== id),
-    }));
-    get().endBatch();
+
+    const deletedEntity = get().entities.find((e: Entity) => e.id === id);
+
+    set((state: GraphStore) => {
+      let entities = state.entities.filter((e) => e.id !== id);
+
+      // Cascade: reparent children of deleted container
+      if (deletedEntity?.type === "container") {
+        entities = entities.map((e) => {
+          if (e.parentId === id) {
+            return {
+              ...e,
+              parentId: undefined,
+              canvasData: {
+                ...e.canvasData,
+                x: e.canvasData.x + deletedEntity.canvasData.x,
+                y: e.canvasData.y + deletedEntity.canvasData.y,
+              },
+            }
+          }
+          return e
+        })
+      }
+
+      return {
+        entities,
+        relations: state.relations.filter((r) => r.source !== id && r.target !== id),
+      }
+    })
+    get().endBatch()
   },
 
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => {

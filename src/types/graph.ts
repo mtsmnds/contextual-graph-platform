@@ -15,6 +15,7 @@ type CanvasData = {
 type Entity = {
   id: string;
   type: EntityType;
+  parentId?: string;
   content: string;
   metadata: Record<string, unknown>;
   createdAt: number;

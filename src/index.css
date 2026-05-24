@@ -334,5 +334,17 @@ body {
   cursor: default;
 }
 
+.react-flow__node-containerGroup {
+  & .container-group-node {
+    height: 100%;
+  }
+
+  & .container-child-area {
+    background: hsl(var(--accent) / 0.15);
+    min-height: 60px;
+    flex: 1;
+  }
+}
+
 
 
