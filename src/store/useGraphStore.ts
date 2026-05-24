@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
-import type { Entity, EntityKind, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
+import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
@@ -85,6 +85,15 @@ export function migrateSnapshot(snapshot: {
     version = 5
   }
 
+  // v5 data may still have "kind" from pre-rename. Normalize to "type".
+  entities = entities.map((e) => {
+    if ("kind" in e && !("type" in e)) {
+      const { kind, ...rest } = e
+      return { ...rest, type: kind }
+    }
+    return e
+  })
+
   return {
     version: version as 5,
     entities: entities as unknown as Entity[],
@@ -117,7 +126,7 @@ interface GraphStore {
   redo: () => void;
   getAdapterHandle: () => FileSystemDirectoryHandle | null;
 
-  addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId?: string | null) => string;
+  addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId?: string | null) => string;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => string;
@@ -169,7 +178,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
     if (workspace) {
       const migrated = migrateSnapshot(workspace);
-      const containerEntities = migrated.entities.filter((e) => e.kind === "container");
+      const containerEntities = migrated.entities.filter((e) => e.type === "container");
       for (const entity of containerEntities) {
         const doc = await adapter.loadDocument(entity.id).catch(() => null);
         if (doc) contentCache[entity.id] = doc;
@@ -183,7 +192,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         const isSeedCollision = SEED_DATA.entities.some((s) => s.id === e.id) && existingIds.has(e.id);
         if (!isSeedCollision) return e;
         const currentEntity = currentEntities.find((ce) => ce.id === e.id);
-        const suffix = slugify(e.content || e.kind);
+        const suffix = slugify(e.content || e.type);
         let newId = `${Date.now()}-${suffix}`;
         let counter = 1;
         while (existingIds.has(newId)) {
@@ -214,7 +223,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         entities: remappedEntities,
         relations,
         canvas: migrated.canvas,
-        contentLoaded: Object.fromEntries(remappedEntities.filter((e) => e.kind === "container").map((e) => [e.id, true])),
+        contentLoaded: Object.fromEntries(remappedEntities.filter((e) => e.type === "container").map((e) => [e.id, true])),
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
         undoStack: [],
@@ -231,7 +240,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       const now = Date.now()
 
       const seedEntities = SEED_DATA.entities.map((e) => {
-        const suffix = e.content ? slugify(e.content) : e.kind
+        const suffix = e.content ? slugify(e.content) : e.type
         let id = `${now}-${suffix}`
         let counter = 1
         while (existingIds.has(id)) {
@@ -242,9 +251,9 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         return { ...e, id, createdAt: now, updatedAt: now }
       })
 
-      const containerEntities = seedEntities.filter((e) => e.kind === "container")
+      const containerEntities = seedEntities.filter((e) => e.type === "container")
 
-      for (const entity of SEED_DATA.entities.filter((e) => e.kind === "container")) {
+      for (const entity of SEED_DATA.entities.filter((e) => e.type === "container")) {
         const newId = idMap.get(entity.id)
         if (!newId) continue
         const doc = SEED_CONTAINER_CONTENT[entity.id]
@@ -375,18 +384,18 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     return _adapter?.getRootHandle?.() ?? null;
   },
 
-  addEntity: (kind: EntityKind, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId: string | null = null) => {
+  addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId: string | null = null) => {
     get().beginBatch("Create node");
     const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
     const siblingCount = parentId
       ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
       : 0;
     const content = data?.content ?? ""
-    const id = generateUniqueId(parentId, kind, content || kind, existingIds, siblingCount);
+    const id = generateUniqueId(parentId, type, content || type, existingIds, siblingCount);
     const now = Date.now();
     const entity: Entity = {
       id,
-      kind,
+      type,
       content,
       metadata: data?.metadata ?? {},
       createdAt: now,
@@ -573,7 +582,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => {
       const currentEntities = state.entities;
       const currentContainerEntities = currentEntities.filter(
-        (e) => e.kind === "annotation" && e.metadata?.sourceContainer === id,
+        (e) => e.type === "annotation" && e.metadata?.sourceContainer === id,
       );
 
       for (const [segmentId, text] of found) {
@@ -582,7 +591,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
           const now = Date.now();
           currentEntities.push({
             id: segmentId,
-            kind: "annotation",
+            type: "annotation",
             content: "",
             metadata: { sourceContainer: id, label },
             createdAt: now,
@@ -654,7 +663,7 @@ useGraphStore.subscribe((state, prevState) => {
           const entries: AutoBackupEntry[] = recentEntries.map((entry) => {
             const documents: Record<string, Record<string, unknown>> = {};
             for (const entity of entry.entities) {
-              if (entity.kind === "container") {
+              if (entity.type === "container") {
                 const doc = contentCache[entity.id];
                 if (doc) documents[entity.id] = doc;
               }

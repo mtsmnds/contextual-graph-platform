@@ -18,11 +18,13 @@
 
 **PRD:** `m5-prd0045-container-group-nodes` — written, ready for implementation.
 
-Entities with `kind: "container"` render as visual group nodes on the canvas using React Flow's sub-flow mechanism (`parentId` + `extent: "parent"`). Children assigned via drag-and-drop or double-click-inside-create. `parentId` is a first-class field on `Entity` — it directly models data hierarchy. `contains` edges may be added later as a parallel representation.
+Entities with `type: "container"` render as visual group nodes on the canvas using React Flow's sub-flow mechanism (`parentId` + `extent: "parent"`). Children assigned via drag-and-drop or double-click-inside-create. `parentId` is a first-class field on `Entity` — it directly models data hierarchy. `contains` edges may be added later as a parallel representation.
 
-- Container group custom node (`"containerGroup"`) with header (title + kind badge), padded child area, resize handles, inner background tint
-- Layout engine: sub-Dagre pass positions children relative to parent
-- Double-click container child area → create child node (`kind: "segment"`)
+- Container group custom node (`"containerGroup"`) with header (title, no badge), padded child area, resize handles, inner background tint
+- Double-click header → inline edit container title
+- Layout engine: sub-Dagre pass positions children relative to parent. Respects saved `canvasData` (no overwrite). `expandParent: true` on all children.
+- Pane double-click: option to create "New Group" or "New Node"
+- Double-click container child area → create child node (`type: "segment"`), enters edit mode immediately
 - Drag node over container → drop → `parentId` assigned
 - Container drag moves all children (React Flow native)
 - Cross-boundary edges supported natively

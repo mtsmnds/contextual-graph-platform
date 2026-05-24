@@ -78,7 +78,7 @@ export function PassageLinkPopover({ segmentId, anchorRect, onClose, onDeletePas
       selectedDocId
         ? entities.filter(
             (e) =>
-              e.kind === "annotation" &&
+              e.type === "annotation" &&
               !e.metadata?.stale &&
               e.metadata?.sourceContainer === selectedDocId &&
               e.id !== segmentId &&

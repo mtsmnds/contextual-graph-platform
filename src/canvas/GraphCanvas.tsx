@@ -21,7 +21,7 @@ import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
-import type { EntityKind, GraphSnapshot, CanvasData } from "../types/graph"
+import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
@@ -44,7 +44,7 @@ function GraphCanvasContent() {
   if (layoutRef.current === null) {
     if (__experimentalNoDagre) {
       const nodes: Node[] = entities.map((entity, idx) => {
-        const content = entity.content || entity.kind || entity.id
+        const content = entity.content || entity.type || entity.id
         const saved = entity.canvasData
         const position: { x: number; y: number } = saved.x !== undefined && saved.y !== undefined
           ? { x: saved.x, y: saved.y }
@@ -53,7 +53,7 @@ function GraphCanvasContent() {
           id: entity.id,
           type: "entity",
           position,
-          data: { content, kind: entity.kind, id: entity.id },
+          data: { content, type: entity.type, id: entity.id },
           style: { width: saved.width ?? 200 },
           ...(saved.width != null && saved.height != null ? { width: saved.width, height: saved.height } : {}),
         }
@@ -107,21 +107,21 @@ function GraphCanvasContent() {
         const entityIdSet = new Set(entities.map((e) => e.id))
 
         for (const entity of entities) {
-          const newContent = entity.content || entity.kind || entity.id
+          const newContent = entity.content || entity.type || entity.id
           const existing = prevById.get(entity.id)
           if (existing) {
             const idx = merged.findIndex((n) => n.id === entity.id)
             if (idx === -1) continue
 
             const posChanged = existing.position.x !== entity.canvasData.x || existing.position.y !== entity.canvasData.y
-            const contentChanged = existing.data.content !== newContent || existing.data.kind !== entity.kind
+            const contentChanged = existing.data.content !== newContent || existing.data.type !== entity.type
             const w = entity.canvasData.width
 
             if (posChanged || contentChanged || w != null) {
               merged[idx] = {
                 ...merged[idx],
                 position: { x: entity.canvasData.x, y: entity.canvasData.y },
-                data: { ...merged[idx].data, content: newContent, kind: entity.kind },
+                data: { ...merged[idx].data, content: newContent, type: entity.type },
                 style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? 200 },
               }
             }
@@ -131,7 +131,7 @@ function GraphCanvasContent() {
               id: entity.id,
               type: "entity",
               position,
-              data: { content: newContent, kind: entity.kind, id: entity.id },
+              data: { content: newContent, type: entity.type, id: entity.id },
               style: { width: entity.canvasData.width ?? 200 },
               ...(entity.canvasData.width != null && entity.canvasData.height != null
                 ? { width: entity.canvasData.width, height: entity.canvasData.height }
@@ -385,7 +385,7 @@ function GraphCanvasContent() {
   const dragStateRef = useRef<{
     originals: Array<{
       id: string
-      kind: EntityKind
+      type: EntityType
       content: string
       metadata: Record<string, unknown>
       canvasData: CanvasData
@@ -450,7 +450,7 @@ function GraphCanvasContent() {
           const entity = s.entities.find((e) => e.id === n.id)
           return {
             id: n.id,
-            kind: n.data.kind as EntityKind,
+            type: n.data.type as EntityType,
             content: n.data.content as string,
             metadata: (n.data.metadata as Record<string, unknown>) ?? {},
             canvasData: entity?.canvasData ?? { x: n.position.x, y: n.position.y },
@@ -466,7 +466,7 @@ function GraphCanvasContent() {
           id: `__ghost_${o.id}`,
           type: "entity" as const,
           position: o.originalPosition,
-          data: { content: o.content, kind: o.kind, id: `__ghost_${o.id}` },
+          data: { content: o.content, type: o.type, id: `__ghost_${o.id}` },
           style: { width: o.canvasData.width ?? 200 },
           className: "ghost-node",
           selectable: false,
@@ -506,7 +506,7 @@ function GraphCanvasContent() {
           const droppedNode = allNodes.find((n) => n.id === orig.id)
           if (!droppedNode) continue
 
-          s.addEntity(orig.kind, {
+          s.addEntity(orig.type, {
             content: orig.content,
             metadata: orig.metadata,
             canvasData: {
@@ -724,7 +724,7 @@ function GraphCanvasContent() {
       const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
       await fsa.saveGraph(snapshot)
       for (const entity of state.entities) {
-        if (entity.kind === "container") {
+        if (entity.type === "container") {
           const content = state.getContent(entity.id)
           if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
         }

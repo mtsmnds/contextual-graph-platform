@@ -57,7 +57,7 @@ export function AppSidebar() {
       const snapshot = { version: 4 as const, entities: state.entities, relations: state.relations, canvas: state.canvas }
       await fsa.saveGraph(snapshot)
       for (const entity of state.entities) {
-        if (entity.kind === "container") {
+        if (entity.type === "container") {
           const content = state.getContent(entity.id)
           if (content) {
             await fsa.saveDocument(entity.id, content).catch(() => {})

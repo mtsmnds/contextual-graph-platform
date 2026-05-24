@@ -1,4 +1,4 @@
-type EntityKind =
+type EntityType =
   | "segment"
   | "container"
   | "annotation"
@@ -14,7 +14,7 @@ type CanvasData = {
 
 type Entity = {
   id: string;
-  kind: EntityKind;
+  type: EntityType;
   content: string;
   metadata: Record<string, unknown>;
   createdAt: number;
@@ -63,7 +63,7 @@ type AutoBackupEntry = HistoryEntry & {
 };
 
 export type {
-  EntityKind,
+  EntityType,
   CanvasData,
   Entity,
   Relation,

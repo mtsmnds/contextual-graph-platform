@@ -102,7 +102,7 @@ export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => vo
 
     try {
       const store = useGraphStore.getState()
-      const containerEntities = store.entities.filter((e) => e.kind === "container")
+      const containerEntities = store.entities.filter((e) => e.type === "container")
       const contentMap: Record<string, Record<string, unknown>> = {}
       for (const entity of containerEntities) {
         const doc = store.getContent(entity.id)

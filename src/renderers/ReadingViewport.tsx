@@ -211,7 +211,7 @@ function ReadingViewport() {
 
   const rootEntity = getEntity(state, focusedId);
 
-  const isContainer = rootEntity?.kind === "container";
+  const isContainer = rootEntity?.type === "container";
 
   // Empty containers: content lives in content store, not on the entity
   // Load synchronously so TiptapEditor initializes with content on the first render

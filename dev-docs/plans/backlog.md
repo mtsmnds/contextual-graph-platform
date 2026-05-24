@@ -62,6 +62,7 @@ Custom edge component that routes to the nearest point on the target node's peri
 - Container-labeled group node refinement (SubFlows pattern for complex hierarchies)
 - Bulk input interface that transforms structured info into graph data
 - Easy connect — floating handle when dragging from a node for intuitive edge creation (may compete with node dragging)
+- Smart drag-out-to-detach — dragging a child node out of its parent container automatically detaches it (removes `parentId`, converts position to absolute). Current approach uses context menu "Detach from Group" instead.
 
 ---
 

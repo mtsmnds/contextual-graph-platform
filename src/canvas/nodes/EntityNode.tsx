@@ -8,11 +8,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { BaseHandle } from "@/components/base-handle"
 import { useGraphStore } from "@/store/useGraphStore"
-import type { EntityKind } from "@/types/graph"
+import type { EntityType } from "@/types/graph"
 
 type EntityNodeData = {
   content: string
-  kind: EntityKind
+  type: EntityType
   id: string
   editTrigger?: number
 }
@@ -125,7 +125,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
       />
       <BaseNode className="w-full" onDoubleClick={handleDoubleClick}>
         <BaseNodeHeader>
-          <Badge variant="secondary" className="text-xs">{data.kind}</Badge>
+          <Badge variant="secondary" className="text-xs">{data.type}</Badge>
         </BaseNodeHeader>
         <BaseNodeContent>
           <BaseHandle type="source" position={Position.Top} id="top" />

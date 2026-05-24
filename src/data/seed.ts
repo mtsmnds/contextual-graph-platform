@@ -224,7 +224,7 @@ export const SEED_DATA: GraphSnapshot = {
   entities: [
     {
       id: "about-workspace",
-      kind: "container",
+      type: "container",
       content: "About This Workspace",
       createdAt: SEED_TS,
       updatedAt: SEED_TS,
@@ -233,7 +233,7 @@ export const SEED_DATA: GraphSnapshot = {
     },
     {
       id: "editor-playground",
-      kind: "container",
+      type: "container",
       content: "Editor Playground",
       createdAt: SEED_TS,
       updatedAt: SEED_TS,

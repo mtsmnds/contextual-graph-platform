@@ -2,7 +2,7 @@ import { memo, useState, useCallback, useRef, useEffect } from "react"
 import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId, Handle } from "@xyflow/react"
 import { useGraphStore } from "@/store/useGraphStore"
 import { isEdgeKey, writeEdgeValue } from "@/engine/edge-metadata"
-import type { EntityKind } from "@/types/graph"
+import type { EntityType } from "@/types/graph"
 
 type MetadataNodeData = {
   entityId: string
@@ -42,10 +42,10 @@ function MetadataNode({ data }: NodeProps<MetadataNodeType>) {
     updateEntity(data.entityId, { content: contentValue })
   }, [entity, data.entityId, contentValue, updateEntity])
 
-  const handleKindChange = useCallback(
+  const handleTypeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (!entity) return
-      updateEntity(data.entityId, { kind: e.target.value as EntityKind })
+      updateEntity(data.entityId, { type: e.target.value as EntityType })
     },
     [entity, data.entityId, updateEntity],
   )
@@ -187,12 +187,12 @@ function MetadataNode({ data }: NodeProps<MetadataNodeType>) {
 
           <div className="space-y-1">
             <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              Kind
+              Type
             </label>
             <select
               className="nodrag nowheel nopan w-full rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-              value={entity.kind}
-              onChange={handleKindChange}
+              value={entity.type}
+              onChange={handleTypeChange}
             >
               <option value="segment">segment</option>
               <option value="container">container</option>

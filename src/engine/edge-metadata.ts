@@ -1,13 +1,13 @@
-import type { EntityKind, Entity, Relation } from "../types/graph"
+import type { EntityType, Entity, Relation } from "../types/graph"
 
 interface EdgeMetadataConfig {
   relationType: string
   direction: "source" | "target"
-  targetKind: EntityKind
+  targetType: EntityType
 }
 
 const EDGE_METADATA_KEYS: Record<string, EdgeMetadataConfig> = {
-  author: { relationType: "contains", direction: "target", targetKind: "container" },
+  author: { relationType: "contains", direction: "target", targetType: "container" },
 }
 
 export function getEdgeKeys(): string[] {
@@ -25,7 +25,7 @@ export function getEdgeConfig(key: string): EdgeMetadataConfig | undefined {
 export type ResolveWriteContext = {
   entities: Entity[]
   relations: Relation[]
-  addEntity: (kind: EntityKind, data?: Partial<Entity>) => string
+  addEntity: (type: EntityType, data?: Partial<Entity>) => string
   addRelation: (source: string, target: string, type: string) => string
 }
 
@@ -62,11 +62,11 @@ export function findOrCreateEdgeBackedEntity(
   ctx: ResolveWriteContext,
 ): string {
   const existing = ctx.entities.find(
-    (e) => e.kind === config.targetKind && e.content === value,
+    (e) => e.type === config.targetType && e.content === value,
   )
   if (existing) return existing.id
 
-  return ctx.addEntity(config.targetKind, { content: value })
+  return ctx.addEntity(config.targetType, { content: value })
 }
 
 export function writeEdgeValue(

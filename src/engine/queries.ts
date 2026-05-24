@@ -52,7 +52,7 @@ export function getContainerChildren(
 
   const flattened: Entity[] = [];
   for (const child of children) {
-    if (child.kind === "container" && depth > 0) {
+    if (child.type === "container" && depth > 0) {
       flattened.push(child);
       flattened.push(
         ...getContainerChildren(state, child.id, depth - 1),
@@ -71,7 +71,7 @@ export function getRootContainers(state: GraphState): Entity[] {
       .map((r) => r.target),
   );
   return state.entities.filter(
-    (e) => e.kind === "container" && !childIds.has(e.id),
+    (e) => e.type === "container" && !childIds.has(e.id),
   );
 }
 
