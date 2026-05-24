@@ -3,9 +3,7 @@ import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVa
 import {
   BaseNode,
   BaseNodeContent,
-  BaseNodeHeader,
 } from "@/components/base-node"
-import { Badge } from "@/components/ui/badge"
 import { BaseHandle } from "@/components/base-handle"
 import { useGraphStore } from "@/store/useGraphStore"
 import type { EntityType } from "@/types/graph"
@@ -124,9 +122,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
         onResizeEnd={handleResizeEnd}
       />
       <BaseNode className="w-full" onDoubleClick={handleDoubleClick}>
-        <BaseNodeHeader>
-          <Badge variant="secondary" className="text-xs">{data.type}</Badge>
-        </BaseNodeHeader>
         <BaseNodeContent>
           <BaseHandle type="source" position={Position.Top} id="top" />
           <BaseHandle type="source" position={Position.Right} id="right" />
