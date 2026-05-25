@@ -11,6 +11,18 @@ let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
+const GRID = 16
+export { GRID }
+const snap16 = (n: number) => Math.ceil(n / GRID) * GRID
+
+function snapCanvasDim(cd: CanvasData): CanvasData {
+  return {
+    ...cd,
+    width: cd.width != null ? snap16(cd.width) : cd.width,
+    height: cd.height != null ? snap16(cd.height) : cd.height,
+  }
+}
+
 export function migrateSnapshot(snapshot: {
   version: number;
   entities: Record<string, unknown>[];
@@ -573,8 +585,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       entities: state.entities.map((e) => {
         const dim = dimensions[e.id];
         if (!dim) return e;
-        if (e.canvasData.width != null && e.canvasData.height != null) return e;
-        return { ...e, canvasData: { ...e.canvasData, ...dim } };
+        const snapped = snapCanvasDim({ ...e.canvasData, width: dim.width ?? e.canvasData.width, height: dim.height ?? e.canvasData.height })
+        return { ...e, canvasData: snapped }
       }),
     }));
   },

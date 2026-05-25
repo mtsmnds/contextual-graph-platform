@@ -80,29 +80,29 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Left}
-        minWidth={260}
-        minHeight={120}
+        minWidth={272}
+        minHeight={128}
       />
       <NodeResizeControl
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Right}
-        minWidth={260}
-        minHeight={120}
+        minWidth={272}
+        minHeight={128}
       />
       <NodeResizeControl
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Top}
-        minWidth={260}
-        minHeight={120}
+        minWidth={272}
+        minHeight={128}
       />
       <NodeResizeControl
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Bottom}
-        minWidth={260}
-        minHeight={120}
+        minWidth={272}
+        minHeight={128}
       />
       <BaseNode className="w-full overflow-hidden container-group-node">
         <BaseNodeHeader onDoubleClick={handleHeaderDoubleClick}>

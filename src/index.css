@@ -328,6 +328,11 @@ body {
   cursor: ew-resize !important;
 }
 
+.react-flow__resize-control.line.top:hover,
+.react-flow__resize-control.line.bottom:hover {
+  cursor: ns-resize !important;
+}
+
 .react-flow__node.ghost-node {
   opacity: 0.5;
   pointer-events: none;

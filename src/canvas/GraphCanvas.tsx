@@ -59,8 +59,7 @@ function GraphCanvasContent() {
           type: isContainer ? "containerGroup" : "entity",
           position,
           data: { content, type: entity.type, id: entity.id },
-          style: { width: saved.width ?? (isContainer ? 400 : 200) },
-          ...(saved.width != null && saved.height != null ? { width: saved.width, height: saved.height } : {}),
+          style: { width: saved.width ?? (isContainer ? 400 : 208), ...(isContainer && saved.height != null ? { height: saved.height } : {}), ...(!isContainer && saved.height == null ? { minHeight: 32 } : {}) },
         }
 
         if (entity.parentId) {
@@ -149,7 +148,7 @@ function GraphCanvasContent() {
                 parentId: entity.parentId ?? undefined,
                 extent: entity.parentId ? "parent" : undefined,
                 expandParent: entity.parentId ? true : undefined,
-                style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? (entity.type === "container" ? 400 : 200) },
+                style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? (entity.type === "container" ? 400 : 208), ...(entity.type === "container" && entity.canvasData.height != null ? { height: entity.canvasData.height } : {}) },
               }
             }
           } else {
@@ -160,16 +159,22 @@ function GraphCanvasContent() {
               type: isContainer ? "containerGroup" : "entity",
               position,
               data: { content: newContent, type: entity.type, id: entity.id },
-              style: { width: entity.canvasData.width ?? (isContainer ? 400 : 200) },
-              ...(entity.canvasData.width != null && entity.canvasData.height != null
-                ? { width: entity.canvasData.width, height: entity.canvasData.height }
-                : {}),
+              style: { width: entity.canvasData.width ?? (isContainer ? 400 : 208), ...(isContainer && entity.canvasData.height != null ? { height: entity.canvasData.height } : {}), ...(!isContainer && entity.canvasData.height == null ? { minHeight: 32 } : {}) },
             }
 
             if (entity.parentId) {
               newNode.parentId = entity.parentId
               newNode.extent = "parent"
               newNode.expandParent = true
+              // Insert after the parent node for correct ordering
+              const parentIdx = merged.findIndex((n) => n.id === entity.parentId)
+              if (parentIdx !== -1) {
+                merged.splice(parentIdx + 1, 0, newNode)
+              } else {
+                merged.push(newNode)
+              }
+            } else {
+              merged.push(newNode)
             }
 
             const pending = pendingNodeRef.current
@@ -178,7 +183,7 @@ function GraphCanvasContent() {
               newNode.data = { ...newNode.data, editTrigger: 1 }
             }
 
-            merged.push(newNode)
+            continue
           }
         }
 
@@ -527,7 +532,7 @@ function GraphCanvasContent() {
 
   const createContainerNode = useCallback((position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("container", {
-      canvasData: { x: position.x, y: position.y, width: 400, height: 300 },
+      canvasData: { x: position.x, y: position.y, width: 400, height: 304 },
     })
     pendingNodeRef.current = id
   }, [])
@@ -774,14 +779,12 @@ function GraphCanvasContent() {
         const isChild = !!node?.parentId
         const items = []
 
-        if (!isContainer) {
-          items.push({
-            label: visibleMetadataNodeIds.has(contextMenu.nodeId!) ? "Metadata: Visible" : "Metadata: Hidden",
-            action: () => {
-              if (contextMenu.nodeId) toggleMetadata(contextMenu.nodeId)
-            },
-          })
-        }
+        items.push({
+          label: visibleMetadataNodeIds.has(contextMenu.nodeId!) ? "Metadata: Visible" : "Metadata: Hidden",
+          action: () => {
+            if (contextMenu.nodeId) toggleMetadata(contextMenu.nodeId)
+          },
+        })
 
         if (isContainer) {
           items.push({
@@ -789,7 +792,7 @@ function GraphCanvasContent() {
             action: () => {
               if (contextMenu.nodeId) {
                 const id = useGraphStore.getState().addEntity("segment", {
-                  canvasData: { x: 20, y: 60 },
+                  canvasData: { x: 16, y: 64 },
                 }, contextMenu.nodeId)
                 pendingNodeRef.current = id
               }
@@ -972,7 +975,7 @@ function GraphCanvasContent() {
       selectionMode={SelectionMode.Partial}
       connectionMode={ConnectionMode.Loose}
       snapToGrid
-      snapGrid={[15, 15]}
+      snapGrid={[16, 16]}
       deleteKeyCode={["Backspace", "Delete"]}
       multiSelectionKeyCode="Shift"
       proOptions={{ hideAttribution: true }}

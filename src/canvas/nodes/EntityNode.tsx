@@ -1,5 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react"
-import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId, useUpdateNodeInternals } from "@xyflow/react"
+import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId } from "@xyflow/react"
 import {
   BaseNode,
   BaseNodeContent,
@@ -7,6 +7,8 @@ import {
 import { BaseHandle } from "@/components/base-handle"
 import { useGraphStore } from "@/store/useGraphStore"
 import type { EntityType } from "@/types/graph"
+
+const GRID = 16
 
 type EntityNodeData = {
   content: string
@@ -24,8 +26,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const commitRef = useRef(false)
   const lastTriggerRef = useRef(data.editTrigger ?? 0)
-  const lastHeightRef = useRef(0)
-  const updateNodeInternals = useUpdateNodeInternals()
 
   const enterEdit = useCallback(() => {
     setIsEditing(true)
@@ -65,28 +65,15 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
     }
   }, [isEditing, editValue.length])
 
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      const ta = textareaRef.current
-      ta.style.height = "auto"
-      const newHeight = Math.min(ta.scrollHeight, 300)
-      ta.style.height = newHeight + "px"
-      if (Math.abs(newHeight - lastHeightRef.current) > 1) {
-        lastHeightRef.current = newHeight
-        updateNodeInternals(data.id)
-      }
-    }
-  }, [editValue, isEditing, data.id, updateNodeInternals])
-
   const handleResizeEnd = useCallback((_: unknown, params: { x: number; y: number; width: number; height: number }) => {
     const store = useGraphStore.getState()
     store.beginBatch("Resize node")
     store.updateEntity(data.id, {
       canvasData: {
-        x: params.x,
-        y: params.y,
-        width: params.width,
-        height: params.height,
+        x: Math.ceil(params.x / GRID) * GRID,
+        y: Math.ceil(params.y / GRID) * GRID,
+        width: Math.ceil(params.width / GRID) * GRID,
+        height: Math.ceil(params.height / GRID) * GRID,
       },
     })
     store.endBatch()
@@ -112,17 +99,30 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Left}
-        minWidth={60}
+        minWidth={64}
       />
       <NodeResizeControl
         nodeId={nodeId ?? undefined}
         variant={ResizeControlVariant.Line}
         position={Position.Right}
-        minWidth={60}
+        minWidth={64}
         onResizeEnd={handleResizeEnd}
       />
-      <BaseNode className="w-full" onDoubleClick={handleDoubleClick}>
-        <BaseNodeContent>
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Line}
+        position={Position.Top}
+        minHeight={32}
+      />
+      <NodeResizeControl
+        nodeId={nodeId ?? undefined}
+        variant={ResizeControlVariant.Line}
+        position={Position.Bottom}
+        minHeight={32}
+        onResizeEnd={handleResizeEnd}
+      />
+      <BaseNode className="w-full h-full overflow-hidden flex flex-col" onDoubleClick={handleDoubleClick}>
+        <BaseNodeContent className="flex-1">
           <BaseHandle type="source" position={Position.Top} id="top" />
           <BaseHandle type="source" position={Position.Right} id="right" />
           <BaseHandle type="source" position={Position.Bottom} id="bottom" />
@@ -130,7 +130,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           {isEditing ? (
             <textarea
               ref={textareaRef}
-              className="nodrag nowheel nopan w-full resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none"
+              className="nodrag nowheel nopan flex-1 resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none"
               value={editValue}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
@@ -139,7 +139,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
               rows={1}
             />
           ) : (
-            <p className="m-0 cursor-default text-sm text-foreground">
+            <p className="flex-1 m-0 cursor-default text-sm text-foreground overflow-hidden">
               {data.content || <span className="text-muted-foreground">Type here...</span>}
             </p>
           )}
