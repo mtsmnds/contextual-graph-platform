@@ -14,6 +14,17 @@ Use this to recover context after breaks.
 
 ## 2026-05-25
 
+### m5 — prd0046 — nested containers (containers within containers)
+- **What:** Extended container nesting support: containers can now be nested inside other containers via drag-to-assign or context menu ("Add Child Container"). Cycle detection (`wouldCreateCycle`) prevents self-nesting and ancestor cycles. No depth limit — arbitrary nesting allowed. Both utilities exported from `queries.ts` with full test coverage. Store's `updateEntity` rejects cycles silently (no phantom undo entries). Depth sort in GraphCanvas fixed from binary child/non-child to recursive ancestor-depth sort, eliminating React Flow "Parent node not found" warnings. 20 new tests (6 cycle-detection, 3 depth, 11 store integration for cascade/undo/redo).
+- **Reason:** Threaded Container View (PRD0047) and Contextual Subgraph Loading (PRD0044) require a multi-level container hierarchy. The `parentId` infrastructure from PRD0045 already handles cascade on delete, extent constraint, and undo batching — this PRD extends the same patterns to container nodes.
+- **Files changed:**
+  - `src/engine/queries.ts`: Added `wouldCreateCycle`, `getNestingDepth` pure functions
+  - `src/store/useGraphStore.ts`: Imported helpers, added cycle guard in `updateEntity`
+  - `src/canvas/GraphCanvas.tsx`: Drag-to-assign now accepts `containerGroup` nodes; context menu "Add Child Container"; batch description counts containers too; depth-first node sort (recursive parentId chain)
+  - `src/store/nesting.test.ts`: 20 new tests — 9 pure function (cycle + depth), 11 store integration (cascade, undo/redo, empty delete)
+- **Impact:** Containers nest arbitrarily deep. Cycles are impossible — drag snaps back with no store mutation and no phantom undo entry. Context menu offers both "Add Child Node" (entity) and "Add Child Container". Delete cascade correctly reparents child containers and grandchildren. Undo/redo works for all nesting operations. No more React Flow parent-ordering warnings. No visual depth differentiation (deferred to later design pass).
+- **Archive:** `dev-docs/plans/m5-prd0046-nested-containers.md`
+
 ### vitest test framework setup
 - **What:** Added vitest (v4.1.7) + jsdom as devDependencies, created `vitest.config.ts` mirroring vite config (plugins, `@/` alias, jsdom environment). Updated `requirements.md` and `architecture.md` to document the testing pipeline. Fixed stale `15×15` grid references to `16×16` in architecture docs.
 - **Reason:** Provide a unit testing framework for pure functions, store actions, and state transitions — previously absent from the project. Align test infrastructure with AGENTS.md requirements.

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
 import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
+import { wouldCreateCycle } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
@@ -424,6 +425,18 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     get().beginBatch("Edit node");
     const current = get().entities.find((e: Entity) => e.id === id);
     if (!current) { get().endBatch(); return; }
+
+    const newParentId = data.parentId
+    if (newParentId !== undefined && newParentId !== current.parentId) {
+      const entities = get().entities as Entity[]
+      if (newParentId) {
+        if (wouldCreateCycle(entities, id, newParentId)) {
+          set({ _pendingSnapshot: null })
+          get().endBatch()
+          return
+        }
+      }
+    }
 
     let resolvedId = id;
     if (data.id && data.id !== id) {

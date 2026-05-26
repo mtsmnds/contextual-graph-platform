@@ -90,6 +90,31 @@ export function getRelationTypes(state: GraphState): string[] {
   return [...new Set(state.relations.map((r) => r.type))].sort()
 }
 
+export function getNestingDepth(entities: Entity[], entityId: string): number {
+  let depth = 0
+  let current = entityId
+  for (let i = 0; i < 20; i++) {
+    const entity = entities.find((e) => e.id === current)
+    if (!entity?.parentId) break
+    depth++
+    current = entity.parentId
+  }
+  return depth
+}
+
+export function wouldCreateCycle(entities: Entity[], childId: string, newParentId: string): boolean {
+  if (childId === newParentId) return true
+  let current: string | undefined = newParentId
+  const visited = new Set<string>()
+  while (current) {
+    if (current === childId) return true
+    visited.add(current)
+    const entity = entities.find((e) => e.id === current)
+    current = entity?.parentId
+  }
+  return false
+}
+
 export function getContainerBreadcrumb(
   state: GraphState,
   containerId: string,
