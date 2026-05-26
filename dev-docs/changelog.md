@@ -12,6 +12,24 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-25
+
+### m5 — prd0045 — container group nodes + entity height fix
+- **What:** Container group nodes (entities with `type: "container"` render as visual group boxes via React Flow sub-flows). EntityKind→EntityType rename project-wide. Entity node height rewritten — user-controlled via Top/Bottom NodeResizeControl, no auto-expand. 16px grid alignment (`snapGrid [16,16]`, `Math.ceil` snap, all defaults snapped). Container query CSS for padding at tight vs normal heights (4.75px / 6px via `@container (min-height: 56px)`).
+- **Reason:** Enable visual grouping of entities by container hierarchy (parent-child as first-class `parentId` on Entity). Fix brittle auto-height textarea — height should be user-controlled, not dictating card size. Eliminate fractional-pixel issues from [15,15] grid.
+- **Files changed:**
+  - `src/canvas/nodes/ContainerGroupNode.tsx`: New — group node with header, child area, 4 handles, 4-edge resize
+  - `src/canvas/nodes/EntityNode.tsx`: Top/Bottom NodeResizeControl, flex-1 textarea, container query classes
+  - `src/canvas/GraphCanvas.tsx`: Register containerGroup type, parent-first ordering, drag-to-assign, context menus, nodeStyle helper
+  - `src/store/useGraphStore.ts`: parentId on Entity, cascade reparent, snap16 helper, snapCanvasDim
+  - `src/types/graph.ts`: EntityType rename, parentId on Entity
+  - `src/index.css`: Container group styles, ns-resize cursor, entity-card container and container query
+  - `src/components/base-node.tsx`: h-full flex flex-col on base node
+  - Multiple files: EntityKind→EntityType rename (17 files total)
+- **Impact:** Containers group children visually with React Flow sub-flows. Entity nodes are now fixed-height (user-resized) with grid-snapped dimensions. Badges removed from all nodes. Seed data unchanged (2 containers exist, children can be assigned via drag-drop).
+- **Archive:** `dev-docs/archive/i2-view-data-as-threads-and-groups/m5-prd0045-container-group-nodes.md`
+- **ADR:** `dev-docs/archive/i2-view-data-as-threads-and-groups/2026-05-25-prd0045-container-group-nodes-adr.md`
+
 ## 2026-05-23
 
 ### m4 — prd0044 — schema v5: canvas data on entity

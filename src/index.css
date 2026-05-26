@@ -256,7 +256,21 @@ body {
 }
 
 .react-flow__node {
-  cursor: grab;
+  width: auto;
+}
+
+.entity-card {
+  container-type: size;
+}
+
+.entity-card-content {
+  padding-block: 4.75px;
+}
+
+@container (min-height: 56px) {
+  .entity-card-content {
+    padding-block: 0.375rem;
+  }
 }
 .react-flow__node.dragging {
   cursor: grabbing;
@@ -328,10 +342,27 @@ body {
   cursor: ew-resize !important;
 }
 
+.react-flow__resize-control.line.top:hover,
+.react-flow__resize-control.line.bottom:hover {
+  cursor: ns-resize !important;
+}
+
 .react-flow__node.ghost-node {
   opacity: 0.5;
   pointer-events: none;
   cursor: default;
+}
+
+.react-flow__node-containerGroup {
+  & .container-group-node {
+    height: 100%;
+  }
+
+  & .container-child-area {
+    background: hsl(var(--accent) / 0.15);
+    min-height: 60px;
+    flex: 1;
+  }
 }
 
 

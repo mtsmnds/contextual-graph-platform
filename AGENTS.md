@@ -1,9 +1,5 @@
 # AGENTS Guide
 
-## Project Overview
-
-A unified node-and-edge system powering two products from one core: a visual project roadmap and a relational reading workspace. Built with React + TypeScript on Vite, using @xyflow/react for graph rendering and Zustand for state.
-
 ## Build & Verify
 
 ```sh
@@ -15,9 +11,20 @@ npx tsc --noEmit   # type checking (main TS verification)
 npm run lint        # ESLint — only covers .js/.jsx, NOT .ts/.tsx
 ```
 
-No test framework is configured. No pre-commit hooks.
+## Testing
+
+- When you fix a bug, write a regression test that fails without the fix.
+- When you add a pure function or store action, add unit tests.
+- When you change behavior that has multiple call sites or timing dependencies
+  (e.g. React Flow measurement → store → node builder), test each boundary.
+- Don't test React component rendering or visual layout — only logic, state
+  transitions, and data transformations.
+- Run `npx vitest run` before committing. If vitest is not set up, set it up.
+
 
 ## Project Overview
+
+A unified node-and-edge system powering two products from one core: a visual project roadmap and a relational reading workspace. Built with React + TypeScript on Vite, using @xyflow/react for graph rendering and Zustand for state.
 
 React 19 + TypeScript (strict) Vite SPA. Graph canvas via `@xyflow/react`, state via Zustand 5, icons via `@phosphor-icons/react`. Native CSS nesting — no preprocessor. Dark mode via `prefers-color-scheme` in `index.css`.
 
@@ -62,3 +69,22 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
 - **ESLint ignores `.ts`/`.tsx`** — use `npx tsc --noEmit` for type checking.
 - **Changelog: most recent on top** — entries sorted newest-to-oldest, grouped by `## YYYY-MM-DD`. Purpose/Rules section stays at the very top. No duplicate date headings.
 - **Roadmap: flat lists only** — three sections (Now/Next/Later), no milestones or phases. Completed items go in changelog, not roadmap.
+
+## Code style
+
+- Add a guard comment when code exists for a non-obvious reason — especially
+  when removing or simplifying it would reintroduce a bug. Format:
+  `// GUARD: <why this exists and what breaks without it>`
+- Do NOT add comments that describe what code does. Only comment WHY.
+
+## Canvas invariants
+
+- All node dimensions must be snapped to the 16px grid via `snap16` / `snapCanvasDim`.
+- There are three node-build sites in GraphCanvas.tsx (initial layoutRef, sync
+  update, sync new-node). All three must set both `width` and `height` in the
+  node style when canvasData has them. Use the shared `nodeStyle()` helper.
+- `applyMeasuredDimensions` snaps measured values and writes them to canvasData.
+  The node builder must read them back into style, or React Flow re-measures
+  at raw DOM height and the snap is lost.
+- Never gate height on width (e.g. `if width && height`). Height can exist
+  independently.

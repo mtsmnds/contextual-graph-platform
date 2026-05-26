@@ -11,6 +11,18 @@ let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
+const GRID = 16
+export { GRID }
+const snap16 = (n: number) => Math.ceil(n / GRID) * GRID
+
+function snapCanvasDim(cd: CanvasData): CanvasData {
+  return {
+    ...cd,
+    width: cd.width != null ? snap16(cd.width) : cd.width,
+    height: cd.height != null ? snap16(cd.height) : cd.height,
+  }
+}
+
 export function migrateSnapshot(snapshot: {
   version: number;
   entities: Record<string, unknown>[];
@@ -396,6 +408,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const entity: Entity = {
       id,
       type,
+      parentId: parentId || undefined,
       content,
       metadata: data?.metadata ?? {},
       createdAt: now,
@@ -445,11 +458,36 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     get().beginBatch("Delete node");
     delete contentCache[id];
     _adapter?.deleteDocument(id).catch(() => {});
-    set((state: GraphStore) => ({
-      entities: state.entities.filter((e) => e.id !== id),
-      relations: state.relations.filter((r) => r.source !== id && r.target !== id),
-    }));
-    get().endBatch();
+
+    const deletedEntity = get().entities.find((e: Entity) => e.id === id);
+
+    set((state: GraphStore) => {
+      let entities = state.entities.filter((e) => e.id !== id);
+
+      // Cascade: reparent children of deleted container
+      if (deletedEntity?.type === "container") {
+        entities = entities.map((e) => {
+          if (e.parentId === id) {
+            return {
+              ...e,
+              parentId: undefined,
+              canvasData: {
+                ...e.canvasData,
+                x: e.canvasData.x + deletedEntity.canvasData.x,
+                y: e.canvasData.y + deletedEntity.canvasData.y,
+              },
+            }
+          }
+          return e
+        })
+      }
+
+      return {
+        entities,
+        relations: state.relations.filter((r) => r.source !== id && r.target !== id),
+      }
+    })
+    get().endBatch()
   },
 
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => {
@@ -547,8 +585,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       entities: state.entities.map((e) => {
         const dim = dimensions[e.id];
         if (!dim) return e;
-        if (e.canvasData.width != null && e.canvasData.height != null) return e;
-        return { ...e, canvasData: { ...e.canvasData, ...dim } };
+        const snapped = snapCanvasDim({ ...e.canvasData, width: dim.width ?? e.canvasData.width, height: dim.height ?? e.canvasData.height })
+        return { ...e, canvasData: snapped }
       }),
     }));
   },
