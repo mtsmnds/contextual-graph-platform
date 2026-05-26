@@ -5,6 +5,17 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-05-25
+
+### prd end — m5-prd0045-container-group-nodes
+- **Source:** user request — container group nodes + entity height fix
+- **Branch at time:** m5-prd0045-container-group-nodes (clean)
+- **User decision:** classification: Architecture change + Feature change
+- **Change classification:** Architecture change + Feature change
+- **ADR type:** full (parentId schema, EntityType rename, grid sizing, container query approach, height model)
+- **Commit hash:** 1b4b233
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
 ## 2026-05-23
 
 ### prd merge — m4-prd0043-undo-redo-and-backup (includes 0044)
