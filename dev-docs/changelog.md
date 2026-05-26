@@ -14,6 +14,18 @@ Use this to recover context after breaks.
 
 ## 2026-05-25
 
+### vitest test framework setup
+- **What:** Added vitest (v4.1.7) + jsdom as devDependencies, created `vitest.config.ts` mirroring vite config (plugins, `@/` alias, jsdom environment). Updated `requirements.md` and `architecture.md` to document the testing pipeline. Fixed stale `15×15` grid references to `16×16` in architecture docs.
+- **Reason:** Provide a unit testing framework for pure functions, store actions, and state transitions — previously absent from the project. Align test infrastructure with AGENTS.md requirements.
+- **Files changed:**
+  - `package.json`: Added vitest, jsdom devDependencies
+  - `vitest.config.ts`: New — vitest config with jsdom env, path alias, passWithNoTests
+  - `dev-docs/requirements.md`: Replaced "no test framework" with vitest requirement
+  - `dev-docs/architecture.md`: Added vitest to tech stack, build pipeline steps, verification; fixed 15×15→16×16 grid
+  - `dev-docs/changelog.md`: This entry
+- **Impact:** `npx vitest run` is now part of the pre-commit verification. No tests written yet — framework is ready for use per AGENTS.md guidelines.
+- **ADR:** `dev-docs/archive/2026-05-25-vitest-test-framework-adr.md`
+
 ### m5 — prd0045 — container group nodes + entity height fix
 - **What:** Container group nodes (entities with `type: "container"` render as visual group boxes via React Flow sub-flows). EntityKind→EntityType rename project-wide. Entity node height rewritten — user-controlled via Top/Bottom NodeResizeControl, no auto-expand. 16px grid alignment (`snapGrid [16,16]`, `Math.ceil` snap, all defaults snapped). Container query CSS for padding at tight vs normal heights (4.75px / 6px via `@container (min-height: 56px)`).
 - **Reason:** Enable visual grouping of entities by container hierarchy (parent-child as first-class `parentId` on Entity). Fix brittle auto-height textarea — height should be user-controlled, not dictating card size. Eliminate fractional-pixel issues from [15,15] grid.

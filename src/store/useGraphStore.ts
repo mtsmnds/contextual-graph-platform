@@ -13,9 +13,9 @@ const contentCache: Record<string, Record<string, unknown>> = {};
 
 const GRID = 16
 export { GRID }
-const snap16 = (n: number) => Math.ceil(n / GRID) * GRID
+export const snap16 = (n: number) => Math.ceil(n / GRID) * GRID
 
-function snapCanvasDim(cd: CanvasData): CanvasData {
+export function snapCanvasDim(cd: CanvasData): CanvasData {
   return {
     ...cd,
     width: cd.width != null ? snap16(cd.width) : cd.width,

@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-25
 
+### update — vitest test framework + documentation sync
+- **Source:** user request — add vitest to requirements after AGENTS.md update
+- **Branch at time:** main (dirty → committed wip)
+- **User decision:** commit wip → proceed with update workflow
+- **Change classification:** Architecture change + Operator change + Bug fix / small tweak
+- **Docs updated:** requirements.md (grid fix + test requirement), architecture.md (build pipeline + grid fix), changelog.md (new entry), ADR (archive/2026-05-25-vitest-test-framework-adr.md)
+- **Pre-commit guard:** committed wip (4 files)
+
 ### prd merge — m5-prd0045-container-group-nodes
 - **Branch at time:** main (clean)
 - **User decision:** merge single branch

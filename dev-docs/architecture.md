@@ -23,6 +23,7 @@ Guiding principle: *The graph is infrastructure. The viewport is the product. Re
 ## Tech Stack
 - Vite 8 + React 19 + TypeScript
 - Zustand 5 — global state
+- Vitest — unit testing (pure functions, store actions, state transitions)
 - @xyflow/react (React Flow) — optional graph renderer (Phase 4+, installed but not imported)
 - @phosphor-icons/react — icon library
 - Native CSS nesting (no preprocessor)
@@ -33,7 +34,9 @@ Guiding principle: *The graph is infrastructure. The viewport is the product. Re
 Entrypoint: `npm run build` → `vite build`
 
 1. **Vite dev** (`npm run dev`) — esbuild transpilation, HMR, static file serving.
-2. **Production build** (`npm run build`) — rolldown bundling, CSS/JS minification, output to `dist/`.
+2. **Type check** (`npx tsc --noEmit`) — static type verification.
+3. **Unit tests** (`npx vitest run`) — state/logic coverage via vitest.
+4. **Production build** (`npm run build`) — rolldown bundling, CSS/JS minification, output to `dist/`.
 
 ## Data Contracts
 
@@ -188,7 +191,7 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
   - `isValidConnection` prevents self-connections
 - **Handles:** 4 handles per node (top/right/bottom/left), all `type="source"` — direction captured by source→target in Connection. `BaseHandle` component (14px dot, 2px border, `::before` expansion to ~18px hit area).
 - **Resize:** Invisible `NodeResizeControl` on left and right edges (cursor-only, no visible dots). Min width 60px. Top/bottom resize removed — height governed by textarea content.
-- **Canvas props:** `zoomOnDoubleClick={false}`, `panOnDrag={false}`, `panOnScroll={true}`, `selectionOnDrag={true}`, `connectionMode={ConnectionMode.Loose}`, `snapToGrid` (15×15), `multiSelectionKeyCode="Shift"`.
+- **Canvas props:** `zoomOnDoubleClick={false}`, `panOnDrag={false}`, `panOnScroll={true}`, `selectionOnDrag={true}`, `connectionMode={ConnectionMode.Loose}`, `snapToGrid` (16×16), `multiSelectionKeyCode="Shift"`.
 - **Sync:** Diff-based — positions live in React Flow state, never the store. Store changes add/remove nodes/edges by ID and merge data labels, preserving user-dragged positions.
 - **Layout:** Dagre is disabled (`__experimentalNoDagre`). Node positions are store-authoritative only — user-dragged positions are the sole source of truth. `setCanvasPositions` merges new positions under existing ones (never drops unsaved positions); `replaceCanvasPositions` is used only by the re-layout button for deliberate bulk reset. New nodes enter at cursor/viewport-center via `pendingNodeRef`.
 - **Cursor styles:** Pane → `default`, node body → `grab` (dragging → `grabbing`), text → `default`, edge labels → `default`, handles → `grab`. All via CSS with `!important` on pane to override React Flow's inline pointer from `selectionOnDrag`.
@@ -237,6 +240,7 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 
 ## Verification
 - `npx tsc --noEmit` — type check.
+- `npx vitest run` — unit tests.
 - `npm run build` — production build.
 
 ## Related Docs
