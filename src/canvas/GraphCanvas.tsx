@@ -35,6 +35,18 @@ import EdgeLabel from "./edges/EdgeLabel"
 const nodeTypes = { entity: EntityNode, metadata: MetadataNode, containerGroup: ContainerGroupNode }
 const edgeTypes = { edgelabel: EdgeLabel }
 
+function nodeStyle(
+  cd: { width?: number; height?: number },
+  isContainer: boolean,
+  fallbackWidth?: number,
+) {
+  return {
+    width: fallbackWidth ?? cd.width ?? (isContainer ? 400 : 208),
+    ...(cd.height != null ? { height: cd.height } : {}),
+    ...(!isContainer && cd.height == null ? { minHeight: 32 } : {}),
+  }
+}
+
 function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
@@ -59,7 +71,7 @@ function GraphCanvasContent() {
           type: isContainer ? "containerGroup" : "entity",
           position,
           data: { content, type: entity.type, id: entity.id },
-          style: { width: saved.width ?? (isContainer ? 400 : 208), ...(isContainer && saved.height != null ? { height: saved.height } : {}), ...(!isContainer && saved.height == null ? { minHeight: 32 } : {}) },
+          style: nodeStyle(saved, isContainer),
         }
 
         if (entity.parentId) {
@@ -148,7 +160,7 @@ function GraphCanvasContent() {
                 parentId: entity.parentId ?? undefined,
                 extent: entity.parentId ? "parent" : undefined,
                 expandParent: entity.parentId ? true : undefined,
-                style: { ...merged[idx].style, width: w ?? (merged[idx].style as Record<string, unknown>)?.width as number ?? (entity.type === "container" ? 400 : 208), ...(entity.type === "container" && entity.canvasData.height != null ? { height: entity.canvasData.height } : {}) },
+                style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container", (merged[idx].style as Record<string, unknown>)?.width as number | undefined) },
               }
             }
           } else {
@@ -159,7 +171,7 @@ function GraphCanvasContent() {
               type: isContainer ? "containerGroup" : "entity",
               position,
               data: { content: newContent, type: entity.type, id: entity.id },
-              style: { width: entity.canvasData.width ?? (isContainer ? 400 : 208), ...(isContainer && entity.canvasData.height != null ? { height: entity.canvasData.height } : {}), ...(!isContainer && entity.canvasData.height == null ? { minHeight: 32 } : {}) },
+              style: nodeStyle(entity.canvasData, isContainer),
             }
 
             if (entity.parentId) {
@@ -525,7 +537,7 @@ function GraphCanvasContent() {
 
   const createNode = useCallback((position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("concept", {
-      canvasData: { x: position.x, y: position.y },
+      canvasData: { x: position.x, y: position.y, height: 64 },
     })
     pendingNodeRef.current = id
   }, [])
@@ -539,7 +551,7 @@ function GraphCanvasContent() {
 
   const createChildNode = useCallback((parentId: string, position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("segment", {
-      canvasData: { x: position.x, y: position.y },
+      canvasData: { x: position.x, y: position.y, height: 64 },
     }, parentId)
     pendingNodeRef.current = id
   }, [])
@@ -792,7 +804,7 @@ function GraphCanvasContent() {
             action: () => {
               if (contextMenu.nodeId) {
                 const id = useGraphStore.getState().addEntity("segment", {
-                  canvasData: { x: 16, y: 64 },
+                  canvasData: { x: 16, y: 64, height: 64 },
                 }, contextMenu.nodeId)
                 pendingNodeRef.current = id
               }

@@ -27,6 +27,12 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
   const commitRef = useRef(false)
   const lastTriggerRef = useRef(data.editTrigger ?? 0)
 
+  const cdHeight = useGraphStore((s) => {
+    const entity = s.entities.find((e) => e.id === data.id)
+    return entity?.canvasData?.height ?? 0
+  })
+  const isTight = cdHeight > 0 && cdHeight < 56
+
   const enterEdit = useCallback(() => {
     setIsEditing(true)
     setEditValue(data.content)
@@ -93,6 +99,23 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
     setEditValue(e.target.value)
   }, [])
 
+  const textEl = isEditing ? (
+    <textarea
+      ref={textareaRef}
+      className={`nodrag nowheel nopan ${isTight ? 'w-full' : 'flex-1'} resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none`}
+      value={editValue}
+      onChange={handleTextareaChange}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      placeholder="Type here..."
+      rows={1}
+    />
+  ) : (
+    <p className={`${isTight ? '' : 'flex-1 overflow-hidden'} m-0 cursor-default text-sm text-foreground`}>
+      {data.content || <span className="text-muted-foreground">Type here...</span>}
+    </p>
+  )
+
   return (
     <>
       <NodeResizeControl
@@ -122,28 +145,12 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
         onResizeEnd={handleResizeEnd}
       />
       <BaseNode className="w-full h-full overflow-hidden flex flex-col" onDoubleClick={handleDoubleClick}>
-        <BaseNodeContent className="flex-1">
+        <BaseNodeContent className={`flex-1${isTight ? ' justify-center p-0' : ''}`}>
           <BaseHandle type="source" position={Position.Top} id="top" />
           <BaseHandle type="source" position={Position.Right} id="right" />
           <BaseHandle type="source" position={Position.Bottom} id="bottom" />
           <BaseHandle type="source" position={Position.Left} id="left" />
-          {isEditing ? (
-            <textarea
-              ref={textareaRef}
-              className="nodrag nowheel nopan flex-1 resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none"
-              value={editValue}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
-              placeholder="Type here..."
-              rows={1}
-            />
-          ) : (
-            <p className="flex-1 m-0 cursor-default text-sm text-foreground overflow-hidden">
-              {data.content || <span className="text-muted-foreground">Type here...</span>}
-            </p>
-          )}
-
+          {isTight ? <div className="px-3 py-3 w-full">{textEl}</div> : textEl}
         </BaseNodeContent>
       </BaseNode>
     </>
