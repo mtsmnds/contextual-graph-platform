@@ -7,6 +7,12 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-25
 
+### prd write — m5-prd0046-nested-containers
+- **Source:** user request — nesting containers within containers
+- **Branch at time:** main (clean)
+- **User decision:** create PRD for nested containers + renumber i2 roadmap (PRD0046 inserted as #2, Threaded Container View bumped to PRD0047, View Toggling to PRD0049)
+- **Pre-commit guard:** no changes
+
 ### update — vitest test framework + documentation sync
 - **Source:** user request — add vitest to requirements after AGENTS.md update
 - **Branch at time:** main (dirty → committed wip)

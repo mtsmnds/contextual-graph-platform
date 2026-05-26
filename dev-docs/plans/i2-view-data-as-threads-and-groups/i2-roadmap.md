@@ -2,13 +2,11 @@
 
 **Objective:** Move from a flat node-and-edge canvas to structured, contextual views — threaded sequences inside nested container groups, metadata that projects from edges, and multi-projection layouts.
 
-**Status:** In progress — 1 of 5 Now PRDs completed.
-
-**Architectural Direction:** Entity Graph → Projection Layer → Renderer. The canvas is one renderer among many. Containers are structural labels; threading is universal across all `contains` children. Metadata shows edge-derived values without exposing the full edge graph by default. Context loads by hop distance, not all at once.
+**Status:** In progress — 1 of 6 Now PRDs completed.
 
 **Parent-child decision (2026-05-23):** Container grouping uses React Flow's native `parentId`/`extent` mechanism. `parentId` is a first-class field on `Entity` — it directly models data hierarchy (e.g., "Hamlet" is the parent of its content). NOT buried in `canvasData`. `contains` edges may be added later as a parallel representation, but `parentId` remains the authoritative domain field.
 
-**Anti-Overengineering Guardrail:** Don't implement Next or Later items unless promoted to Now. Speculative ideas get one bullet, then move on.
+**PRD renumbering (2026-05-25):** Nested Containers (PRD0046) inserted as #2, bumping Threaded Container View to PRD0047 and View Toggling to PRD0049.
 
 ---
 
@@ -40,15 +38,23 @@ Snapshot-based undo/redo system with batch grouping and workspace backup panel. 
 
 ## Now (ordered by dependency)
 
-### 2. Threaded Container View
+### 2. Nested Containers
 
-**PRD:** `m5-prd0046-threaded-container-view`
+**PRD:** `m5-prd0046-nested-containers`
 
-A vertical projection layer that renders containers as collapsible sections with threaded children stacked top-to-bottom. Children ordered by `sortOrder`. Collapse/expand handles "annotations-only" views. Operates separately from the free-form canvas layout — same data, different projection.
+Containers can be nested inside other containers — the same `parentId`/`extent`/`expandParent` mechanics from PRD0045 extended to container-type entities. Drag a container onto another container to nest it. Right-click container → "Add Child Container". Cycle detection prevents circular nesting. Depth-limited to 4 levels. Visual depth indicator (progressively deeper background tint).
 
 Depends on: Container group nodes (PRD0045) — ✅ done.
 
-### 3. Contextual Subgraph Loading
+### 3. Threaded Container View
+
+**PRD:** `m5-prd0047-threaded-container-view`
+
+A vertical projection layer that renders containers as collapsible sections with threaded children stacked top-to-bottom. Children ordered by `sortOrder`. Collapse/expand handles "annotations-only" views. Operates separately from the free-form canvas layout — same data, different projection.
+
+Depends on: Container group nodes (PRD0045) + nested containers (PRD0046).
+
+### 4. Contextual Subgraph Loading
 
 **PRD:** `m5-prd0044-contextual-subgraph`
 
@@ -56,7 +62,7 @@ New query engine function: `getContextualSubgraph(entityId, maxDepth)` — BFS o
 
 Depends on: Container group nodes + threaded view + Hamlet test data.
 
-### 4. Metadata-as-Edge Resolution
+### 5. Metadata-as-Edge Resolution
 
 **PRD:** `m5-prd0043-metadata-edge-resolution`
 
@@ -64,9 +70,9 @@ Define which metadata keys resolve to edges at read time and create edges at wri
 
 Depends on: metadata panel (built in i1). Non-blocking for grouping/threading.
 
-### 5. View Toggling
+### 6. View Toggling
 
-**PRD:** `m5-prd0048-view-toggling`
+**PRD:** `m5-prd0049-view-toggling`
 
 Focus modes: text-focus (full content + annotations aligned) vs annotations-focus (text collapsed, annotations threaded). Toggle control near viewport. Projection filter over contextual subgraph, not a data mutation.
 
