@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-25
 
+### prd merge — m5-prd0045-container-group-nodes
+- **Branch at time:** main (clean)
+- **User decision:** merge single branch
+- **Merge order:** m5-prd0045-container-group-nodes (0045)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly (12 files, 590 insertions)
+- **Pre-commit guard:** no changes
+
 ### prd end — m5-prd0045-container-group-nodes
 - **Source:** user request — container group nodes + entity height fix
 - **Branch at time:** m5-prd0045-container-group-nodes (clean)
