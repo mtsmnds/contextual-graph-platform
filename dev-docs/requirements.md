@@ -48,7 +48,7 @@ This document defines why this project exists, who it serves, and what capabilit
 - As a user, right-clicking nodes, edges, or the canvas pane shows a context menu with relevant actions.
 - As a user, I can select multiple nodes (Shift+click) and delete them with Backspace/Delete.
 - As a user, the cursor changes contextually: grab on nodes, default on pane and edge labels, text on content.
-- As a user, nodes snap to a 15×15 grid when moved.
+- As a user, nodes snap to the 16px grid when moved.
 
 ### State Management
 - As a developer, I can add, update, and delete entities and relations through primitive store actions.
@@ -63,7 +63,7 @@ This document defines why this project exists, who it serves, and what capabilit
 - TypeScript strict mode enabled — no `any` in graph types.
 - Domain types import nothing from rendering libraries (React Flow agnostic).
 - Large texts (1,400+ entities) render without performance issues. No virtualization/lazy loading needed at current scale.
-- No test framework required (not yet configured).
+- Vitest is used for unit tests covering pure functions, store actions, and state transitions. Run `npx vitest run` before committing. See AGENTS.md for testing guidelines.
 
 ## Traceability
 - Update this file when adding/changing features or non-functional targets.
