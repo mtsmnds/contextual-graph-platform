@@ -1,5 +1,11 @@
 # m5-prd0045 — Container Group Nodes
 
+> **Completion note (2026-05-25):**
+> - **What was built:** Container group nodes (entities with `type: "container"` render as visual group boxes via React Flow sub-flows). EntityKind→EntityType rename across 17 files. Entity node height rewritten — user-controlled via Top/Bottom NodeResizeControl instead of auto-height textarea. 16px grid alignment throughout. Container query CSS for padding at tight/normal heights.
+> - **Key decisions:** `parentId` is a first-class field on `Entity` (not in `canvasData`). Badges removed from ALL node types (not just containers — they live in metadata panel only). Height is user-controlled (no auto-expand). `container-type: size` + `@container (min-height: 56px)` switches padding from 4.75px to 6px.
+> - **Deviations from plan:** snapGrid changed from [15,15] to [16,16] (not specified). Container default height is 304 (not 300) — snapped to 16px grid. Entity node default height is 64px (not specified). Dagre sub-pass not implemented (gated behind `__experimentalNoDagre`). Seeds not updated (carried existing data).
+> - **Postponed:** Sub-Dagre layout for containers, `contains` edges, collapse/expand, container breadcrumbs, URL routing.
+
 ## Overview
 
 Entities with `type: "container"` render as visual group nodes on the canvas using React Flow's sub-flow mechanism (`parentId` + `extent: "parent"`). Children are assigned to containers via drag-and-drop or double-click-inside-create. The parent-child relationship is a first-class domain field (`parentId` on Entity) — this directly models data hierarchy (e.g., "Hamlet" is the parent of its content). `contains` edges may be added later as a parallel representation, but `parentId` remains the authoritative field. This PRD establishes the visual grouping infrastructure that threaded views, subgraph loading, and URL-routed pages will build on.
