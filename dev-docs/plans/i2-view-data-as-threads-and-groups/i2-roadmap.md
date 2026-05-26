@@ -1,6 +1,8 @@
-# i2 Roadmap — View Data as Threads and Groups
+# Initiative: View Data as Threads and Groups (i2)
 
 **Objective:** Move from a flat node-and-edge canvas to structured, contextual views — threaded sequences inside nested container groups, metadata that projects from edges, and multi-projection layouts.
+
+**Status:** In progress — 1 of 5 Now PRDs completed.
 
 **Architectural Direction:** Entity Graph → Projection Layer → Renderer. The canvas is one renderer among many. Containers are structural labels; threading is universal across all `contains` children. Metadata shows edge-derived values without exposing the full edge graph by default. Context loads by hop distance, not all at once.
 
@@ -8,26 +10,35 @@
 
 **Anti-Overengineering Guardrail:** Don't implement Next or Later items unless promoted to Now. Speculative ideas get one bullet, then move on.
 
-**PRD numbering:** PRD numbers in this document are non-final. They shift as PRDs are added, removed, or reordered across milestones.
-
 ---
 
-## Now (ordered by dependency)
+## ✅ Done
 
-### 1. Container Group Nodes
+### Container Group Nodes — m5-prd0045
+Entities with `type: "container"` render as visual group nodes on the canvas using React Flow's sub-flow mechanism (`parentId` + `extent: "parent"`). Children assigned via drag-and-drop or double-click-inside-create. `parentId` is a first-class field on `Entity` — directly models data hierarchy. Entity node height rewritten — user-controlled via Top/Bottom NodeResizeControl.
 
-**PRD:** `m5-prd0045-container-group-nodes` — written, ready for implementation.
-
-Entities with `type: "container"` render as visual group nodes on the canvas using React Flow's sub-flow mechanism (`parentId` + `extent: "parent"`). Children assigned via drag-and-drop or double-click-inside-create. `parentId` is a first-class field on `Entity` — it directly models data hierarchy. `contains` edges may be added later as a parallel representation.
-
-- Container group custom node (`"containerGroup"`) with header (title, no badge), padded child area, resize handles, inner background tint
+- Container group custom node (`"containerGroup"`) with header (title), padded child area, 4-edge resize, inner background tint
 - Double-click header → inline edit container title
-- Layout engine: sub-Dagre pass positions children relative to parent. Respects saved `canvasData` (no overwrite). `expandParent: true` on all children.
-- Pane double-click: option to create "New Group" or "New Node"
 - Double-click container child area → create child node (`type: "segment"`), enters edit mode immediately
 - Drag node over container → drop → `parentId` assigned
 - Container drag moves all children (React Flow native)
 - Cross-boundary edges supported natively
+- Entity nodes: Top/Bottom resize, flex-1 textarea, container query CSS for padding at tight vs normal heights
+- 16px grid alignment (`snapGrid [16,16]`, `Math.ceil` snap)
+- Container group styles, ns-resize cursor
+
+**Not implemented in this PRD:**
+- Layout engine sub-Dagre pass — Dagre is disabled (`__experimentalNoDagre`). Node positions are store-authoritative.
+- Pane double-click option to create "New Group" vs "New Node" — only "New Node" is offered.
+
+**Archive:** `dev-docs/archive/m5-i2-view-data-as-threads-and-groups/m5-prd0045-container-group-nodes.md`
+
+### Undo/Redo (independent, built as m4-prd0043)
+Snapshot-based undo/redo system with batch grouping and workspace backup panel. 50-entry in-memory history. Cmd+Z / Cmd+Shift+Z. Built as part of m4 (not under i2) but fulfills the Next item listed below.
+
+---
+
+## Now (ordered by dependency)
 
 ### 2. Threaded Container View
 
@@ -35,13 +46,13 @@ Entities with `type: "container"` render as visual group nodes on the canvas usi
 
 A vertical projection layer that renders containers as collapsible sections with threaded children stacked top-to-bottom. Children ordered by `sortOrder`. Collapse/expand handles "annotations-only" views. Operates separately from the free-form canvas layout — same data, different projection.
 
-Depends on: Container group nodes (PRD0045).
+Depends on: Container group nodes (PRD0045) — ✅ done.
 
 ### 3. Contextual Subgraph Loading
 
 **PRD:** `m5-prd0044-contextual-subgraph`
 
-New query engine function: `getContextualSubgraph(entityId, maxDepth)` — BFS outward from the focused entity up to N hops. Pure query over store state. Foundation for performance at scale. Built after grouping + threading + test data exist, so there's a real platform to test against.
+New query engine function: `getContextualSubgraph(entityId, maxDepth)` — BFS outward from the focused entity up to N hops. Pure query over store state. Foundation for performance at scale.
 
 Depends on: Container group nodes + threaded view + Hamlet test data.
 
@@ -75,8 +86,6 @@ Hamlet entities built incrementally as each feature ships — not a sequential P
 
 - **Annotations Inline Alignment** — When reading Hamlet text, annotations attach horizontally to their source paragraphs. The layout engine positions annotation nodes adjacent to their anchor paragraphs. Uses the existing `annotates` relation type for anchoring.
 
-- **Undo/Redo** — Command-pattern history for entity/relation mutations. Cmd+Z / Cmd+Shift+Z. Debounced position changes excluded from history. UI buttons in the panel.
-
 ## Later (m7+)
 
 - **Query Builder UI** — Target dropdown + relation type dropdown + "Show" button. Generates thread views from arbitrary `queryThread` calls. (i1 carry-forward)
@@ -95,3 +104,4 @@ Hamlet entities built incrementally as each feature ships — not a sequential P
 - Hamlet is chosen because it's public domain and provides a real-world hierarchy to test against (book → act → scene → paragraph).
 - The metadata panel (key-value editor) was built in i1. Edge-derived metadata (`edge-metadata.ts`) adds edge-awareness to it.
 - Parent-child grouping uses React Flow's `parentId` property layer. `parentId` is a first-class field on `Entity` — not in `canvasData`. `contains` edges may be added later as a parallel representation but `parentId` remains authoritative.
+- Undo/Redo was built as m4-prd0043 (independent of i2) and moved from Next to Done.
