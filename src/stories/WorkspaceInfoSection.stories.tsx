@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { fn } from 'storybook/test'
 import WorkspaceInfoSection from '@/canvas/panels/sections/WorkspaceInfoSection'
 import { withSidebarSection } from '../../.storybook/decorators'
 
@@ -8,6 +9,14 @@ const meta = {
   decorators: [withSidebarSection],
   parameters: { layout: 'centered' },
   tags: ['autodocs', 'ai-generated'],
+  args: {
+    folderName: null,
+    entityCount: 0,
+    undoStack: [],
+    redoStack: [],
+    onUndo: fn(),
+    onRedo: fn(),
+  },
 } satisfies Meta<typeof WorkspaceInfoSection>
 
 export default meta

@@ -1,3 +1,9 @@
+> **Completion note (2026-05-27):**
+> - **What was built:** Container/presenter split for all three sidebar sections, shared `withSidebarSection` decorator, updated stories with explicit args.
+> - **Key decisions:** Container owns store reads + async ops + dialog state. Presenter is pure render with explicit props. Stories target presenters with `fn()` callbacks.
+> - **Deviations from plan:** None — all three phases completed as specified.
+> - **Postponed:** AppSidebar container/presenter split, project-wide migration.
+
 # PRD 0048: Container/Presenter Pattern for AppSidebar Sections
 
 ## Overview
