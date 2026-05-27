@@ -232,6 +232,14 @@ Append-only, newest on top within same-day groupings.
 - **Scope:** full (single phase)
 - **Pre-commit guard:** committed ("docs")
 
+### prd write — m5-prd0047-workspace-sidebar
+- **Source:** user text: "build the prd putting things in their right places..."
+- **Branch at time:** m5-storybook (clean)
+- **User decision:** Replace WorkspaceMenu entirely, sidebar toggle replaces DotsThreeOutline icon, persist everything (open/closed + sections), sections: Feature Flags + Backups + Workspace Info
+- **PRD file:** `dev-docs/plans/m5-prd0047-workspace-sidebar.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** clean
+
 ### prd write — m4-prd0038-save-node-positions
 - **Source:** user text: "Save node positions — schema v4..."
 - **Branch at time:** prd0037-zoom-improvements (clean)
