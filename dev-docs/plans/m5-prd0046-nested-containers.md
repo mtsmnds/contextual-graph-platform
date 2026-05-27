@@ -44,7 +44,7 @@ This is the next immediate dependency for Threaded Container View (PRD0047) and 
 
 - **Circular nesting prevention:** Dragging container A over container B must detect whether A is an ancestor of B (walk up `parentId` chain). If a cycle would form, the drop is rejected (no `parentId` set, node snaps back to original position).
 - **Self-nesting:** A container cannot be dropped onto itself.
-- **Depth limit:** Impose a maximum nesting depth of 4 levels. Attempts to go deeper are rejected. (Prevents rendering issues from deeply nested sub-flows.)
+- **No depth limit:** Containers may nest arbitrarily deep with no enforced maximum.
 - **Resize constraint:** Child containers use `extent: 'parent'` to prevent being resized or dragged beyond parent bounds (already applied to entity children from PRD0045).
 - **Delete cascade:** When a parent container is deleted, its child containers are reparented (same `deleteEntity` cascade logic as PRD0045 — `parentId` cleared, position converted to absolute). Child containers retain their own children.
 - **Undo/redo:** Drag-to-nest and detach must produce single undo entries. Delete cascade must be undoable (wrapped via existing `beginBatch`/`endBatch`).

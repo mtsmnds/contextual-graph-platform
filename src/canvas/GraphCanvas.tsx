@@ -25,8 +25,9 @@ import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import GraphContextMenu from "./GraphContextMenu"
-import WorkspaceMenu from "./panels/WorkspaceMenu"
+import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
 import ContainerGroupNode from "./nodes/ContainerGroupNode"
@@ -83,13 +84,20 @@ function GraphCanvasContent() {
         nodes.push(node)
       }
 
-      // Parent-first ordering: container nodes before their children
-      nodes.sort((a, b) => {
-        const aIsChild = !!a.parentId
-        const bIsChild = !!b.parentId
-        if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
-        return 0
-      })
+      // Depth-first ordering: parents before children (handles multi-level nesting)
+      {
+        const depthCache = new Map<string, number>()
+        function depthOf(id: string): number {
+          const cached = depthCache.get(id)
+          if (cached !== undefined) return cached
+          const n = nodes.find((m) => m.id === id)
+          if (!n?.parentId) { depthCache.set(id, 0); return 0 }
+          const d = 1 + depthOf(n.parentId)
+          depthCache.set(id, d)
+          return d
+        }
+        nodes.sort((a, b) => depthOf(a.id) - depthOf(b.id))
+      }
       const edges: Edge[] = relations.map((rel) => ({
         id: rel.id,
         source: rel.source,
@@ -118,8 +126,8 @@ function GraphCanvasContent() {
   const keyboardMoveIdsRef = useRef<Set<string>>(new Set())
 
   const reactFlowInstance = useReactFlow()
-  const storeInit = useGraphStore((s) => s.init)
-  const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
+
+  const featureFlags = useGraphStore((s) => s.featureFlags)
 
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -251,13 +259,18 @@ function GraphCanvasContent() {
           }
         }
 
-        // Parent-first ordering: containers before their children
-        merged.sort((a, b) => {
-          const aIsChild = !!a.parentId
-          const bIsChild = !!b.parentId
-          if (aIsChild !== bIsChild) return aIsChild ? 1 : -1
-          return 0
-        })
+        // Depth-first ordering: parents before children (handles multi-level nesting)
+        const nodeDepthCache = new Map<string, number>()
+        function getNodeDepth(id: string): number {
+          const cached = nodeDepthCache.get(id)
+          if (cached !== undefined) return cached
+          const n = merged.find((m) => m.id === id)
+          if (!n?.parentId) { nodeDepthCache.set(id, 0); return 0 }
+          const depth = 1 + getNodeDepth(n.parentId)
+          nodeDepthCache.set(id, depth)
+          return depth
+        }
+        merged.sort((a, b) => getNodeDepth(a.id) - getNodeDepth(b.id))
 
         return merged
       })
@@ -421,7 +434,7 @@ function GraphCanvasContent() {
   const onNodesDelete = useCallback(
     (deletedNodes: Node[]) => {
       const s = useGraphStore.getState()
-      const count = deletedNodes.filter((n) => n.type === "entity").length
+      const count = deletedNodes.filter((n) => n.type === "entity" || n.type === "containerGroup").length
       s.beginBatch(`Delete ${count} nodes`)
       for (const node of deletedNodes) {
         s.deleteEntity(node.id)
@@ -639,8 +652,9 @@ function GraphCanvasContent() {
       }
 
       // Drag-to-assign: check if any moved node landed in a container
+      if (!featureFlags.dragToNest) return
       for (const node of allNodes) {
-        if (node.type !== "entity") continue
+        if (node.type !== "entity" && node.type !== "containerGroup") continue
         const containerNodes = allNodes.filter((n) => n.type === "containerGroup")
         for (const container of containerNodes) {
           const cw = (container.measured?.width ?? container.width ?? 400) as number
@@ -810,6 +824,17 @@ function GraphCanvasContent() {
               }
             },
           })
+          items.push({
+            label: "Add Child Container",
+            action: () => {
+              if (contextMenu.nodeId) {
+                const id = useGraphStore.getState().addEntity("container", {
+                  canvasData: { x: 16, y: 128, width: 400, height: 304 },
+                }, contextMenu.nodeId)
+                pendingNodeRef.current = id
+              }
+            },
+          })
         }
 
         if (isChild) {
@@ -898,30 +923,6 @@ function GraphCanvasContent() {
     }
   }, [contextMenu, setNodes, visibleMetadataNodeIds, nodes])
 
-  const onOpenFolder = useCallback(async () => {
-    const fsa = getFSAccessInstance()
-    const picked = await fsa.initFromPicker()
-    if (!picked) return
-
-    const existing = await fsa.loadWorkspace()
-    if (existing) {
-      setAdapter(fsa)
-      await storeInit(fsa)
-    } else {
-      const state = useGraphStore.getState()
-      const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
-      await fsa.saveGraph(snapshot)
-      for (const entity of state.entities) {
-        if (entity.type === "container") {
-          const content = state.getContent(entity.id)
-          if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
-        }
-      }
-      setAdapter(fsa)
-      refreshFolderName()
-    }
-  }, [storeInit, refreshFolderName])
-
   const onZoomIn = useCallback(() => reactFlowInstance.zoomIn(), [reactFlowInstance])
   const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
   const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
@@ -996,9 +997,6 @@ function GraphCanvasContent() {
       <MiniMap pannable zoomable position="bottom-right" />
       <Panel position="bottom-right" style={{ marginBottom: 8 }}>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] tabular-nums text-muted-foreground/60">
-            x: {x.toFixed(1)} y: {y.toFixed(1)} z: {Math.round(zoom * 100)}%
-          </span>
           <ButtonGroup>
             <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
               <ZoomIn data-icon />
@@ -1016,7 +1014,7 @@ function GraphCanvasContent() {
         </div>
       </Panel>
       <Panel position="top-right">
-        <WorkspaceMenu onOpenFolder={onOpenFolder} />
+        <SidebarTrigger variant="outline" size="icon-sm" aria-label="Workspace menu" />
       </Panel>
       <GraphContextMenu
         open={contextMenu !== null}
@@ -1030,10 +1028,42 @@ function GraphCanvasContent() {
 }
 
 function GraphCanvas() {
+  const storeInit = useGraphStore((s) => s.init)
+  const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
+
+  const onOpenFolder = useCallback(async () => {
+    const fsa = getFSAccessInstance()
+    const picked = await fsa.initFromPicker()
+    if (!picked) return
+
+    const existing = await fsa.loadWorkspace()
+    if (existing) {
+      setAdapter(fsa)
+      await storeInit(fsa)
+    } else {
+      const state = useGraphStore.getState()
+      const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
+      await fsa.saveGraph(snapshot)
+      for (const entity of state.entities) {
+        if (entity.type === "container") {
+          const content = state.getContent(entity.id)
+          if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
+        }
+      }
+      setAdapter(fsa)
+      refreshFolderName()
+    }
+  }, [storeInit, refreshFolderName])
+
   return (
-    <ReactFlowProvider>
-      <GraphCanvasContent />
-    </ReactFlowProvider>
+    <SidebarProvider>
+      <div className="flex-1 min-w-0 min-h-0">
+        <ReactFlowProvider>
+          <GraphCanvasContent />
+        </ReactFlowProvider>
+      </div>
+      <AppSidebar onOpenFolder={onOpenFolder} />
+    </SidebarProvider>
   )
 }
 

@@ -7,6 +7,27 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-25
 
+### fix — removed depth limit, fixed sort + phantom undo entries
+- **Source:** manual testing in browser revealed issues
+- **Branch at time:** m5-prd0046-nested-containers
+- **Changes:**
+  - `src/engine/queries.ts`: Exported `wouldCreateCycle`, `getNestingDepth`
+  - `src/store/useGraphStore.ts`: Removed depth limit from `updateEntity`, null `_pendingSnapshot` on cycle rejection (no phantom undo entries)
+  - `src/canvas/GraphCanvas.tsx`: Fixed depth sort from binary child/non-child to recursive ancestor-depth sort (eliminated React Flow "Parent node not found" warnings)
+  - `src/store/nesting.test.ts`: Changed depth limit test to verify arbitrary depth
+- **Final status:** 85 tests passing + tsc --noEmit clean + build clean
+
+### prd start — implement m5-prd0046-nested-containers
+- **Source:** user request — proceed with nested containers implementation
+- **Branch at time:** m5-prd0046-nested-containers (clean, new branch from main)
+- **Changes:**
+  - `src/engine/queries.ts`: Added `wouldCreateCycle` + `getNestingDepth` helpers
+  - `src/store/useGraphStore.ts`: Imported helpers, added cycle/depth guard in `updateEntity`
+  - `src/canvas/GraphCanvas.tsx`: Drag-to-assign for containers, "Add Child Container" context menu item, batch description count includes containers
+  - `src/store/nesting.test.ts`: 20 new tests (9 pure function + 11 store integration)
+- **Pre-commit guard:** clean
+- **Final status:** implemented + all 85 tests passing + tsc --noEmit clean + build clean
+
 ### prd write — m5-prd0046-nested-containers
 - **Source:** user request — nesting containers within containers
 - **Branch at time:** main (clean)
@@ -210,6 +231,14 @@ Append-only, newest on top within same-day groupings.
 - **Branch name:** m4-prd0038-save-node-positions
 - **Scope:** full (single phase)
 - **Pre-commit guard:** committed ("docs")
+
+### prd write — m5-prd0047-workspace-sidebar
+- **Source:** user text: "build the prd putting things in their right places..."
+- **Branch at time:** m5-storybook (clean)
+- **User decision:** Replace WorkspaceMenu entirely, sidebar toggle replaces DotsThreeOutline icon, persist everything (open/closed + sections), sections: Feature Flags + Backups + Workspace Info
+- **PRD file:** `dev-docs/plans/m5-prd0047-workspace-sidebar.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** clean
 
 ### prd write — m4-prd0038-save-node-positions
 - **Source:** user text: "Save node positions — schema v4..."

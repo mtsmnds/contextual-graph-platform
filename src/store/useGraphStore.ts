@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { generateKeyBetween } from "fractional-indexing";
 import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
+import { wouldCreateCycle } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
@@ -114,6 +115,24 @@ export function migrateSnapshot(snapshot: {
   }
 }
 
+const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
+  dragToNest: false,
+}
+
+function loadFeatureFlags(): Record<string, boolean> {
+  try {
+    const stored = localStorage.getItem("feature-flags")
+    if (stored) return { ...DEFAULT_FEATURE_FLAGS, ...JSON.parse(stored) }
+  } catch { }
+  return { ...DEFAULT_FEATURE_FLAGS }
+}
+
+function saveFeatureFlags(flags: Record<string, boolean>) {
+  try {
+    localStorage.setItem("feature-flags", JSON.stringify(flags))
+  } catch { }
+}
+
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
@@ -159,6 +178,9 @@ interface GraphStore {
 
   applyMeasuredDimensions: (dimensions: Record<string, CanvasData>) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+
+  featureFlags: Record<string, boolean>;
+  setFeatureFlag: (key: string, value: boolean) => void;
 }
 
 const storeInitializer = (set: any, get: any): GraphStore => ({
@@ -425,6 +447,18 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const current = get().entities.find((e: Entity) => e.id === id);
     if (!current) { get().endBatch(); return; }
 
+    const newParentId = data.parentId
+    if (newParentId !== undefined && newParentId !== current.parentId) {
+      const entities = get().entities as Entity[]
+      if (newParentId) {
+        if (wouldCreateCycle(entities, id, newParentId)) {
+          set({ _pendingSnapshot: null })
+          get().endBatch()
+          return
+        }
+      }
+    }
+
     let resolvedId = id;
     if (data.id && data.id !== id) {
       const oldId = id;
@@ -672,6 +706,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, viewport },
     }));
+  },
+
+  featureFlags: loadFeatureFlags(),
+  setFeatureFlag: (key: string, value: boolean) => {
+    set((state: GraphStore) => ({
+      featureFlags: { ...state.featureFlags, [key]: value },
+    }));
+    saveFeatureFlags({ ...useGraphStore.getState().featureFlags, [key]: value });
   },
 });
 

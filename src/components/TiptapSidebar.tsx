@@ -22,7 +22,7 @@ import {
 import { House, BookOpen, MapIcon, StickyNote, Plus, FolderOpen } from "lucide-react"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 
-export function AppSidebar() {
+export function TiptapSidebar() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
   const focusedEntityId = useGraphStore((s) => s.view.focusedEntityId)

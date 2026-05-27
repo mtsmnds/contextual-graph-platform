@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from "react"
-import { DotsThreeOutline, ArrowUUpLeft, ArrowUUpRight, Plus, ArrowCounterClockwise, Trash, Hourglass, WarningCircle, FolderOpen } from "@phosphor-icons/react"
+import { Plus, ArrowCounterClockwise, Trash, Hourglass, WarningCircle, CaretDown } from "@phosphor-icons/react"
 import { useGraphStore } from "@/store/useGraphStore"
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible"
+import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "@/components/ui/sidebar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import {
   createManualBackup,
@@ -14,6 +18,7 @@ import {
   restoreAutoSnapshot,
   clearAutoSnapshots,
 } from "@/engine/backup"
+
 
 type ManualBackupInfo = { id: string; timestamp: number }
 type AutoSnapshotInfo = { filename: string; timestamp: number }
@@ -34,8 +39,7 @@ function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString()
 }
 
-export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => void }) {
-  const [open, setOpen] = useState(false)
+export default function BackupsSection() {
   const [manualBackups, setManualBackups] = useState<ManualBackupInfo[]>([])
   const [autoSnapshots, setAutoSnapshots] = useState<AutoSnapshotInfo[]>([])
   const [isCreating, setIsCreating] = useState(false)
@@ -45,14 +49,10 @@ export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => vo
   const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
-  const folderName = useGraphStore((s) => s.folderName)
-  const undoStack = useGraphStore((s) => s.undoStack)
-  const redoStack = useGraphStore((s) => s.redoStack)
   const entityCount = useGraphStore((s) => s.entities.length)
+  const undoStack = useGraphStore((s) => s.undoStack)
+  const folderName = useGraphStore((s) => s.folderName)
   const hasFileSystem = folderName !== null
-
-  const undoDescription = undoStack.length > 0 ? `Undo ${undoStack[undoStack.length - 1].description}` : undefined
-  const redoDescription = redoStack.length > 0 ? `Redo ${redoStack[redoStack.length - 1].description}` : undefined
 
   const getHandle = useCallback(() => {
     return useGraphStore.getState().getAdapterHandle()
@@ -82,16 +82,8 @@ export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => vo
 
   useEffect(() => {
     loadAutoSnapshots()
-    if (open && hasFileSystem) loadManualBackups()
-  }, [open, hasFileSystem, loadAutoSnapshots, loadManualBackups])
-
-  const handleUndo = useCallback(() => {
-    useGraphStore.getState().undo()
-  }, [])
-
-  const handleRedo = useCallback(() => {
-    useGraphStore.getState().redo()
-  }, [])
+    if (hasFileSystem) loadManualBackups()
+  }, [hasFileSystem, loadAutoSnapshots, loadManualBackups])
 
   const handleCreateBackup = useCallback(async () => {
     const handle = getHandle()
@@ -156,7 +148,6 @@ export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => vo
     } finally {
       setConfirmRestoreOpen(false)
       setRestoreTarget(null)
-      setOpen(false)
     }
   }, [restoreTarget, getHandle])
 
@@ -187,9 +178,7 @@ export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => vo
     try {
       await clearAutoSnapshots(handle)
       setAutoSnapshots([])
-    } catch {
-      // ignore
-    }
+    } catch { }
   }, [getHandle])
 
   const recentSnapshots = undoStack.slice(-10).reverse()
@@ -198,164 +187,124 @@ export default function WorkspaceMenu({ onOpenFolder }: { onOpenFolder: () => vo
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={<Button variant="outline" size="icon-sm" aria-label="Workspace menu" />}
-        >
-          <DotsThreeOutline />
-        </PopoverTrigger>
-        <PopoverContent className="w-[260px]" align="end" sideOffset={8}>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 px-0.5">
-              <ButtonGroup>
+      <Collapsible defaultOpen>
+        <SidebarGroup>
+          <CollapsibleTrigger nativeButton={false} render={<SidebarGroupLabel />}>
+            <CaretDown className="size-3 shrink-0" />
+            <span>Backups</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarGroupContent>
+              <div className="flex flex-col gap-2 px-1 pt-1">
                 <Button
                   variant="outline"
                   size="sm"
-                  aria-label="Undo"
-                  title={undoDescription}
-                  disabled={undoStack.length === 0}
-                  onClick={handleUndo}
+                  className="w-full justify-start gap-2"
+                  onClick={handleCreateBackup}
+                  disabled={isCreating || isWorkspaceEmpty || !hasFileSystem}
                 >
-                  <ArrowUUpLeft />
+                  {isCreating ? (
+                    <Hourglass className="size-4 animate-spin" />
+                  ) : (
+                    <Plus />
+                  )}
+                  {isCreating ? "Saving..." : isWorkspaceEmpty ? "Nothing to back up yet" : "Save checkpoint now"}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="Redo"
-                  title={redoDescription}
-                  disabled={redoStack.length === 0}
-                  onClick={handleRedo}
-                >
-                  <ArrowUUpRight />
-                </Button>
-              </ButtonGroup>
-            </div>
 
-            <div className="border-t" />
+                {createError && (
+                  <div className="flex items-center gap-1.5 text-xs text-destructive">
+                    <WarningCircle className="size-3.5" />
+                    {createError}
+                  </div>
+                )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start gap-2"
-              onClick={() => { onOpenFolder(); setOpen(false) }}
-            >
-              <FolderOpen />
-              Open Folder
-            </Button>
-
-            <div className="border-t" />
-
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-0.5">
-              Backups
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start gap-2"
-              onClick={handleCreateBackup}
-              disabled={isCreating || isWorkspaceEmpty || !hasFileSystem}
-            >
-              {isCreating ? (
-                <Hourglass className="size-4 animate-spin" />
-              ) : (
-                <Plus />
-              )}
-              {isCreating ? "Saving..." : isWorkspaceEmpty ? "Nothing to back up yet" : "Save checkpoint now"}
-            </Button>
-
-            {createError && (
-              <div className="flex items-center gap-1.5 text-xs text-destructive">
-                <WarningCircle className="size-3.5" />
-                {createError}
-              </div>
-            )}
-
-            {autoSnapshots.length > 0 && (
-              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                <p className="text-muted-foreground mb-1.5">You have unsaved snapshots from your last session.</p>
-                <div className="flex gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    className="h-6 text-[11px]"
-                    onClick={() => {
-                      const latest = autoSnapshots[0]
-                      if (latest) handleRestoreClick({ type: "auto", filename: latest.filename })
-                    }}
-                  >
-                    Restore
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    className="h-6 text-[11px]"
-                    onClick={handleDismissAutoSnapshots}
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {manualBackups.length > 0 && (
-              <>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-0.5">Manual Saves</span>
-                <div className="flex flex-col gap-0.5 max-h-32 overflow-y-auto">
-                  {manualBackups.map((backup) => (
-                    <div key={backup.id} className="flex items-center justify-between gap-1 rounded-md px-1.5 py-0.5 hover:bg-muted/50">
-                      <span className="text-xs text-muted-foreground truncate flex-1">
-                        {formatTimestamp(backup.timestamp)}
-                      </span>
-                      <div className="flex shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          aria-label="Restore this backup"
-                          onClick={() => handleRestoreClick({ type: "manual", id: backup.id })}
-                        >
-                          <ArrowCounterClockwise className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          aria-label="Delete backup"
-                          onClick={() => handleDeleteClick(backup)}
-                        >
-                          <Trash className="size-3.5" />
-                        </Button>
-                      </div>
+                {autoSnapshots.length > 0 && (
+                  <div className="rounded-md bg-muted/50 p-2 text-xs">
+                    <p className="text-muted-foreground mb-1.5">You have unsaved snapshots from your last session.</p>
+                    <div className="flex gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="h-6 text-[11px]"
+                        onClick={() => {
+                          const latest = autoSnapshots[0]
+                          if (latest) handleRestoreClick({ type: "auto", filename: latest.filename })
+                        }}
+                      >
+                        Restore
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        className="h-6 text-[11px]"
+                        onClick={handleDismissAutoSnapshots}
+                      >
+                        Dismiss
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              </>
-            )}
+                  </div>
+                )}
 
-            {recentSnapshots.length > 0 && (
-              <>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-0.5">Recent Snapshots</span>
-                <div className="flex flex-col gap-0.5 max-h-32 overflow-y-auto">
-                  {recentSnapshots.map((entry, idx) => (
-                    <div key={`${entry.timestamp}-${idx}`} className="flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-muted/50">
-                      <span className="text-xs truncate flex-1">
-                        <span className="text-muted-foreground">{formatRelativeTime(entry.timestamp)}</span>
-                        <span className="text-muted-foreground/70">&nbsp;&mdash;&nbsp;</span>
-                        {entry.description}
-                      </span>
+                {manualBackups.length > 0 && (
+                  <>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-0.5">Manual Saves</span>
+                    <div className="flex flex-col gap-0.5 max-h-32 overflow-y-auto">
+                      {manualBackups.map((backup) => (
+                        <div key={backup.id} className="flex items-center justify-between gap-1 rounded-md px-1.5 py-0.5 hover:bg-sidebar-accent">
+                          <span className="text-xs text-muted-foreground truncate flex-1">
+                            {formatTimestamp(backup.timestamp)}
+                          </span>
+                          <div className="flex shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label="Restore this backup"
+                              onClick={() => handleRestoreClick({ type: "manual", id: backup.id })}
+                            >
+                              <ArrowCounterClockwise className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label="Delete backup"
+                              onClick={() => handleDeleteClick(backup)}
+                            >
+                              <Trash className="size-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </>
-            )}
+                  </>
+                )}
 
-            {!hasAnyBackupContent && !isCreating && autoSnapshots.length === 0 && (
-              <div className="text-xs text-muted-foreground py-2 text-center">
-                No backups yet. Create one with the + button above.
+                {recentSnapshots.length > 0 && (
+                  <>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-0.5">Recent Snapshots</span>
+                    <div className="flex flex-col gap-0.5 max-h-32 overflow-y-auto">
+                      {recentSnapshots.map((entry, idx) => (
+                        <div key={`${entry.timestamp}-${idx}`} className="flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-sidebar-accent">
+                          <span className="text-xs truncate flex-1">
+                            <span className="text-muted-foreground">{formatRelativeTime(entry.timestamp)}</span>
+                            <span className="text-muted-foreground/70">&nbsp;&mdash;&nbsp;</span>
+                            {entry.description}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {!hasAnyBackupContent && !isCreating && autoSnapshots.length === 0 && (
+                  <div className="text-xs text-muted-foreground py-2 text-center">
+                    No backups yet. Create one with the + button above.
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </SidebarGroup>
+      </Collapsible>
 
       <Dialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
         <DialogContent showCloseButton={false}>
