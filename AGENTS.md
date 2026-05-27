@@ -21,6 +21,14 @@ npm run lint        # ESLint — only covers .js/.jsx, NOT .ts/.tsx
   transitions, and data transformations.
 - Run `npx vitest run` before committing. If vitest is not set up, set it up.
 
+## Storybook
+
+- New UI components need stories under `src/stories/`.
+- When a PRD touches UI components, run story tests for affected stories
+  (`storybook_run-story-tests` or `npx storybook test`) as part of verification.
+- Presenters receive explicit props with `fn()` callbacks for actions.
+- Interactive stories use stateful `render` wrappers for controlled components.
+
 
 ## Project Overview
 

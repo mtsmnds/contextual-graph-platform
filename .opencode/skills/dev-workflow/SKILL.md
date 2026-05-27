@@ -221,6 +221,8 @@ Create a PRD plan file. No git operations — no branching, no committing, no im
 
    - **Overview** — one-paragraph summary of what this PRD delivers.
    - **Specification / Acceptance Criteria** — concrete, testable outcomes. What must be true when this PRD is done?
+     - New UI components have corresponding stories under `src/stories/`.
+     - Existing stories pass for any modified components.
    - **Files changed (inferred)** — which files will likely be touched.
    - **Phases (optional)** — only if the PRD is too large for a single pass.
      - Each phase must state: `Testable by: [manual local dev / unit test / etc.]`
@@ -332,7 +334,13 @@ Archive the PRD, update changelog, write the mandatory ADR, and commit everythin
 
    Save ADR to `dev-docs/archive/{milestone}/{YYYY-MM-DD}-prd{NNNN}-{description}-adr.md`. Link from the changelog entry.
 
-5. **Archive the PRD plan:**
+5. **Verify:**
+   - `npx tsc --noEmit` — type check.
+   - `npm run build` — production build.
+   - If PRD touched UI components: run story tests for affected stories via `storybook_run-story-tests`.
+   - Fix any failures before proceeding.
+
+6. **Archive the PRD plan:**
    a. Prepend a completion note to the plan file, between the frontmatter (if any) and the original content:
       ```
       > **Completion note ({YYYY-MM-DD}):**
@@ -343,16 +351,16 @@ Archive the PRD, update changelog, write the mandatory ADR, and commit everythin
       ```
    b. `mv dev-docs/plans/{filename} dev-docs/archive/{milestone}/{filename}`
 
-6. **Roadmap:** user manages independently — skip roadmap edits.
+7. **Roadmap:** user manages independently — skip roadmap edits.
 
-7. **Stage and commit:**
+8. **Stage and commit:**
    ```
    git add -A
    git commit -m "{milestone}: prd{NNNN} - {description}"
    ```
    Show the diffstat to the user before committing so they can verify scope.
 
-8. **Append to `dev-docs/workflow-log.md`.** Include change classification, ADR type (full or no-changes), commit hash.
+9. **Append to `dev-docs/workflow-log.md`.** Include change classification, ADR type (full or no-changes), commit hash.
 
 ---
 

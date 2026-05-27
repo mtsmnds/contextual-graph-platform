@@ -7,8 +7,8 @@ const preview: Preview = {
   parameters: {
     controls: {
       matchers: {
-       color: /(background|color)$/i,
-       date: /Date$/i,
+        color: /(background|color)$/i,
+        date: /Date$/i,
       },
     },
     a11y: {
@@ -18,9 +18,7 @@ const preview: Preview = {
   decorators: [
     (Story) => (
       <BrowserRouter>
-        <div className="dark">
-          <Story />
-        </div>
+        <Story />
       </BrowserRouter>
     ),
   ],
