@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { fn } from 'storybook/test'
+import { fn, expect, userEvent, within } from 'storybook/test'
 import { Button } from '@/components/ui/button'
 import { Plus } from '@phosphor-icons/react'
 
@@ -70,4 +70,14 @@ export const IconOnly: Story = {
 
 export const Disabled: Story = {
   args: { children: 'Disabled', disabled: true },
+}
+
+export const ClickInteraction: Story = {
+  args: { children: 'Click me', onClick: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button')
+    await userEvent.click(button)
+    await expect(args.onClick).toHaveBeenCalledOnce()
+  },
 }

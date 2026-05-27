@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, userEvent, within } from 'storybook/test'
 import { Input } from '@/components/ui/input'
 
 const meta = {
@@ -35,4 +36,14 @@ export const Disabled: Story = {
 
 export const WithError: Story = {
   args: { placeholder: 'Invalid input', 'aria-invalid': true },
+}
+
+export const TypeInteraction: Story = {
+  args: { placeholder: 'Type here...' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const input = canvas.getByPlaceholderText('Type here...')
+    await userEvent.type(input, 'Hello Storybook')
+    await expect(input).toHaveValue('Hello Storybook')
+  },
 }

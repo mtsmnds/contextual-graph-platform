@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState, useCallback } from 'react'
+import { expect, userEvent, within } from 'storybook/test'
 import GraphContextMenu from '@/canvas/GraphContextMenu'
 
 function ContextMenuDemo() {
@@ -91,4 +92,15 @@ export const EdgeMenu: Story = {
       />
     </div>
   ),
+}
+
+export const RightClickInteraction: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const target = canvas.getByText('Right-click anywhere')
+    await userEvent.pointer({ target, coords: { x: 100, y: 50 }, keys: '[MouseRight]' })
+    const menuItem = await canvas.findByText('New Node')
+    await expect(menuItem).toBeVisible()
+    await userEvent.click(menuItem)
+  },
 }
