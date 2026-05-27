@@ -1,4 +1,7 @@
 import type { Preview } from '@storybook/react-vite'
+import { BrowserRouter } from 'react-router-dom'
+
+import '@/index.css'
 
 const preview: Preview = {
   parameters: {
@@ -8,14 +11,19 @@ const preview: Preview = {
        date: /Date$/i,
       },
     },
-
     a11y: {
-      // 'todo' - show a11y violations in the test UI only
-      // 'error' - fail CI on a11y violations
-      // 'off' - skip a11y checks entirely
       test: 'todo'
     }
   },
-};
+  decorators: [
+    (Story) => (
+      <BrowserRouter>
+        <div className="dark">
+          <Story />
+        </div>
+      </BrowserRouter>
+    ),
+  ],
+}
 
-export default preview;
+export default preview
