@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { FolderOpen } from "@phosphor-icons/react"
-import FeatureFlagsSection from "./sections/FeatureFlagsSection"
-import BackupsSection from "./sections/BackupsSection"
-import WorkspaceInfoSection from "./sections/WorkspaceInfoSection"
+import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContainer"
+import BackupsSectionContainer from "./sections/BackupsSectionContainer"
+import WorkspaceInfoSectionContainer from "./sections/WorkspaceInfoSectionContainer"
 
 export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void }) {
   const viewport = useGraphStore((s) => s.canvas.viewport)
@@ -20,9 +20,9 @@ export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void 
         <span className="text-sm font-semibold">Workspace</span>
       </SidebarHeader>
       <SidebarContent>
-        <FeatureFlagsSection />
-        <BackupsSection />
-        <WorkspaceInfoSection viewport={viewport} />
+        <FeatureFlagsSectionContainer />
+        <BackupsSectionContainer />
+        <WorkspaceInfoSectionContainer viewport={viewport} />
       </SidebarContent>
       <SidebarFooter>
         <Button

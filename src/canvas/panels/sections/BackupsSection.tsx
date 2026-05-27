@@ -1,6 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
 import { Plus, ArrowCounterClockwise, Trash, Hourglass, WarningCircle, CaretDown } from "@phosphor-icons/react"
-import { useGraphStore } from "@/store/useGraphStore"
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
@@ -9,19 +7,6 @@ import {
 } from "@/components/ui/collapsible"
 import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "@/components/ui/sidebar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
-import {
-  createManualBackup,
-  listManualBackups,
-  deleteManualBackup,
-  restoreManualBackup,
-  listAutoSnapshots,
-  restoreAutoSnapshot,
-  clearAutoSnapshots,
-} from "@/engine/backup"
-
-
-type ManualBackupInfo = { id: string; timestamp: number }
-type AutoSnapshotInfo = { filename: string; timestamp: number }
 
 function formatRelativeTime(timestamp: number): string {
   const diff = Date.now() - timestamp
@@ -39,152 +24,53 @@ function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString()
 }
 
-export default function BackupsSection() {
-  const [manualBackups, setManualBackups] = useState<ManualBackupInfo[]>([])
-  const [autoSnapshots, setAutoSnapshots] = useState<AutoSnapshotInfo[]>([])
-  const [isCreating, setIsCreating] = useState(false)
-  const [createError, setCreateError] = useState<string | null>(null)
-  const [restoreTarget, setRestoreTarget] = useState<{ type: "manual"; id: string } | { type: "auto"; filename: string } | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<ManualBackupInfo | null>(null)
-  const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false)
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+type ManualBackupInfo = { id: string; timestamp: number }
+type AutoSnapshotInfo = { filename: string; timestamp: number }
+type RestoreTarget = { type: "manual"; id: string } | { type: "auto"; filename: string }
 
-  const entityCount = useGraphStore((s) => s.entities.length)
-  const undoStack = useGraphStore((s) => s.undoStack)
-  const folderName = useGraphStore((s) => s.folderName)
-  const hasFileSystem = folderName !== null
-
-  const getHandle = useCallback(() => {
-    return useGraphStore.getState().getAdapterHandle()
-  }, [])
-
-  const loadManualBackups = useCallback(async () => {
-    const handle = getHandle()
-    if (!handle) return
-    try {
-      const list = await listManualBackups(handle)
-      setManualBackups(list)
-    } catch {
-      setManualBackups([])
-    }
-  }, [getHandle])
-
-  const loadAutoSnapshots = useCallback(async () => {
-    const handle = getHandle()
-    if (!handle) return
-    try {
-      const list = await listAutoSnapshots(handle)
-      setAutoSnapshots(list)
-    } catch {
-      setAutoSnapshots([])
-    }
-  }, [getHandle])
-
-  useEffect(() => {
-    loadAutoSnapshots()
-    if (hasFileSystem) loadManualBackups()
-  }, [hasFileSystem, loadAutoSnapshots, loadManualBackups])
-
-  const handleCreateBackup = useCallback(async () => {
-    const handle = getHandle()
-    if (!handle) return
-
-    setIsCreating(true)
-    setCreateError(null)
-
-    try {
-      const store = useGraphStore.getState()
-      const containerEntities = store.entities.filter((e) => e.type === "container")
-      const contentMap: Record<string, Record<string, unknown>> = {}
-      for (const entity of containerEntities) {
-        const doc = store.getContent(entity.id)
-        if (doc) contentMap[entity.id] = doc
-      }
-
-      await createManualBackup(handle, store.entities, store.relations, store.canvas, contentMap)
-      await loadManualBackups()
-    } catch (err) {
-      console.error("Failed to create backup:", err)
-      setCreateError("Failed to create backup. Check permissions.")
-    } finally {
-      setIsCreating(false)
-    }
-  }, [getHandle, loadManualBackups])
-
-  const handleRestoreClick = useCallback((target: { type: "manual"; id: string } | { type: "auto"; filename: string }) => {
-    setRestoreTarget(target)
-    setConfirmRestoreOpen(true)
-  }, [])
-
-  const handleConfirmRestore = useCallback(async () => {
-    if (!restoreTarget) return
-    const handle = getHandle()
-    if (!handle) return
-
-    try {
-      let entities, relations, canvas, documents
-
-      if (restoreTarget.type === "manual") {
-        const result = await restoreManualBackup(handle, restoreTarget.id)
-        if (!result) return
-        entities = result.entities
-        relations = result.relations
-        canvas = result.canvas
-        documents = result.documents
-      } else {
-        const result = await restoreAutoSnapshot(handle, restoreTarget.filename)
-        if (!result) return
-        entities = result.entities
-        relations = result.relations
-        canvas = result.canvas
-        documents = result.documents
-      }
-
-      const store = useGraphStore.getState()
-      store.loadContentDirect(documents)
-      useGraphStore.setState({ entities, relations, canvas })
-    } catch (err) {
-      console.error("Failed to restore backup:", err)
-    } finally {
-      setConfirmRestoreOpen(false)
-      setRestoreTarget(null)
-    }
-  }, [restoreTarget, getHandle])
-
-  const handleDeleteClick = useCallback((backup: ManualBackupInfo) => {
-    setDeleteTarget(backup)
-    setConfirmDeleteOpen(true)
-  }, [])
-
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deleteTarget) return
-    const handle = getHandle()
-    if (!handle) return
-
-    try {
-      await deleteManualBackup(handle, deleteTarget.id)
-      setManualBackups((prev) => prev.filter((b) => b.id !== deleteTarget.id))
-    } catch (err) {
-      console.error("Failed to delete backup:", err)
-    } finally {
-      setConfirmDeleteOpen(false)
-      setDeleteTarget(null)
-    }
-  }, [deleteTarget, getHandle])
-
-  const handleDismissAutoSnapshots = useCallback(async () => {
-    const handle = getHandle()
-    if (!handle) return
-    try {
-      await clearAutoSnapshots(handle)
-      setAutoSnapshots([])
-    } catch { }
-  }, [getHandle])
-
-  const recentSnapshots = undoStack.slice(-10).reverse()
-  const isWorkspaceEmpty = entityCount === 0
-  const hasAnyBackupContent = hasFileSystem && (manualBackups.length > 0 || recentSnapshots.length > 0 || autoSnapshots.length > 0)
-
+export default function BackupsSection({
+  manualBackups,
+  autoSnapshots,
+  recentSnapshots,
+  isCreating,
+  createError,
+  isWorkspaceEmpty,
+  hasFileSystem,
+  hasAnyContent,
+  onCreateBackup,
+  onRestoreClick,
+  onDeleteClick,
+  onDismissAutoSnapshots,
+  confirmRestoreOpen,
+  confirmDeleteOpen,
+  restoreTarget,
+  deleteTarget,
+  onConfirmRestore,
+  onCancelRestore,
+  onConfirmDelete,
+  onCancelDelete,
+}: {
+  manualBackups: ManualBackupInfo[]
+  autoSnapshots: AutoSnapshotInfo[]
+  recentSnapshots: Array<{ description: string; timestamp: number }>
+  isCreating: boolean
+  createError: string | null
+  isWorkspaceEmpty: boolean
+  hasFileSystem: boolean
+  hasAnyContent: boolean
+  onCreateBackup: () => void
+  onRestoreClick: (target: RestoreTarget) => void
+  onDeleteClick: (backup: ManualBackupInfo) => void
+  onDismissAutoSnapshots: () => void
+  confirmRestoreOpen: boolean
+  confirmDeleteOpen: boolean
+  restoreTarget: RestoreTarget | null
+  deleteTarget: ManualBackupInfo | null
+  onConfirmRestore: () => void
+  onCancelRestore: () => void
+  onConfirmDelete: () => void
+  onCancelDelete: () => void
+}) {
   return (
     <>
       <Collapsible defaultOpen>
@@ -200,7 +86,7 @@ export default function BackupsSection() {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={handleCreateBackup}
+                  onClick={onCreateBackup}
                   disabled={isCreating || isWorkspaceEmpty || !hasFileSystem}
                 >
                   {isCreating ? (
@@ -228,7 +114,7 @@ export default function BackupsSection() {
                         className="h-6 text-[11px]"
                         onClick={() => {
                           const latest = autoSnapshots[0]
-                          if (latest) handleRestoreClick({ type: "auto", filename: latest.filename })
+                          if (latest) onRestoreClick({ type: "auto", filename: latest.filename })
                         }}
                       >
                         Restore
@@ -237,7 +123,7 @@ export default function BackupsSection() {
                         variant="ghost"
                         size="xs"
                         className="h-6 text-[11px]"
-                        onClick={handleDismissAutoSnapshots}
+                        onClick={onDismissAutoSnapshots}
                       >
                         Dismiss
                       </Button>
@@ -259,7 +145,7 @@ export default function BackupsSection() {
                               variant="ghost"
                               size="icon-xs"
                               aria-label="Restore this backup"
-                              onClick={() => handleRestoreClick({ type: "manual", id: backup.id })}
+                              onClick={() => onRestoreClick({ type: "manual", id: backup.id })}
                             >
                               <ArrowCounterClockwise className="size-3.5" />
                             </Button>
@@ -267,7 +153,7 @@ export default function BackupsSection() {
                               variant="ghost"
                               size="icon-xs"
                               aria-label="Delete backup"
-                              onClick={() => handleDeleteClick(backup)}
+                              onClick={() => onDeleteClick(backup)}
                             >
                               <Trash className="size-3.5" />
                             </Button>
@@ -295,7 +181,7 @@ export default function BackupsSection() {
                   </>
                 )}
 
-                {!hasAnyBackupContent && !isCreating && autoSnapshots.length === 0 && (
+                {!hasAnyContent && !isCreating && autoSnapshots.length === 0 && (
                   <div className="text-xs text-muted-foreground py-2 text-center">
                     No backups yet. Create one with the + button above.
                   </div>
@@ -306,7 +192,7 @@ export default function BackupsSection() {
         </SidebarGroup>
       </Collapsible>
 
-      <Dialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+      <Dialog open={confirmRestoreOpen} onOpenChange={(open) => { if (!open) onCancelRestore() }}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Restore backup?</DialogTitle>
@@ -324,12 +210,12 @@ export default function BackupsSection() {
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-            <Button onClick={handleConfirmRestore}>Restore</Button>
+            <Button onClick={onConfirmRestore}>Restore</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+      <Dialog open={confirmDeleteOpen} onOpenChange={(open) => { if (!open) onCancelDelete() }}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Delete backup?</DialogTitle>
@@ -341,7 +227,7 @@ export default function BackupsSection() {
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-            <Button variant="destructive" onClick={handleConfirmDelete}>Delete</Button>
+            <Button variant="destructive" onClick={onConfirmDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

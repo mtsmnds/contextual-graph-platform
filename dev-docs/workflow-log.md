@@ -5,6 +5,39 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-05-27
+
+### update — document container/presenter pattern in architecture.md
+- **Source:** user request — "use dev-workflow and update our dev-docs"
+- **Branch at time:** m5-prd0048-container-presenter-pattern (clean)
+- **Change classification:** Architecture change
+- **Docs updated:** `architecture.md` — added Storybook to tech stack, documented container/presenter pattern under new Component Architecture section, added sidebar sections to module map, added Storybook to verification steps
+- **Pre-commit guard:** no changes (clean)
+
+### prd end — m5-prd0048-container-presenter-pattern
+- **Source:** user request — extract store access from sidebar sections into container/presenter pattern
+- **Branch at time:** m5-prd0048-container-presenter-pattern (clean)
+- **User decision:** classification: Architecture change + Feature change
+- **Change classification:** Architecture change
+- **ADR type:** full (container/presenter split, new file convention, project migration plan)
+- **Commit hash:** 129a4d3
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from prd start)
+
+### prd start — m5-prd0048-container-presenter-pattern
+- **Source:** user request — migrate sidebar sections to container/presenter pattern, stacked on current branch
+- **Branch at time:** m5-prd0047-workspace-sidebar (dirty — decorator work)
+- **User decision:** commit decorated changes → stacked branch from m5-prd0047
+- **Branch name:** m5-prd0048-container-presenter-pattern
+- **Scope:** full (3 phases: FeatureFlags, WorkspaceInfo, Backups)
+- **Pre-commit guard:** committed wip ("m5: prd0047 - add shared withSidebarSection decorator")
+
+### prd write — m5-prd0048-container-presenter-pattern
+- **Source:** user request — container/presenter migration for AppSidebar sections
+- **Branch at time:** m5-prd0047-workspace-sidebar (dirty — decorator work)
+- **User decision:** implement full migration in 3 phases
+- **PRD file:** `dev-docs/plans/m5-prd0048-container-presenter-pattern.md`
+- **Pre-commit guard:** skip (dirty from decorator — handled by prd start)
+
 ## 2026-05-25
 
 ### fix — removed depth limit, fixed sort + phantom undo entries

@@ -1,4 +1,4 @@
-import { useGraphStore } from "@/store/useGraphStore"
+import type { HistoryEntry } from "@/types/graph"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import {
@@ -9,14 +9,23 @@ import {
 import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "@/components/ui/sidebar"
 import { ArrowUUpLeft, ArrowUUpRight, CaretDown } from "@phosphor-icons/react"
 
-export default function WorkspaceInfoSection({ viewport }: { viewport?: { x: number; y: number; zoom: number } }) {
-  const folderName = useGraphStore((s) => s.folderName)
-  const entityCount = useGraphStore((s) => s.entities.length)
-  const undoStack = useGraphStore((s) => s.undoStack)
-  const redoStack = useGraphStore((s) => s.redoStack)
-  const undo = useGraphStore((s) => s.undo)
-  const redo = useGraphStore((s) => s.redo)
-
+export default function WorkspaceInfoSection({
+  folderName,
+  entityCount,
+  undoStack,
+  redoStack,
+  onUndo,
+  onRedo,
+  viewport,
+}: {
+  folderName: string | null
+  entityCount: number
+  undoStack: HistoryEntry[]
+  redoStack: HistoryEntry[]
+  onUndo: () => void
+  onRedo: () => void
+  viewport?: { x: number; y: number; zoom: number }
+}) {
   const undoDescription = undoStack.length > 0 ? `Undo ${undoStack[undoStack.length - 1].description}` : undefined
   const redoDescription = redoStack.length > 0 ? `Redo ${redoStack[redoStack.length - 1].description}` : undefined
 
@@ -51,7 +60,7 @@ export default function WorkspaceInfoSection({ viewport }: { viewport?: { x: num
                     aria-label="Undo"
                     title={undoDescription}
                     disabled={undoStack.length === 0}
-                    onClick={undo}
+                    onClick={onUndo}
                   >
                     <ArrowUUpLeft />
                   </Button>
@@ -61,7 +70,7 @@ export default function WorkspaceInfoSection({ viewport }: { viewport?: { x: num
                     aria-label="Redo"
                     title={redoDescription}
                     disabled={redoStack.length === 0}
-                    onClick={redo}
+                    onClick={onRedo}
                   >
                     <ArrowUUpRight />
                   </Button>

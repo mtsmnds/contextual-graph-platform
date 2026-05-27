@@ -12,6 +12,27 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-27
+
+### m5 — prd0048 — container/presenter pattern for sidebar sections
+- **What:** Extracted Zustand store access from three sidebar sections into container wrappers. Each section file (`FeatureFlagsSection`, `WorkspaceInfoSection`, `BackupsSection`) is now a pure presenter accepting explicit props. New `*Container.tsx` files own store reads, async operations, and dialog state. `AppSidebar` imports containers. Shared `withSidebarSection` decorator added to `.storybook/decorators.tsx`.
+- **Reason:** Components with hidden store dependencies are hard to test, storybook, and refactor. Explicit props make dependencies visible, enable isolated rendering, and eliminate state leakage between stories.
+- **Files changed:**
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: accepts `{ flags, onToggle }` props
+  - `src/canvas/panels/sections/FeatureFlagsSectionContainer.tsx`: new, reads store
+  - `src/canvas/panels/sections/WorkspaceInfoSection.tsx`: accepts 7 props instead of 1
+  - `src/canvas/panels/sections/WorkspaceInfoSectionContainer.tsx`: new, reads store
+  - `src/canvas/panels/sections/BackupsSection.tsx`: accepts all state + callbacks as props
+  - `src/canvas/panels/sections/BackupsSectionContainer.tsx`: new, owns dialogs + backup ops
+  - `src/canvas/panels/AppSidebar.tsx`: imports containers instead of presenters
+  - `src/stories/FeatureFlagsSection.stories.tsx`: explicit args, stateful ToggleFlag story
+  - `src/stories/WorkspaceInfoSection.stories.tsx`: explicit args
+  - `src/stories/BackupsSection.stories.tsx`: explicit args
+  - `.storybook/decorators.tsx`: new, shared `withSidebarSection`
+- **Impact:** All 7 sidebar/AppSidebar stories pass with explicit controlled props. Container/presenter pattern established as project convention for future migrations.
+- **Archive:** `dev-docs/archive/m5/m5-prd0048-container-presenter-pattern.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-27-prd0048-container-presenter-pattern-adr.md`
+
 ## 2026-05-25
 
 ### m5 — prd0046 — nested containers (containers within containers)

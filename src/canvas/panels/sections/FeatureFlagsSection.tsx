@@ -1,4 +1,3 @@
-import { useGraphStore } from "@/store/useGraphStore"
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -12,10 +11,14 @@ const FEATURE_FLAG_LABELS: Record<string, string> = {
   dragToNest: "Drag to Nest",
 }
 
-export default function FeatureFlagsSection() {
-  const featureFlags = useGraphStore((s) => s.featureFlags)
-  const setFeatureFlag = useGraphStore((s) => s.setFeatureFlag)
-  const entries = Object.entries(featureFlags)
+export default function FeatureFlagsSection({
+  flags,
+  onToggle,
+}: {
+  flags: Record<string, boolean>
+  onToggle: (key: string, value: boolean) => void
+}) {
+  const entries = Object.entries(flags)
 
   return (
     <Collapsible defaultOpen>
@@ -38,7 +41,7 @@ export default function FeatureFlagsSection() {
                     <span className="text-xs">{FEATURE_FLAG_LABELS[key] ?? key}</span>
                     <Switch
                       checked={value}
-                      onCheckedChange={(v) => setFeatureFlag(key, v)}
+                      onCheckedChange={(v) => onToggle(key, v)}
                     />
                   </label>
                 ))
