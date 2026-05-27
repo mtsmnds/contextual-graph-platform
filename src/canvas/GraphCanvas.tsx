@@ -25,8 +25,9 @@ import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import GraphContextMenu from "./GraphContextMenu"
-import WorkspaceMenu from "./panels/WorkspaceMenu"
+import WorkspaceSidebar from "./panels/WorkspaceSidebar"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
 import ContainerGroupNode from "./nodes/ContainerGroupNode"
@@ -125,8 +126,8 @@ function GraphCanvasContent() {
   const keyboardMoveIdsRef = useRef<Set<string>>(new Set())
 
   const reactFlowInstance = useReactFlow()
-  const storeInit = useGraphStore((s) => s.init)
-  const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
+
+  const featureFlags = useGraphStore((s) => s.featureFlags)
 
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -651,6 +652,7 @@ function GraphCanvasContent() {
       }
 
       // Drag-to-assign: check if any moved node landed in a container
+      if (!featureFlags.dragToNest) return
       for (const node of allNodes) {
         if (node.type !== "entity" && node.type !== "containerGroup") continue
         const containerNodes = allNodes.filter((n) => n.type === "containerGroup")
@@ -921,30 +923,6 @@ function GraphCanvasContent() {
     }
   }, [contextMenu, setNodes, visibleMetadataNodeIds, nodes])
 
-  const onOpenFolder = useCallback(async () => {
-    const fsa = getFSAccessInstance()
-    const picked = await fsa.initFromPicker()
-    if (!picked) return
-
-    const existing = await fsa.loadWorkspace()
-    if (existing) {
-      setAdapter(fsa)
-      await storeInit(fsa)
-    } else {
-      const state = useGraphStore.getState()
-      const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
-      await fsa.saveGraph(snapshot)
-      for (const entity of state.entities) {
-        if (entity.type === "container") {
-          const content = state.getContent(entity.id)
-          if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
-        }
-      }
-      setAdapter(fsa)
-      refreshFolderName()
-    }
-  }, [storeInit, refreshFolderName])
-
   const onZoomIn = useCallback(() => reactFlowInstance.zoomIn(), [reactFlowInstance])
   const onZoomOut = useCallback(() => reactFlowInstance.zoomOut(), [reactFlowInstance])
   const onFitView = useCallback(() => reactFlowInstance.fitView(), [reactFlowInstance])
@@ -1019,9 +997,6 @@ function GraphCanvasContent() {
       <MiniMap pannable zoomable position="bottom-right" />
       <Panel position="bottom-right" style={{ marginBottom: 8 }}>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] tabular-nums text-muted-foreground/60">
-            x: {x.toFixed(1)} y: {y.toFixed(1)} z: {Math.round(zoom * 100)}%
-          </span>
           <ButtonGroup>
             <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
               <ZoomIn data-icon />
@@ -1039,7 +1014,7 @@ function GraphCanvasContent() {
         </div>
       </Panel>
       <Panel position="top-right">
-        <WorkspaceMenu onOpenFolder={onOpenFolder} />
+        <SidebarTrigger variant="outline" size="icon-sm" aria-label="Workspace menu" />
       </Panel>
       <GraphContextMenu
         open={contextMenu !== null}
@@ -1053,10 +1028,40 @@ function GraphCanvasContent() {
 }
 
 function GraphCanvas() {
+  const storeInit = useGraphStore((s) => s.init)
+  const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
+
+  const onOpenFolder = useCallback(async () => {
+    const fsa = getFSAccessInstance()
+    const picked = await fsa.initFromPicker()
+    if (!picked) return
+
+    const existing = await fsa.loadWorkspace()
+    if (existing) {
+      setAdapter(fsa)
+      await storeInit(fsa)
+    } else {
+      const state = useGraphStore.getState()
+      const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
+      await fsa.saveGraph(snapshot)
+      for (const entity of state.entities) {
+        if (entity.type === "container") {
+          const content = state.getContent(entity.id)
+          if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
+        }
+      }
+      setAdapter(fsa)
+      refreshFolderName()
+    }
+  }, [storeInit, refreshFolderName])
+
   return (
-    <ReactFlowProvider>
-      <GraphCanvasContent />
-    </ReactFlowProvider>
+    <SidebarProvider>
+      <ReactFlowProvider>
+        <GraphCanvasContent />
+      </ReactFlowProvider>
+      <WorkspaceSidebar onOpenFolder={onOpenFolder} />
+    </SidebarProvider>
   )
 }
 

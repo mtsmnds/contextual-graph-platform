@@ -115,6 +115,24 @@ export function migrateSnapshot(snapshot: {
   }
 }
 
+const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
+  dragToNest: false,
+}
+
+function loadFeatureFlags(): Record<string, boolean> {
+  try {
+    const stored = localStorage.getItem("feature-flags")
+    if (stored) return { ...DEFAULT_FEATURE_FLAGS, ...JSON.parse(stored) }
+  } catch { }
+  return { ...DEFAULT_FEATURE_FLAGS }
+}
+
+function saveFeatureFlags(flags: Record<string, boolean>) {
+  try {
+    localStorage.setItem("feature-flags", JSON.stringify(flags))
+  } catch { }
+}
+
 interface GraphStore {
   entities: Entity[];
   relations: Relation[];
@@ -160,6 +178,9 @@ interface GraphStore {
 
   applyMeasuredDimensions: (dimensions: Record<string, CanvasData>) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+
+  featureFlags: Record<string, boolean>;
+  setFeatureFlag: (key: string, value: boolean) => void;
 }
 
 const storeInitializer = (set: any, get: any): GraphStore => ({
@@ -685,6 +706,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, viewport },
     }));
+  },
+
+  featureFlags: loadFeatureFlags(),
+  setFeatureFlag: (key: string, value: boolean) => {
+    set((state: GraphStore) => ({
+      featureFlags: { ...state.featureFlags, [key]: value },
+    }));
+    saveFeatureFlags({ ...useGraphStore.getState().featureFlags, [key]: value });
   },
 });
 
