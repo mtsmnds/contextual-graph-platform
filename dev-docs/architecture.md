@@ -20,10 +20,36 @@ Guiding principle: *The graph is infrastructure. The viewport is the product. Re
 - Deployment style: Tauri-packaged desktop app (dev via `npm run dev`)
 - Execution model: Client-side SPA, no server
 
+## Component Architecture
+
+### Container/Presenter Pattern
+
+Stateful UI components follow a container/presenter split:
+
+- **Presenter** — a pure render function. Accepts all data and callbacks as explicit props. Zero side effects, zero store imports. Default export from the `.tsx` file. Used directly in Storybook stories.
+- **Container** — owns store reads, async orchestration, dialog state, and effects. Renders the presenter with props derived from state. Named `{Name}Container.tsx` alongside the presenter.
+
+```
+sections/
+  FeatureFlagsSection.tsx          ← presenter (props: flags, onToggle)
+  FeatureFlagsSectionContainer.tsx ← container (reads useGraphStore)
+  BackupsSection.tsx               ← presenter (all state + callbacks as props)
+  BackupsSectionContainer.tsx      ← container (owns dialogs + backup ops)
+```
+
+Container always renders exactly one presenter. Presenters never import the store. This makes presenters isolatable for Storybook and unit tests without mocking.
+
+### Storybook
+
+All presenters have stories under `src/stories/`. Stories pass explicit `args` with `fn()` callbacks for actions. Interactive stories use stateful `render` wrappers for controlled components.
+
+Global decorators in `.storybook/preview.tsx` provide `BrowserRouter` and dark mode. Shared section decorators live in `.storybook/decorators.tsx`.
+
 ## Tech Stack
 - Vite 8 + React 19 + TypeScript
 - Zustand 5 — global state
 - Vitest — unit testing (pure functions, store actions, state transitions)
+- Storybook 10 — component development environment (isolated rendering + interaction tests)
 - @xyflow/react (React Flow) — optional graph renderer (Phase 4+, installed but not imported)
 - @phosphor-icons/react — icon library
 - Native CSS nesting (no preprocessor)
@@ -224,6 +250,13 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 | `src/components/base-node.tsx` | BaseNode layout components (BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) from reactflow.dev registry |
 | `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (not shadcn/Radix — avoids trigger-wrapper conflicts with React Flow) |
+| `src/canvas/panels/AppSidebar.tsx` | Right-side collapsible sidebar (workspace info, feature flags, backups, open folder) |
+| `src/canvas/panels/sections/FeatureFlagsSection.tsx` | Presenter: feature flag toggles (flags, onToggle) |
+| `src/canvas/panels/sections/FeatureFlagsSectionContainer.tsx` | Container: reads featureFlags + setFeatureFlag from store |
+| `src/canvas/panels/sections/WorkspaceInfoSection.tsx` | Presenter: folder name, entity count, undo/redo buttons, viewport |
+| `src/canvas/panels/sections/WorkspaceInfoSectionContainer.tsx` | Container: reads store data, renders presenter |
+| `src/canvas/panels/sections/BackupsSection.tsx` | Presenter: backup/snapshot lists, create/restore/delete actions, dialogs |
+| `src/canvas/panels/sections/BackupsSectionContainer.tsx` | Container: owns dialog state + async backup engine calls |
 | `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content, loaded on first visit) |
 | `src/components/ui/` | shadcn/ui components (sidebar, button, etc.) |
@@ -241,6 +274,7 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 ## Verification
 - `npx tsc --noEmit` — type check.
 - `npx vitest run` — unit tests.
+- `npm run storybook` — Storybook dev server (verify components render in isolation).
 - `npm run build` — production build.
 
 ## Related Docs
