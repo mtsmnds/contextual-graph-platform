@@ -994,8 +994,8 @@ function GraphCanvasContent() {
       proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
-      <MiniMap pannable zoomable position="bottom-right" style={{ margin: 8 }} />
-      <Panel position="bottom-right" style={{ margin: 8 }}>
+      <MiniMap pannable zoomable position="bottom-right" style={{ margin: "16px 8px" }} />
+      <Panel position="bottom-right" style={{ margin: "16px 8px" }}>
         <div className="flex items-center gap-3">
           <ButtonGroup>
             <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
@@ -1013,7 +1013,7 @@ function GraphCanvasContent() {
           </ButtonGroup>
         </div>
       </Panel>
-      <Panel position="top-right" style={{ margin: 8 }}>
+      <Panel position="top-right" style={{ margin: "16px 8px" }}>
         <SidebarTrigger variant="outline" size="icon-sm" aria-label="Workspace menu" />
       </Panel>
       <GraphContextMenu
