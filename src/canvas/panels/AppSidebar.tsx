@@ -11,7 +11,7 @@ import FeatureFlagsSection from "./sections/FeatureFlagsSection"
 import BackupsSection from "./sections/BackupsSection"
 import WorkspaceInfoSection from "./sections/WorkspaceInfoSection"
 
-export default function WorkspaceSidebar({ onOpenFolder }: { onOpenFolder: () => void }) {
+export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void }) {
   const viewport = useGraphStore((s) => s.canvas.viewport)
 
   return (

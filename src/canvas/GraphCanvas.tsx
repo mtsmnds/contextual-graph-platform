@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import GraphContextMenu from "./GraphContextMenu"
-import WorkspaceSidebar from "./panels/WorkspaceSidebar"
+import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
 import ContainerGroupNode from "./nodes/ContainerGroupNode"
@@ -1062,7 +1062,7 @@ function GraphCanvas() {
           <GraphCanvasContent />
         </ReactFlowProvider>
       </div>
-      <WorkspaceSidebar onOpenFolder={onOpenFolder} />
+      <AppSidebar onOpenFolder={onOpenFolder} />
     </SidebarProvider>
   )
 }

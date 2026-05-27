@@ -3,7 +3,7 @@ import { useGraphStore } from "../store/useGraphStore"
 import { getEntity } from "../engine/queries"
 import ReadingViewport from "../renderers/ReadingViewport"
 import { HomePage } from "@/components/HomePage"
-import { AppSidebar } from "@/components/AppSidebar"
+import { TiptapSidebar } from "@/components/TiptapSidebar"
 import {
   SidebarProvider,
   SidebarInset,
@@ -70,7 +70,7 @@ function LegacyApp() {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <AppSidebar />
+      <TiptapSidebar />
       <SidebarInset>
         <div className="flex items-center gap-2 px-3 py-1.5 border-b shrink-0">
           <SidebarTrigger />

@@ -2,28 +2,27 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import {
   SidebarProvider,
+  SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import WorkspaceSidebar from '@/canvas/panels/WorkspaceSidebar'
+import AppSidebar from '@/canvas/panels/AppSidebar'
 
 function SidebarDemo() {
   return (
-    <div style={{ width: 800, height: 600, display: 'flex', position: 'relative' }}>
-      <SidebarProvider defaultOpen>
-        <div className="flex-1 flex items-center justify-center bg-muted/20">
-          <p className="text-muted-foreground text-sm">Canvas area (clickable)</p>
-        </div>
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+    <SidebarProvider defaultOpen>
+      <SidebarInset>
+        <div className="flex items-center gap-2 px-4 py-2">
           <SidebarTrigger variant="outline" size="icon-sm" aria-label="Workspace menu" />
+          <span className="text-sm text-muted-foreground">Main content area</span>
         </div>
-        <WorkspaceSidebar onOpenFolder={() => {}} />
-      </SidebarProvider>
-    </div>
+      </SidebarInset>
+      <AppSidebar onOpenFolder={() => {}} />
+    </SidebarProvider>
   )
 }
 
 const meta = {
-  title: 'Canvas/WorkspaceSidebar',
+  title: 'Canvas/AppSidebar',
   component: SidebarDemo,
   parameters: { layout: 'fullscreen' },
   tags: ['autodocs', 'ai-generated'],
@@ -40,7 +39,6 @@ export const ToggleSidebar: Story = {
     const trigger = canvas.getByLabelText('Workspace menu')
     await expect(trigger).toBeInTheDocument()
     await userEvent.click(trigger)
-    // Verify the Workspace sidebar header is still rendered (offcanvas keeps DOM)
     await expect(canvas.getByText('Workspace')).toBeInTheDocument()
   },
 }

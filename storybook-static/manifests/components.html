@@ -594,7 +594,7 @@
 <main>
   <div class="wrap">
     <div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>4.0s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>3.4s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
@@ -2239,14 +2239,14 @@ Code:
     <div class="title">
       <h2><span class="status-dot dot-ok"></span> SidebarDemo</h2>
       <div class="badges">
-        <label for="c-12-canvas-workspacesidebar-props" class="badge ok as-toggle">1 prop type</label>
-        <label for="c-12-canvas-workspacesidebar-info" class="badge info as-toggle">1 info</label>
-        <label for="c-12-canvas-workspacesidebar-stories" class="badge ok as-toggle">2 stories</label>
+        <label for="c-12-canvas-appsidebar-props" class="badge ok as-toggle">1 prop type</label>
+        <label for="c-12-canvas-appsidebar-info" class="badge info as-toggle">1 info</label>
+        <label for="c-12-canvas-appsidebar-stories" class="badge ok as-toggle">2 stories</label>
         
         
       </div>
     </div>
-    <div class="meta" title="./src/stories/WorkspaceSidebar.stories.tsx">canvas-workspacesidebar · ./src/stories/WorkspaceSidebar.stories.tsx</div>
+    <div class="meta" title="./src/stories/AppSidebar.stories.tsx">canvas-appsidebar · ./src/stories/AppSidebar.stories.tsx</div>
     
     
     
@@ -2254,11 +2254,11 @@ Code:
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-12-canvas-workspacesidebar-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-12-canvas-workspacesidebar-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-12-canvas-appsidebar-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-12-canvas-appsidebar-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
-  <input id="c-12-canvas-workspacesidebar-props" class="tg tg-props" type="checkbox" hidden />
+  <input id="c-12-canvas-appsidebar-props" class="tg tg-props" type="checkbox" hidden />
 
   <div class="panels">
     
@@ -2277,7 +2277,7 @@ Code:
               <span class="ex-name">Prop types <small>(react-docgen)</small></span>
               <span class="badge ok">1 prop type</span>
             </div>
-            <pre><code>Component: src/canvas/panels/WorkspaceSidebar.tsx::default</code></pre>
+            <pre><code>Component: src/canvas/panels/AppSidebar.tsx::default</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>onOpenFolder: () =&gt; void</code></pre>
           </div>
@@ -2291,7 +2291,7 @@ Code:
                 <div class="row">
                   <span class="ex-name">Imports</span>
                 </div>
-                <pre><code>import { SidebarProvider, SidebarTrigger, WorkspaceSidebar } from "react-roadmap";</code></pre>
+                <pre><code>import { AppSidebar, SidebarInset, SidebarProvider, SidebarTrigger } from "react-roadmap";</code></pre>
               </div>
           
           
@@ -2302,7 +2302,7 @@ Code:
               </div>
               
               
-              <pre><code>const Open = () =&gt; &lt;WorkspaceSidebar /&gt;;</code></pre>
+              <pre><code>const Open = () =&gt; &lt;AppSidebar /&gt;;</code></pre>
             </div>
             <div class="note ok">
               <div class="row">
@@ -2311,7 +2311,7 @@ Code:
               </div>
               
               
-              <pre><code>const ToggleSidebar = () =&gt; &lt;WorkspaceSidebar /&gt;;</code></pre>
+              <pre><code>const ToggleSidebar = () =&gt; &lt;AppSidebar /&gt;;</code></pre>
             </div>
         </div>
     
