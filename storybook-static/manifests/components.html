@@ -588,13 +588,13 @@
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">5/12 prop type errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">12/12 infos</a><a class="filter-pill err" data-k="story-errors" href="#filter-story-errors">8/52 story errors</a><a class="filter-pill ok" data-k="docs" href="#filter-docs">1 doc ok</a></div>
+    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">4/15 prop type errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">15/15 infos</a><a class="filter-pill err" data-k="story-errors" href="#filter-story-errors">7/57 story errors</a><a class="filter-pill ok" data-k="docs" href="#filter-docs">1 doc ok</a></div>
   </div>
 </header>
 <main>
   <div class="wrap">
     <div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>0.4s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>4.0s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
@@ -604,6 +604,77 @@
     <h2 class="section-title">Components</h2>
     <div class="grid" role="list">
       
+<article
+  class="card 
+  no-error 
+  has-info 
+  no-story-error
+  no-doc-error"
+  role="listitem"
+  aria-label="BackupsSection">
+  <div class="head">
+    <div class="title">
+      <h2><span class="status-dot dot-ok"></span> BackupsSection</h2>
+      <div class="badges">
+        
+        <label for="c-0-canvas-sidebar-backupssection-info" class="badge info as-toggle">1 info</label>
+        <label for="c-0-canvas-sidebar-backupssection-stories" class="badge ok as-toggle">1 story</label>
+        
+        
+      </div>
+    </div>
+    <div class="meta" title="./src/stories/BackupsSection.stories.tsx">canvas-sidebar-backupssection · ./src/stories/BackupsSection.stories.tsx</div>
+    
+    
+    
+  </div>
+
+  <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
+  
+  <input id="c-0-canvas-sidebar-backupssection-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-0-canvas-sidebar-backupssection-stories" class="tg tg-stories" type="checkbox" hidden />
+  
+  
+  
+
+  <div class="panels">
+    
+    
+        <div class="panel panel-info">
+          
+    <div class="note info">
+      <div class="note-title">Info</div>
+      <div class="note-body">No description found. Write a jsdoc comment such as /** Component description */.</div>
+    </div>
+        </div>
+    
+    
+        <div class="panel panel-stories">
+          
+          
+          
+          <div class="note ok">
+                <div class="row">
+                  <span class="ex-name">Imports</span>
+                </div>
+                <pre><code>import { BackupsSection, Sidebar, SidebarContent, SidebarProvider } from "react-roadmap";</code></pre>
+              </div>
+          
+          
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Empty</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const Empty = () =&gt; &lt;BackupsSection /&gt;;</code></pre>
+            </div>
+        </div>
+    
+    
+  </div>
+</article>
 <article
   class="card 
   has-error 
@@ -616,9 +687,9 @@
     <div class="title">
       <h2><span class="status-dot dot-err"></span> Badge</h2>
       <div class="badges">
-        <label for="c-0-ui-badge-err" class="badge err as-toggle">prop type error</label>
-        <label for="c-0-ui-badge-info" class="badge info as-toggle">1 info</label>
-        <label for="c-0-ui-badge-stories" class="badge ok as-toggle">4 stories</label>
+        <label for="c-1-ui-badge-err" class="badge err as-toggle">prop type error</label>
+        <label for="c-1-ui-badge-info" class="badge info as-toggle">1 info</label>
+        <label for="c-1-ui-badge-stories" class="badge ok as-toggle">4 stories</label>
         
         
       </div>
@@ -630,9 +701,9 @@
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  <input id="c-0-ui-badge-err" class="tg tg-err" type="checkbox" hidden />
-  <input id="c-0-ui-badge-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-0-ui-badge-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-1-ui-badge-err" class="tg tg-err" type="checkbox" hidden />
+  <input id="c-1-ui-badge-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-1-ui-badge-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -778,9 +849,9 @@ export { Badge, badgeVariants }
     <div class="title">
       <h2><span class="status-dot dot-ok"></span> Button</h2>
       <div class="badges">
-        <label for="c-1-ui-button-props" class="badge ok as-toggle">2 prop types</label>
-        <label for="c-1-ui-button-info" class="badge info as-toggle">1 info</label>
-        <label for="c-1-ui-button-stories" class="badge ok as-toggle">13 stories</label>
+        <label for="c-2-ui-button-props" class="badge ok as-toggle">2 prop types</label>
+        <label for="c-2-ui-button-info" class="badge info as-toggle">1 info</label>
+        <label for="c-2-ui-button-stories" class="badge ok as-toggle">13 stories</label>
         
         
       </div>
@@ -793,11 +864,11 @@ export { Badge, badgeVariants }
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-1-ui-button-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-1-ui-button-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-2-ui-button-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-2-ui-button-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
-  <input id="c-1-ui-button-props" class="tg tg-props" type="checkbox" hidden />
+  <input id="c-2-ui-button-props" class="tg tg-props" type="checkbox" hidden />
 
   <div class="panels">
     
@@ -972,8 +1043,8 @@ import { Plus } from "@phosphor-icons/react";</code></pre>
       <h2><span class="status-dot dot-ok"></span> ButtonGroup</h2>
       <div class="badges">
         
-        <label for="c-2-ui-buttongroup-info" class="badge info as-toggle">1 info</label>
-        <label for="c-2-ui-buttongroup-stories" class="badge ok as-toggle">4 stories</label>
+        <label for="c-3-ui-buttongroup-info" class="badge info as-toggle">1 info</label>
+        <label for="c-3-ui-buttongroup-stories" class="badge ok as-toggle">4 stories</label>
         
         
       </div>
@@ -986,8 +1057,8 @@ import { Plus } from "@phosphor-icons/react";</code></pre>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-2-ui-buttongroup-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-2-ui-buttongroup-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-3-ui-buttongroup-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-3-ui-buttongroup-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -1094,9 +1165,9 @@ import { Button, ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "reac
     <div class="title">
       <h2><span class="status-dot dot-err"></span> ContainerNodeFlow</h2>
       <div class="badges">
-        <label for="c-3-canvas-containergroupnode-err" class="badge err as-toggle">prop type error</label>
-        <label for="c-3-canvas-containergroupnode-info" class="badge info as-toggle">1 info</label>
-        <label for="c-3-canvas-containergroupnode-stories" class="badge err as-toggle">3/3 story errors</label>
+        <label for="c-4-canvas-containergroupnode-err" class="badge err as-toggle">prop type error</label>
+        <label for="c-4-canvas-containergroupnode-info" class="badge info as-toggle">1 info</label>
+        <label for="c-4-canvas-containergroupnode-stories" class="badge err as-toggle">3/3 story errors</label>
         
         
       </div>
@@ -1108,9 +1179,9 @@ import { Button, ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "reac
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  <input id="c-3-canvas-containergroupnode-err" class="tg tg-err" type="checkbox" hidden />
-  <input id="c-3-canvas-containergroupnode-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-3-canvas-containergroupnode-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-4-canvas-containergroupnode-err" class="tg tg-err" type="checkbox" hidden />
+  <input id="c-4-canvas-containergroupnode-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-4-canvas-containergroupnode-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -1277,9 +1348,9 @@ export const DoubleClickEdit: Story = {
     <div class="title">
       <h2><span class="status-dot dot-ok"></span> ContextMenuDemo</h2>
       <div class="badges">
-        <label for="c-4-canvas-graphcontextmenu-props" class="badge ok as-toggle">5 prop types</label>
-        <label for="c-4-canvas-graphcontextmenu-info" class="badge info as-toggle">1 info</label>
-        <label for="c-4-canvas-graphcontextmenu-stories" class="badge ok as-toggle">4 stories</label>
+        <label for="c-5-canvas-graphcontextmenu-props" class="badge ok as-toggle">5 prop types</label>
+        <label for="c-5-canvas-graphcontextmenu-info" class="badge info as-toggle">1 info</label>
+        <label for="c-5-canvas-graphcontextmenu-stories" class="badge ok as-toggle">4 stories</label>
         
         
       </div>
@@ -1292,11 +1363,11 @@ export const DoubleClickEdit: Story = {
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-4-canvas-graphcontextmenu-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-4-canvas-graphcontextmenu-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-5-canvas-graphcontextmenu-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-5-canvas-graphcontextmenu-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
-  <input id="c-4-canvas-graphcontextmenu-props" class="tg tg-props" type="checkbox" hidden />
+  <input id="c-5-canvas-graphcontextmenu-props" class="tg tg-props" type="checkbox" hidden />
 
   <div class="panels">
     
@@ -1424,8 +1495,8 @@ y: number</code></pre>
       <h2><span class="status-dot dot-ok"></span> DialogDemo</h2>
       <div class="badges">
         
-        <label for="c-5-ui-dialog-info" class="badge info as-toggle">1 info</label>
-        <label for="c-5-ui-dialog-stories" class="badge ok as-toggle">3 stories</label>
+        <label for="c-6-ui-dialog-info" class="badge info as-toggle">1 info</label>
+        <label for="c-6-ui-dialog-stories" class="badge ok as-toggle">3 stories</label>
         
         
       </div>
@@ -1438,8 +1509,8 @@ y: number</code></pre>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-5-ui-dialog-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-5-ui-dialog-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-6-ui-dialog-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-6-ui-dialog-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -1522,9 +1593,9 @@ y: number</code></pre>
     <div class="title">
       <h2><span class="status-dot dot-err"></span> EntityNodeFlow</h2>
       <div class="badges">
-        <label for="c-6-canvas-entitynode-err" class="badge err as-toggle">prop type error</label>
-        <label for="c-6-canvas-entitynode-info" class="badge info as-toggle">1 info</label>
-        <label for="c-6-canvas-entitynode-stories" class="badge err as-toggle">4/4 story errors</label>
+        <label for="c-7-canvas-entitynode-err" class="badge err as-toggle">prop type error</label>
+        <label for="c-7-canvas-entitynode-info" class="badge info as-toggle">1 info</label>
+        <label for="c-7-canvas-entitynode-stories" class="badge err as-toggle">4/4 story errors</label>
         
         
       </div>
@@ -1536,9 +1607,9 @@ y: number</code></pre>
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  <input id="c-6-canvas-entitynode-err" class="tg tg-err" type="checkbox" hidden />
-  <input id="c-6-canvas-entitynode-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-6-canvas-entitynode-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-7-canvas-entitynode-err" class="tg tg-err" type="checkbox" hidden />
+  <input id="c-7-canvas-entitynode-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-7-canvas-entitynode-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -1719,6 +1790,86 @@ export const DoubleClickEdit: Story = {
 </article>
 <article
   class="card 
+  no-error 
+  has-info 
+  no-story-error
+  no-doc-error"
+  role="listitem"
+  aria-label="FeatureFlagsSection">
+  <div class="head">
+    <div class="title">
+      <h2><span class="status-dot dot-ok"></span> FeatureFlagsSection</h2>
+      <div class="badges">
+        
+        <label for="c-8-canvas-sidebar-featureflagssection-info" class="badge info as-toggle">1 info</label>
+        <label for="c-8-canvas-sidebar-featureflagssection-stories" class="badge ok as-toggle">2 stories</label>
+        
+        
+      </div>
+    </div>
+    <div class="meta" title="./src/stories/FeatureFlagsSection.stories.tsx">canvas-sidebar-featureflagssection · ./src/stories/FeatureFlagsSection.stories.tsx</div>
+    
+    
+    
+  </div>
+
+  <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
+  
+  <input id="c-8-canvas-sidebar-featureflagssection-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-8-canvas-sidebar-featureflagssection-stories" class="tg tg-stories" type="checkbox" hidden />
+  
+  
+  
+
+  <div class="panels">
+    
+    
+        <div class="panel panel-info">
+          
+    <div class="note info">
+      <div class="note-title">Info</div>
+      <div class="note-body">No description found. Write a jsdoc comment such as /** Component description */.</div>
+    </div>
+        </div>
+    
+    
+        <div class="panel panel-stories">
+          
+          
+          
+          <div class="note ok">
+                <div class="row">
+                  <span class="ex-name">Imports</span>
+                </div>
+                <pre><code>import { FeatureFlagsSection, Sidebar, SidebarContent, SidebarProvider } from "react-roadmap";</code></pre>
+              </div>
+          
+          
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Default</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const Default = () =&gt; &lt;FeatureFlagsSection /&gt;;</code></pre>
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Toggle Flag</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const ToggleFlag = () =&gt; &lt;FeatureFlagsSection /&gt;;</code></pre>
+            </div>
+        </div>
+    
+    
+  </div>
+</article>
+<article
+  class="card 
   has-error 
   has-info 
   no-story-error
@@ -1729,9 +1880,9 @@ export const DoubleClickEdit: Story = {
     <div class="title">
       <h2><span class="status-dot dot-err"></span> FlowWrapper</h2>
       <div class="badges">
-        <label for="c-7-canvas-basehandle-err" class="badge err as-toggle">prop type error</label>
-        <label for="c-7-canvas-basehandle-info" class="badge info as-toggle">1 info</label>
-        <label for="c-7-canvas-basehandle-stories" class="badge ok as-toggle">4 stories</label>
+        <label for="c-9-canvas-basehandle-err" class="badge err as-toggle">prop type error</label>
+        <label for="c-9-canvas-basehandle-info" class="badge info as-toggle">1 info</label>
+        <label for="c-9-canvas-basehandle-stories" class="badge ok as-toggle">4 stories</label>
         
         
       </div>
@@ -1743,9 +1894,9 @@ export const DoubleClickEdit: Story = {
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  <input id="c-7-canvas-basehandle-err" class="tg tg-err" type="checkbox" hidden />
-  <input id="c-7-canvas-basehandle-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-7-canvas-basehandle-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-9-canvas-basehandle-err" class="tg tg-err" type="checkbox" hidden />
+  <input id="c-9-canvas-basehandle-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-9-canvas-basehandle-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -1867,8 +2018,8 @@ Code:
       <h2><span class="status-dot dot-ok"></span> Input</h2>
       <div class="badges">
         
-        <label for="c-8-ui-input-info" class="badge info as-toggle">1 info</label>
-        <label for="c-8-ui-input-stories" class="badge ok as-toggle">6 stories</label>
+        <label for="c-10-ui-input-info" class="badge info as-toggle">1 info</label>
+        <label for="c-10-ui-input-stories" class="badge ok as-toggle">6 stories</label>
         
         
       </div>
@@ -1881,8 +2032,8 @@ Code:
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-8-ui-input-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-8-ui-input-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-10-ui-input-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-10-ui-input-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -1972,288 +2123,6 @@ Code:
 </article>
 <article
   class="card 
-  has-error 
-  has-info 
-  has-story-error
-  no-doc-error"
-  role="listitem"
-  aria-label="MenuPreview">
-  <div class="head">
-    <div class="title">
-      <h2><span class="status-dot dot-err"></span> MenuPreview</h2>
-      <div class="badges">
-        <label for="c-9-canvas-workspacemenu-err" class="badge err as-toggle">prop type error</label>
-        <label for="c-9-canvas-workspacemenu-info" class="badge info as-toggle">1 info</label>
-        <label for="c-9-canvas-workspacemenu-stories" class="badge err as-toggle">1/2 story errors</label>
-        
-        
-      </div>
-    </div>
-    <div class="meta" title="./src/stories/WorkspaceMenu.stories.tsx">canvas-workspacemenu · ./src/stories/WorkspaceMenu.stories.tsx</div>
-    
-    
-    
-  </div>
-
-  <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  <input id="c-9-canvas-workspacemenu-err" class="tg tg-err" type="checkbox" hidden />
-  <input id="c-9-canvas-workspacemenu-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-9-canvas-workspacemenu-stories" class="tg tg-stories" type="checkbox" hidden />
-  
-  
-  
-
-  <div class="panels">
-    
-        <div class="panel panel-err">
-          
-    <div class="note err">
-      <div class="note-title">Prop type error</div>
-      <div class="note-body"><pre><code>No component file found for the &quot;MenuPreview&quot; component.
-  47 | }
-  48 |
-&gt; 49 | const meta = {
-     | ^
-  50 |   title: &#39;Canvas/WorkspaceMenu&#39;,
-  51 |   component: MenuPreview,
-  52 |   parameters: { layout: &#39;centered&#39; },
-
-./src/stories/WorkspaceMenu.stories.tsx:
-import type { Meta, StoryObj } from &#39;@storybook/react-vite&#39;
-import { Button } from &#39;@/components/ui/button&#39;
-import { DotsThreeOutline } from &#39;@phosphor-icons/react&#39;
-import { Popover, PopoverTrigger, PopoverContent } from &#39;@/components/ui/popover&#39;
-import { ButtonGroup } from &#39;@/components/ui/button-group&#39;
-import { ArrowUUpLeft, ArrowUUpRight, Plus, FolderOpen } from &#39;@phosphor-icons/react&#39;
-
-function MenuPreview() {
-  return (
-    &lt;Popover defaultOpen&gt;
-      &lt;PopoverTrigger
-        render={&lt;Button variant=&quot;outline&quot; size=&quot;icon-sm&quot; aria-label=&quot;Workspace menu&quot; /&gt;}
-      &gt;
-        &lt;DotsThreeOutline /&gt;
-      &lt;/PopoverTrigger&gt;
-      &lt;PopoverContent className=&quot;w-[260px]&quot; align=&quot;end&quot; sideOffset={8}&gt;
-        &lt;div style={{ display: &#39;flex&#39;, flexDirection: &#39;column&#39;, gap: 8 }}&gt;
-          &lt;div style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 8, padding: &#39;0 2px&#39; }}&gt;
-            &lt;ButtonGroup&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Undo&quot; disabled&gt;
-                &lt;ArrowUUpLeft /&gt;
-              &lt;/Button&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Redo&quot; disabled&gt;
-                &lt;ArrowUUpRight /&gt;
-              &lt;/Button&gt;
-            &lt;/ButtonGroup&gt;
-          &lt;/div&gt;
-
-          &lt;div className=&quot;border-t&quot; /&gt;
-
-          &lt;span style={{ fontSize: 11, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-            Backups
-          &lt;/span&gt;
-
-          &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; className=&quot;w-full justify-start gap-2&quot; disabled&gt;
-            &lt;Plus /&gt;
-            Nothing to back up yet
-          &lt;/Button&gt;
-
-          &lt;div style={{ fontSize: 12, color: &#39;var(--muted-foreground)&#39;, padding: &#39;8px 0&#39;, textAlign: &#39;center&#39; }}&gt;
-            No backups yet. Create one with the + button above.
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/PopoverContent&gt;
-    &lt;/Popover&gt;
-  )
-}
-
-const meta = {
-  title: &#39;Canvas/WorkspaceMenu&#39;,
-  component: MenuPreview,
-  parameters: { layout: &#39;centered&#39; },
-  tags: [&#39;autodocs&#39;, &#39;ai-generated&#39;],
-} satisfies Meta&lt;typeof MenuPreview&gt;
-
-export default meta
-type Story = StoryObj&lt;typeof meta&gt;
-
-export const Default: Story = {}
-
-export const WithUndoHistory: Story = {
-  render: () =&gt; (
-    &lt;Popover defaultOpen&gt;
-      &lt;PopoverTrigger
-        render={&lt;Button variant=&quot;outline&quot; size=&quot;icon-sm&quot; aria-label=&quot;Workspace menu&quot; /&gt;}
-      &gt;
-        &lt;DotsThreeOutline /&gt;
-      &lt;/PopoverTrigger&gt;
-      &lt;PopoverContent className=&quot;w-[260px]&quot; align=&quot;end&quot; sideOffset={8}&gt;
-        &lt;div style={{ display: &#39;flex&#39;, flexDirection: &#39;column&#39;, gap: 8 }}&gt;
-          &lt;div style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 8, padding: &#39;0 2px&#39; }}&gt;
-            &lt;ButtonGroup&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Undo&quot;&gt;
-                &lt;ArrowUUpLeft /&gt;
-              &lt;/Button&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Redo&quot;&gt;
-                &lt;ArrowUUpRight /&gt;
-              &lt;/Button&gt;
-            &lt;/ButtonGroup&gt;
-          &lt;/div&gt;
-
-          &lt;div className=&quot;border-t&quot; /&gt;
-
-          &lt;Button
-            variant=&quot;outline&quot;
-            size=&quot;sm&quot;
-            className=&quot;w-full justify-start gap-2&quot;
-          &gt;
-            &lt;FolderOpen /&gt;
-            Open Folder
-          &lt;/Button&gt;
-
-          &lt;div className=&quot;border-t&quot; /&gt;
-
-          &lt;span style={{ fontSize: 11, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-            Backups
-          &lt;/span&gt;
-
-          &lt;Button
-            variant=&quot;outline&quot;
-            size=&quot;sm&quot;
-            className=&quot;w-full justify-start gap-2&quot;
-          &gt;
-            &lt;Plus /&gt;
-            Save checkpoint now
-          &lt;/Button&gt;
-
-          &lt;span style={{ fontSize: 10, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-            Recent Snapshots
-          &lt;/span&gt;
-
-          {[&#39;Moved node&#39;, &#39;Added entity&#39;, &#39;Updated label&#39;].map((desc, i) =&gt; (
-            &lt;div key={i} style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 4, borderRadius: 6, padding: &#39;2px 6px&#39;, fontSize: 12 }}&gt;
-              &lt;span style={{ color: &#39;var(--muted-foreground)&#39; }}&gt;{`${i + 1}m ago`}&lt;/span&gt;
-              &lt;span style={{ color: &#39;var(--muted-foreground)&#39;, opacity: 0.7 }}&gt;&amp;mdash;&lt;/span&gt;
-              {desc}
-            &lt;/div&gt;
-          ))}
-        &lt;/div&gt;
-      &lt;/PopoverContent&gt;
-    &lt;/Popover&gt;
-  ),
-}
-</code></pre></div>
-    </div>
-        </div>
-    
-        <div class="panel panel-info">
-          
-    <div class="note info">
-      <div class="note-title">Info</div>
-      <div class="note-body">No description found. Write a jsdoc comment such as /** Component description */.</div>
-    </div>
-        </div>
-    
-    
-        <div class="panel panel-stories">
-          
-            <div class="note err">
-              <div class="row">
-                <span class="ex-name">Default</span>
-                <span class="badge err">story error</span>
-              </div>
-              
-              
-              
-              <pre><code>Could not generate snippet without component name.</code></pre>
-            </div>
-          
-          
-          <div class="note ok">
-                <div class="row">
-                  <span class="ex-name">Imports</span>
-                </div>
-                <pre><code>import { ArrowUUpLeft, ArrowUUpRight, DotsThreeOutline, FolderOpen, Plus } from "@phosphor-icons/react";
-import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "react-roadmap";</code></pre>
-              </div>
-          
-          
-            <div class="note ok">
-              <div class="row">
-                <span class="ex-name">With Undo History</span>
-                <span class="badge ok">story ok</span>
-              </div>
-              
-              
-              <pre><code>const WithUndoHistory = () =&gt; (
-  &lt;Popover defaultOpen&gt;
-    &lt;PopoverTrigger
-      render={&lt;Button variant=&quot;outline&quot; size=&quot;icon-sm&quot; aria-label=&quot;Workspace menu&quot; /&gt;}
-    &gt;
-      &lt;DotsThreeOutline /&gt;
-    &lt;/PopoverTrigger&gt;
-    &lt;PopoverContent className=&quot;w-[260px]&quot; align=&quot;end&quot; sideOffset={8}&gt;
-      &lt;div style={{ display: &#39;flex&#39;, flexDirection: &#39;column&#39;, gap: 8 }}&gt;
-        &lt;div style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 8, padding: &#39;0 2px&#39; }}&gt;
-          &lt;ButtonGroup&gt;
-            &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Undo&quot;&gt;
-              &lt;ArrowUUpLeft /&gt;
-            &lt;/Button&gt;
-            &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Redo&quot;&gt;
-              &lt;ArrowUUpRight /&gt;
-            &lt;/Button&gt;
-          &lt;/ButtonGroup&gt;
-        &lt;/div&gt;
-
-        &lt;div className=&quot;border-t&quot; /&gt;
-
-        &lt;Button
-          variant=&quot;outline&quot;
-          size=&quot;sm&quot;
-          className=&quot;w-full justify-start gap-2&quot;
-        &gt;
-          &lt;FolderOpen /&gt;
-          Open Folder
-        &lt;/Button&gt;
-
-        &lt;div className=&quot;border-t&quot; /&gt;
-
-        &lt;span style={{ fontSize: 11, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-          Backups
-        &lt;/span&gt;
-
-        &lt;Button
-          variant=&quot;outline&quot;
-          size=&quot;sm&quot;
-          className=&quot;w-full justify-start gap-2&quot;
-        &gt;
-          &lt;Plus /&gt;
-          Save checkpoint now
-        &lt;/Button&gt;
-
-        &lt;span style={{ fontSize: 10, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-          Recent Snapshots
-        &lt;/span&gt;
-
-        {[&#39;Moved node&#39;, &#39;Added entity&#39;, &#39;Updated label&#39;].map((desc, i) =&gt; (
-          &lt;div key={i} style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 4, borderRadius: 6, padding: &#39;2px 6px&#39;, fontSize: 12 }}&gt;
-            &lt;span style={{ color: &#39;var(--muted-foreground)&#39; }}&gt;{`${i + 1}m ago`}&lt;/span&gt;
-            &lt;span style={{ color: &#39;var(--muted-foreground)&#39;, opacity: 0.7 }}&gt;&amp;mdash;&lt;/span&gt;
-            {desc}
-          &lt;/div&gt;
-        ))}
-      &lt;/div&gt;
-    &lt;/PopoverContent&gt;
-  &lt;/Popover&gt;
-);</code></pre>
-            </div>
-        </div>
-    
-    
-  </div>
-</article>
-<article
-  class="card 
   no-error 
   has-info 
   no-story-error
@@ -2264,9 +2133,9 @@ import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "re
     <div class="title">
       <h2><span class="status-dot dot-ok"></span> Separator</h2>
       <div class="badges">
-        <label for="c-10-ui-separator-props" class="badge ok as-toggle">1 prop type</label>
-        <label for="c-10-ui-separator-info" class="badge info as-toggle">1 info</label>
-        <label for="c-10-ui-separator-stories" class="badge ok as-toggle">3 stories</label>
+        <label for="c-11-ui-separator-props" class="badge ok as-toggle">1 prop type</label>
+        <label for="c-11-ui-separator-info" class="badge info as-toggle">1 info</label>
+        <label for="c-11-ui-separator-stories" class="badge ok as-toggle">3 stories</label>
         
         
       </div>
@@ -2279,11 +2148,11 @@ import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "re
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-10-ui-separator-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-10-ui-separator-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-11-ui-separator-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-11-ui-separator-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
-  <input id="c-10-ui-separator-props" class="tg tg-props" type="checkbox" hidden />
+  <input id="c-11-ui-separator-props" class="tg tg-props" type="checkbox" hidden />
 
   <div class="panels">
     
@@ -2365,14 +2234,105 @@ import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "re
   no-story-error
   no-doc-error"
   role="listitem"
+  aria-label="SidebarDemo">
+  <div class="head">
+    <div class="title">
+      <h2><span class="status-dot dot-ok"></span> SidebarDemo</h2>
+      <div class="badges">
+        <label for="c-12-canvas-workspacesidebar-props" class="badge ok as-toggle">1 prop type</label>
+        <label for="c-12-canvas-workspacesidebar-info" class="badge info as-toggle">1 info</label>
+        <label for="c-12-canvas-workspacesidebar-stories" class="badge ok as-toggle">2 stories</label>
+        
+        
+      </div>
+    </div>
+    <div class="meta" title="./src/stories/WorkspaceSidebar.stories.tsx">canvas-workspacesidebar · ./src/stories/WorkspaceSidebar.stories.tsx</div>
+    
+    
+    
+  </div>
+
+  <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
+  
+  <input id="c-12-canvas-workspacesidebar-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-12-canvas-workspacesidebar-stories" class="tg tg-stories" type="checkbox" hidden />
+  
+  
+  <input id="c-12-canvas-workspacesidebar-props" class="tg tg-props" type="checkbox" hidden />
+
+  <div class="panels">
+    
+    
+        <div class="panel panel-info">
+          
+    <div class="note info">
+      <div class="note-title">Info</div>
+      <div class="note-body">No description found. Write a jsdoc comment such as /** Component description */.</div>
+    </div>
+        </div>
+    
+        <div class="panel panel-props">
+          <div class="note ok">
+            <div class="row">
+              <span class="ex-name">Prop types <small>(react-docgen)</small></span>
+              <span class="badge ok">1 prop type</span>
+            </div>
+            <pre><code>Component: src/canvas/panels/WorkspaceSidebar.tsx::default</code></pre>
+            <pre><code>Props:</code></pre>
+            <pre><code>onOpenFolder: () =&gt; void</code></pre>
+          </div>
+        </div>
+    
+        <div class="panel panel-stories">
+          
+          
+          
+          <div class="note ok">
+                <div class="row">
+                  <span class="ex-name">Imports</span>
+                </div>
+                <pre><code>import { SidebarProvider, SidebarTrigger, WorkspaceSidebar } from "react-roadmap";</code></pre>
+              </div>
+          
+          
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Open</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const Open = () =&gt; &lt;WorkspaceSidebar /&gt;;</code></pre>
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Toggle Sidebar</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const ToggleSidebar = () =&gt; &lt;WorkspaceSidebar /&gt;;</code></pre>
+            </div>
+        </div>
+    
+    
+  </div>
+</article>
+<article
+  class="card 
+  no-error 
+  has-info 
+  no-story-error
+  no-doc-error"
+  role="listitem"
   aria-label="Skeleton">
   <div class="head">
     <div class="title">
       <h2><span class="status-dot dot-ok"></span> Skeleton</h2>
       <div class="badges">
         
-        <label for="c-11-ui-skeleton-info" class="badge info as-toggle">1 info</label>
-        <label for="c-11-ui-skeleton-stories" class="badge ok as-toggle">2 stories</label>
+        <label for="c-13-ui-skeleton-info" class="badge info as-toggle">1 info</label>
+        <label for="c-13-ui-skeleton-stories" class="badge ok as-toggle">2 stories</label>
         
         
       </div>
@@ -2385,8 +2345,8 @@ import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "re
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   
-  <input id="c-11-ui-skeleton-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-11-ui-skeleton-stories" class="tg tg-stories" type="checkbox" hidden />
+  <input id="c-13-ui-skeleton-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-13-ui-skeleton-stories" class="tg tg-stories" type="checkbox" hidden />
   
   
   
@@ -2451,6 +2411,97 @@ import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "re
     
   </div>
 </article>
+<article
+  class="card 
+  no-error 
+  has-info 
+  no-story-error
+  no-doc-error"
+  role="listitem"
+  aria-label="WorkspaceInfoSection">
+  <div class="head">
+    <div class="title">
+      <h2><span class="status-dot dot-ok"></span> WorkspaceInfoSection</h2>
+      <div class="badges">
+        <label for="c-14-canvas-sidebar-workspaceinfosection-props" class="badge ok as-toggle">1 prop type</label>
+        <label for="c-14-canvas-sidebar-workspaceinfosection-info" class="badge info as-toggle">1 info</label>
+        <label for="c-14-canvas-sidebar-workspaceinfosection-stories" class="badge ok as-toggle">2 stories</label>
+        
+        
+      </div>
+    </div>
+    <div class="meta" title="./src/stories/WorkspaceInfoSection.stories.tsx">canvas-sidebar-workspaceinfosection · ./src/stories/WorkspaceInfoSection.stories.tsx</div>
+    
+    
+    
+  </div>
+
+  <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
+  
+  <input id="c-14-canvas-sidebar-workspaceinfosection-info" class="tg tg-info" type="checkbox" hidden />
+  <input id="c-14-canvas-sidebar-workspaceinfosection-stories" class="tg tg-stories" type="checkbox" hidden />
+  
+  
+  <input id="c-14-canvas-sidebar-workspaceinfosection-props" class="tg tg-props" type="checkbox" hidden />
+
+  <div class="panels">
+    
+    
+        <div class="panel panel-info">
+          
+    <div class="note info">
+      <div class="note-title">Info</div>
+      <div class="note-body">No description found. Write a jsdoc comment such as /** Component description */.</div>
+    </div>
+        </div>
+    
+        <div class="panel panel-props">
+          <div class="note ok">
+            <div class="row">
+              <span class="ex-name">Prop types <small>(react-docgen)</small></span>
+              <span class="badge ok">1 prop type</span>
+            </div>
+            <pre><code>Component: src/canvas/panels/sections/WorkspaceInfoSection.tsx::default</code></pre>
+            <pre><code>Props:</code></pre>
+            <pre><code>viewport?: { x: number; y: number; zoom: number }</code></pre>
+          </div>
+        </div>
+    
+        <div class="panel panel-stories">
+          
+          
+          
+          <div class="note ok">
+                <div class="row">
+                  <span class="ex-name">Imports</span>
+                </div>
+                <pre><code>import { Sidebar, SidebarContent, SidebarProvider, WorkspaceInfoSection } from "react-roadmap";</code></pre>
+              </div>
+          
+          
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">With Viewport</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const WithViewport = () =&gt; &lt;WorkspaceInfoSection viewport={{ x: 725, y: 396.5, zoom: 1 }} /&gt;;</code></pre>
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Without Viewport</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const WithoutViewport = () =&gt; &lt;WorkspaceInfoSection /&gt;;</code></pre>
+            </div>
+        </div>
+    
+    
+  </div>
+</article>
     </div>
     <div class="error-groups" role="region" aria-label="Prop type error groups">
         <section class="group">
@@ -2458,7 +2509,7 @@ import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "re
           <label for="no-component-import-found-toggle" class="group-header">
             <span class="caret">▸</span>
             <span class="group-title">No component import found</span>
-            <span class="group-count">3</span>
+            <span class="group-count">2</span>
           </label>
           <div class="group-cards">
 <article
@@ -2846,288 +2897,6 @@ export const DoubleClickEdit: Story = {
               </div>
           
           
-        </div>
-    
-    
-  </div>
-</article>
-<article
-  class="card 
-  has-error 
-  has-info 
-  has-story-error
-  no-doc-error"
-  role="listitem"
-  aria-label="MenuPreview">
-  <div class="head">
-    <div class="title">
-      <h2><span class="status-dot dot-err"></span> MenuPreview</h2>
-      <div class="badges">
-        <label for="c-error-2-canvas-workspacemenu-err" class="badge err as-toggle">prop type error</label>
-        <label for="c-error-2-canvas-workspacemenu-info" class="badge info as-toggle">1 info</label>
-        <label for="c-error-2-canvas-workspacemenu-stories" class="badge err as-toggle">1/2 story errors</label>
-        
-        
-      </div>
-    </div>
-    <div class="meta" title="./src/stories/WorkspaceMenu.stories.tsx">canvas-workspacemenu · ./src/stories/WorkspaceMenu.stories.tsx</div>
-    
-    
-    
-  </div>
-
-  <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  <input id="c-error-2-canvas-workspacemenu-err" class="tg tg-err" type="checkbox" hidden />
-  <input id="c-error-2-canvas-workspacemenu-info" class="tg tg-info" type="checkbox" hidden />
-  <input id="c-error-2-canvas-workspacemenu-stories" class="tg tg-stories" type="checkbox" hidden />
-  
-  
-  
-
-  <div class="panels">
-    
-        <div class="panel panel-err">
-          
-    <div class="note err">
-      <div class="note-title">Prop type error</div>
-      <div class="note-body"><pre><code>No component file found for the &quot;MenuPreview&quot; component.
-  47 | }
-  48 |
-&gt; 49 | const meta = {
-     | ^
-  50 |   title: &#39;Canvas/WorkspaceMenu&#39;,
-  51 |   component: MenuPreview,
-  52 |   parameters: { layout: &#39;centered&#39; },
-
-./src/stories/WorkspaceMenu.stories.tsx:
-import type { Meta, StoryObj } from &#39;@storybook/react-vite&#39;
-import { Button } from &#39;@/components/ui/button&#39;
-import { DotsThreeOutline } from &#39;@phosphor-icons/react&#39;
-import { Popover, PopoverTrigger, PopoverContent } from &#39;@/components/ui/popover&#39;
-import { ButtonGroup } from &#39;@/components/ui/button-group&#39;
-import { ArrowUUpLeft, ArrowUUpRight, Plus, FolderOpen } from &#39;@phosphor-icons/react&#39;
-
-function MenuPreview() {
-  return (
-    &lt;Popover defaultOpen&gt;
-      &lt;PopoverTrigger
-        render={&lt;Button variant=&quot;outline&quot; size=&quot;icon-sm&quot; aria-label=&quot;Workspace menu&quot; /&gt;}
-      &gt;
-        &lt;DotsThreeOutline /&gt;
-      &lt;/PopoverTrigger&gt;
-      &lt;PopoverContent className=&quot;w-[260px]&quot; align=&quot;end&quot; sideOffset={8}&gt;
-        &lt;div style={{ display: &#39;flex&#39;, flexDirection: &#39;column&#39;, gap: 8 }}&gt;
-          &lt;div style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 8, padding: &#39;0 2px&#39; }}&gt;
-            &lt;ButtonGroup&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Undo&quot; disabled&gt;
-                &lt;ArrowUUpLeft /&gt;
-              &lt;/Button&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Redo&quot; disabled&gt;
-                &lt;ArrowUUpRight /&gt;
-              &lt;/Button&gt;
-            &lt;/ButtonGroup&gt;
-          &lt;/div&gt;
-
-          &lt;div className=&quot;border-t&quot; /&gt;
-
-          &lt;span style={{ fontSize: 11, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-            Backups
-          &lt;/span&gt;
-
-          &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; className=&quot;w-full justify-start gap-2&quot; disabled&gt;
-            &lt;Plus /&gt;
-            Nothing to back up yet
-          &lt;/Button&gt;
-
-          &lt;div style={{ fontSize: 12, color: &#39;var(--muted-foreground)&#39;, padding: &#39;8px 0&#39;, textAlign: &#39;center&#39; }}&gt;
-            No backups yet. Create one with the + button above.
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/PopoverContent&gt;
-    &lt;/Popover&gt;
-  )
-}
-
-const meta = {
-  title: &#39;Canvas/WorkspaceMenu&#39;,
-  component: MenuPreview,
-  parameters: { layout: &#39;centered&#39; },
-  tags: [&#39;autodocs&#39;, &#39;ai-generated&#39;],
-} satisfies Meta&lt;typeof MenuPreview&gt;
-
-export default meta
-type Story = StoryObj&lt;typeof meta&gt;
-
-export const Default: Story = {}
-
-export const WithUndoHistory: Story = {
-  render: () =&gt; (
-    &lt;Popover defaultOpen&gt;
-      &lt;PopoverTrigger
-        render={&lt;Button variant=&quot;outline&quot; size=&quot;icon-sm&quot; aria-label=&quot;Workspace menu&quot; /&gt;}
-      &gt;
-        &lt;DotsThreeOutline /&gt;
-      &lt;/PopoverTrigger&gt;
-      &lt;PopoverContent className=&quot;w-[260px]&quot; align=&quot;end&quot; sideOffset={8}&gt;
-        &lt;div style={{ display: &#39;flex&#39;, flexDirection: &#39;column&#39;, gap: 8 }}&gt;
-          &lt;div style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 8, padding: &#39;0 2px&#39; }}&gt;
-            &lt;ButtonGroup&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Undo&quot;&gt;
-                &lt;ArrowUUpLeft /&gt;
-              &lt;/Button&gt;
-              &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Redo&quot;&gt;
-                &lt;ArrowUUpRight /&gt;
-              &lt;/Button&gt;
-            &lt;/ButtonGroup&gt;
-          &lt;/div&gt;
-
-          &lt;div className=&quot;border-t&quot; /&gt;
-
-          &lt;Button
-            variant=&quot;outline&quot;
-            size=&quot;sm&quot;
-            className=&quot;w-full justify-start gap-2&quot;
-          &gt;
-            &lt;FolderOpen /&gt;
-            Open Folder
-          &lt;/Button&gt;
-
-          &lt;div className=&quot;border-t&quot; /&gt;
-
-          &lt;span style={{ fontSize: 11, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-            Backups
-          &lt;/span&gt;
-
-          &lt;Button
-            variant=&quot;outline&quot;
-            size=&quot;sm&quot;
-            className=&quot;w-full justify-start gap-2&quot;
-          &gt;
-            &lt;Plus /&gt;
-            Save checkpoint now
-          &lt;/Button&gt;
-
-          &lt;span style={{ fontSize: 10, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-            Recent Snapshots
-          &lt;/span&gt;
-
-          {[&#39;Moved node&#39;, &#39;Added entity&#39;, &#39;Updated label&#39;].map((desc, i) =&gt; (
-            &lt;div key={i} style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 4, borderRadius: 6, padding: &#39;2px 6px&#39;, fontSize: 12 }}&gt;
-              &lt;span style={{ color: &#39;var(--muted-foreground)&#39; }}&gt;{`${i + 1}m ago`}&lt;/span&gt;
-              &lt;span style={{ color: &#39;var(--muted-foreground)&#39;, opacity: 0.7 }}&gt;&amp;mdash;&lt;/span&gt;
-              {desc}
-            &lt;/div&gt;
-          ))}
-        &lt;/div&gt;
-      &lt;/PopoverContent&gt;
-    &lt;/Popover&gt;
-  ),
-}
-</code></pre></div>
-    </div>
-        </div>
-    
-        <div class="panel panel-info">
-          
-    <div class="note info">
-      <div class="note-title">Info</div>
-      <div class="note-body">No description found. Write a jsdoc comment such as /** Component description */.</div>
-    </div>
-        </div>
-    
-    
-        <div class="panel panel-stories">
-          
-            <div class="note err">
-              <div class="row">
-                <span class="ex-name">Default</span>
-                <span class="badge err">story error</span>
-              </div>
-              
-              
-              
-              <pre><code>Could not generate snippet without component name.</code></pre>
-            </div>
-          
-          
-          <div class="note ok">
-                <div class="row">
-                  <span class="ex-name">Imports</span>
-                </div>
-                <pre><code>import { ArrowUUpLeft, ArrowUUpRight, DotsThreeOutline, FolderOpen, Plus } from "@phosphor-icons/react";
-import { Button, ButtonGroup, Popover, PopoverContent, PopoverTrigger } from "react-roadmap";</code></pre>
-              </div>
-          
-          
-            <div class="note ok">
-              <div class="row">
-                <span class="ex-name">With Undo History</span>
-                <span class="badge ok">story ok</span>
-              </div>
-              
-              
-              <pre><code>const WithUndoHistory = () =&gt; (
-  &lt;Popover defaultOpen&gt;
-    &lt;PopoverTrigger
-      render={&lt;Button variant=&quot;outline&quot; size=&quot;icon-sm&quot; aria-label=&quot;Workspace menu&quot; /&gt;}
-    &gt;
-      &lt;DotsThreeOutline /&gt;
-    &lt;/PopoverTrigger&gt;
-    &lt;PopoverContent className=&quot;w-[260px]&quot; align=&quot;end&quot; sideOffset={8}&gt;
-      &lt;div style={{ display: &#39;flex&#39;, flexDirection: &#39;column&#39;, gap: 8 }}&gt;
-        &lt;div style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 8, padding: &#39;0 2px&#39; }}&gt;
-          &lt;ButtonGroup&gt;
-            &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Undo&quot;&gt;
-              &lt;ArrowUUpLeft /&gt;
-            &lt;/Button&gt;
-            &lt;Button variant=&quot;outline&quot; size=&quot;sm&quot; aria-label=&quot;Redo&quot;&gt;
-              &lt;ArrowUUpRight /&gt;
-            &lt;/Button&gt;
-          &lt;/ButtonGroup&gt;
-        &lt;/div&gt;
-
-        &lt;div className=&quot;border-t&quot; /&gt;
-
-        &lt;Button
-          variant=&quot;outline&quot;
-          size=&quot;sm&quot;
-          className=&quot;w-full justify-start gap-2&quot;
-        &gt;
-          &lt;FolderOpen /&gt;
-          Open Folder
-        &lt;/Button&gt;
-
-        &lt;div className=&quot;border-t&quot; /&gt;
-
-        &lt;span style={{ fontSize: 11, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-          Backups
-        &lt;/span&gt;
-
-        &lt;Button
-          variant=&quot;outline&quot;
-          size=&quot;sm&quot;
-          className=&quot;w-full justify-start gap-2&quot;
-        &gt;
-          &lt;Plus /&gt;
-          Save checkpoint now
-        &lt;/Button&gt;
-
-        &lt;span style={{ fontSize: 10, fontWeight: 600, color: &#39;var(--muted-foreground)&#39;, textTransform: &#39;uppercase&#39;, letterSpacing: &#39;0.05em&#39;, padding: &#39;0 2px&#39; }}&gt;
-          Recent Snapshots
-        &lt;/span&gt;
-
-        {[&#39;Moved node&#39;, &#39;Added entity&#39;, &#39;Updated label&#39;].map((desc, i) =&gt; (
-          &lt;div key={i} style={{ display: &#39;flex&#39;, alignItems: &#39;center&#39;, gap: 4, borderRadius: 6, padding: &#39;2px 6px&#39;, fontSize: 12 }}&gt;
-            &lt;span style={{ color: &#39;var(--muted-foreground)&#39; }}&gt;{`${i + 1}m ago`}&lt;/span&gt;
-            &lt;span style={{ color: &#39;var(--muted-foreground)&#39;, opacity: 0.7 }}&gt;&amp;mdash;&lt;/span&gt;
-            {desc}
-          &lt;/div&gt;
-        ))}
-      &lt;/div&gt;
-    &lt;/PopoverContent&gt;
-  &lt;/Popover&gt;
-);</code></pre>
-            </div>
         </div>
     
     

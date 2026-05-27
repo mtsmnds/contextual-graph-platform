@@ -1057,9 +1057,11 @@ function GraphCanvas() {
 
   return (
     <SidebarProvider>
-      <ReactFlowProvider>
-        <GraphCanvasContent />
-      </ReactFlowProvider>
+      <div className="flex-1 min-w-0 min-h-0">
+        <ReactFlowProvider>
+          <GraphCanvasContent />
+        </ReactFlowProvider>
+      </div>
       <WorkspaceSidebar onOpenFolder={onOpenFolder} />
     </SidebarProvider>
   )

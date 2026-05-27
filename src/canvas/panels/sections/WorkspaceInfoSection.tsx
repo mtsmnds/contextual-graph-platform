@@ -23,7 +23,7 @@ export default function WorkspaceInfoSection({ viewport }: { viewport?: { x: num
   return (
     <Collapsible>
       <SidebarGroup>
-        <CollapsibleTrigger render={<SidebarGroupLabel />}>
+        <CollapsibleTrigger nativeButton={false} render={<SidebarGroupLabel />}>
           <CaretDown className="size-3 shrink-0" />
           <span>Workspace Info</span>
         </CollapsibleTrigger>
