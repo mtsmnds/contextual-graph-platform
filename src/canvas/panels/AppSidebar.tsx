@@ -11,6 +11,11 @@ import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContaine
 import BackupsSectionContainer from "./sections/BackupsSectionContainer"
 import WorkspaceInfoSectionContainer from "./sections/WorkspaceInfoSectionContainer"
 
+/**
+ * Right-side collapsible workspace sidebar.
+ * Shows feature flags, backups/snapshots, and workspace metadata.
+ * Collapses to an off-canvas overlay — use `SidebarTrigger` to toggle.
+ */
 export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void }) {
   const viewport = useGraphStore((s) => s.canvas.viewport)
 

@@ -41,9 +41,34 @@ Container always renders exactly one presenter. Presenters never import the stor
 
 ### Storybook
 
-All presenters have stories under `src/stories/`. Stories pass explicit `args` with `fn()` callbacks for actions. Interactive stories use stateful `render` wrappers for controlled components.
+**Decorators for providers:** Use decorators for provider/layout wrapping
+(`SidebarProvider`, context providers, layout containers). Stories should only
+show the component and its props in the code panel. Use `parameters` for per-story
+configuration passed to the decorator.
 
-Global decorators in `.storybook/preview.tsx` provide `BrowserRouter` and dark mode. Shared section decorators live in `.storybook/decorators.tsx`.
+**Never wrapper components:** Never create wrapper components (e.g., `SidebarDemo`)
+as the story's `component`. Use real components directly in `render` or let the
+decorator + `component` default handle it.
+
+**JSDoc on every component:** Every component exported from `src/` should have a
+JSDoc description explaining what it does and when to use it. Storybook picks
+these up automatically for the docs page.
+
+**ArgTypes with descriptions:** Every prop needs a description in `argTypes`,
+not just a type. One line explaining what it controls.
+
+**Stories are use cases, not prop permutations:** Each story represents a
+meaningful, visually distinct state (e.g., "With multiple backups", "Empty workspace",
+"Loading state"). If two stories render identically, remove one.
+
+**Mock data fixtures:** Create mock data in a `__mocks__` or `__fixtures__` directory
+colocated with stories. Reuse across stories and tests.
+
+**Presenters:** Accept explicit props with `fn()` callbacks for actions. Interactive
+stories use stateful `render` wrappers for controlled components.
+
+Global decorators in `.storybook/preview.tsx` provide `BrowserRouter`. Shared
+section decorators live in `.storybook/decorators.tsx`.
 
 ## Tech Stack
 - Vite 8 + React 19 + TypeScript

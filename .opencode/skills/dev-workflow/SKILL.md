@@ -222,6 +222,8 @@ Create a PRD plan file. No git operations — no branching, no committing, no im
    - **Overview** — one-paragraph summary of what this PRD delivers.
    - **Specification / Acceptance Criteria** — concrete, testable outcomes. What must be true when this PRD is done?
      - New UI components have corresponding stories under `src/stories/`.
+     - Stories follow standards: decorators for providers, JSDoc on components,
+       argTypes descriptions, use-case-focused states, mock data fixtures.
      - Existing stories pass for any modified components.
    - **Files changed (inferred)** — which files will likely be touched.
    - **Phases (optional)** — only if the PRD is too large for a single pass.

@@ -1001,7 +1001,7 @@ function GraphCanvasContent() {
             onFitView={onFitView}
             onZoom100={onZoom100}
           />
-          <SidebarTrigger variant="ghost" aria-label="Workspace menu" />
+          <SidebarTrigger aria-label="Workspace menu" />
         </div>
       </Panel>
       <GraphContextMenu

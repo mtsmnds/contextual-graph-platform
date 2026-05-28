@@ -23,11 +23,26 @@ npm run lint        # ESLint — only covers .js/.jsx, NOT .ts/.tsx
 
 ## Storybook
 
-- New UI components need stories under `src/stories/`.
-- When a PRD touches UI components, run story tests for affected stories
-  (`storybook_run-story-tests` or `npx storybook test`) as part of verification.
-- Presenters receive explicit props with `fn()` callbacks for actions.
-- Interactive stories use stateful `render` wrappers for controlled components.
+- **Decorators for providers:** Use decorators for provider/layout wrapping
+  (`SidebarProvider`, context providers, layout containers). Stories should only
+  show the component and its props in the code panel. Use `parameters` for per-story
+  configuration passed to the decorator.
+- **Never wrapper components:** Never create wrapper components (e.g., `SidebarDemo`)
+  as the story's `component`. Use real components directly in `render` or let the
+  decorator + `component` default handle it.
+- **JSDoc on every component:** Add a JSDoc description explaining what it does
+  and when to use it. Storybook picks these up for the docs page.
+- **ArgTypes with descriptions:** Every prop should have a description in `argTypes`,
+  not just a type. One line explaining what it controls.
+- **Stories are use cases, not prop permutations:** Each story should represent a
+  meaningful, visually distinct state (e.g., "With multiple backups", "Empty workspace",
+  "Loading state"). If two stories render identically, remove one.
+- **Mock data fixtures:** Create mock data in a `__mocks__` or `__fixtures__` directory
+  colocated with stories. Reuse across stories and tests.
+- **Run story tests:** When a PRD touches UI components, run story tests for affected
+  stories (`storybook_run-story-tests` or `npx storybook test`) as part of verification.
+- **Presenters:** Accept explicit props with `fn()` callbacks for actions.
+- **Interactive stories:** Use stateful `render` wrappers for controlled components.
 
 
 ## Project Overview
