@@ -12,7 +12,39 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-28
+
+### m5 — prd0051 — experimental section, CollapsibleSection component, ViewLogger and MiniMap toggles
+- **What:** Extracted shared `CollapsibleSection` component with rotating caret, renamed "Feature Flags" to "Experimental" and moved it to the bottom of the sidebar. Added ViewLogger display (live x/y/zoom in the top-right button group) and MiniMap, both toggleable via switches in the Experimental section. Set `:root { font-size: 16px }` to match Storybook. Reduced Switch label from `text-sm` to `text-xs` to match section labels.
+- **Reason:** The collapsible section pattern was duplicated across three sections — extracting a shared component reduces boilerplate and ensures consistent caret behavior. ViewLogger and MiniMap toggles give users control over canvas chrome. Font-size reset fixes a mismatch where browser defaults (18px) caused rem-based text to render larger than Storybook.
+- **Files changed:**
+  - `src/index.css`: added `:root { font-size: 16px }` reset
+  - `src/components/ui/switch.tsx`: label changed from `text-sm` to `text-xs`
+  - `src/canvas/panels/sections/CollapsibleSection.tsx`: new — shared collapsible section component
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: refactored to use CollapsibleSection, renamed "Experimental", added viewLogger/minimap labels
+  - `src/canvas/panels/sections/BackupsSection.tsx`: refactored to use CollapsibleSection
+  - `src/canvas/panels/sections/WorkspaceInfoSection.tsx`: refactored to use CollapsibleSection
+  - `src/canvas/panels/ViewLogger.tsx`: new — viewport display (x, y, zoom)
+  - `src/canvas/GraphCanvas.tsx`: conditional rendering of ViewLogger and MiniMap, added ViewLogger to button group
+  - `src/canvas/panels/AppSidebar.tsx`: moved Experimental section to last position
+  - `src/store/useGraphStore.ts`: added `viewLogger` and `minimap` to `DEFAULT_FEATURE_FLAGS`
+- **Impact:** Three sections dropped ~15 lines of boilerplate each. Caret rotation is centralized. ViewLogger and MiniMap are now user-toggleable. Font rendering is consistent between Storybook and the app.
+- **Archive:** `dev-docs/archive/m5/m5-prd0051-experimental-section.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0051-experimental-section-adr.md`
+
 ## 2026-05-27
+
+### m5 — prd0050 — switch component with label, description, invalid state
+- **What:** Replaced the bare `<Switch>` toggle with a full labeled component. The new `<Switch>` accepts `label` (required), `description` (optional), `disabled`, and `invalid` props. Uses `<label htmlFor>` so clicking the label text toggles the switch. Invalid state shows a red border on the switch and red description text. Four stories: Default, WithDescription, Disabled, Invalid. FeatureFlagsSection updated to use the new API.
+- **Reason:** The bare switch required callers to write the label layout themselves. A self-contained labeled switch reduces duplication and ensures consistent layout across the codebase (label left, switch right, optional description below label).
+- **Files changed:**
+  - `src/components/ui/switch.tsx`: full rewrite — added label/description/invalid props, `<label>` wrapper with `useId()`
+  - `src/stories/Switch.stories.tsx`: new — 4 stories with JSDoc + argTypes descriptions
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: simplified to use new Switch API
+  - `.storybook/preview.tsx`: added Switch to storySort order
+- **Impact:** All future toggle settings use a single consistent pattern. Invalid state patterns established for form components.
+- **Archive:** `dev-docs/archive/m5/m5-prd0050-switch-component.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-27-prd0050-switch-component-adr.md`
 
 ### m5 — prd0048 — container/presenter pattern for sidebar sections
 - **What:** Extracted Zustand store access from three sidebar sections into container wrappers. Each section file (`FeatureFlagsSection`, `WorkspaceInfoSection`, `BackupsSection`) is now a pure presenter accepting explicit props. New `*Container.tsx` files own store reads, async operations, and dialog state. `AppSidebar` imports containers. Shared `withSidebarSection` decorator added to `.storybook/decorators.tsx`.

@@ -16,7 +16,7 @@ const preview: Preview = {
     },
     options: {
       storySort: {
-        order: ['Buttons & Sidebar', ['Button', 'IconButton', 'ButtonGroup', 'SidebarTrigger', 'ZoomControls', 'AppSidebar', 'FeatureFlagsSection', 'WorkspaceInfoSection', 'BackupsSection']],
+        order: ['Buttons & Sidebar', ['Button', 'IconButton', 'ButtonGroup', 'SidebarTrigger', 'ZoomControls', 'AppSidebar', 'FeatureFlagsSection', 'WorkspaceInfoSection', 'BackupsSection', 'Switch']],
       },
     },
   },

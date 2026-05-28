@@ -24,6 +24,7 @@ import { getLayoutedElements } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import ZoomControls from "./panels/ZoomControls"
+import ViewLogger from "./panels/ViewLogger"
 import GraphContextMenu from "./GraphContextMenu"
 import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
@@ -992,9 +993,12 @@ function GraphCanvasContent() {
       proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1.5} />
-      <MiniMap pannable zoomable position="bottom-right" style={{ margin: "0 8px 16px 0" }} />
+      {featureFlags.minimap && (
+        <MiniMap pannable zoomable position="bottom-right" style={{ margin: "0 8px 16px 0" }} />
+      )}
       <Panel position="top-right" style={{ margin: "16px 8px" }}>
         <div className="flex items-center gap-2">
+          {featureFlags.viewLogger && <ViewLogger />}
           <ZoomControls
             onZoomIn={onZoomIn}
             onZoomOut={onZoomOut}

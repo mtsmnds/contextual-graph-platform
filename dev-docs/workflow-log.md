@@ -5,7 +5,27 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-05-28
+
+### prd end — m5-prd0051-experimental-section
+- **Source:** user request — relate everything after prd0050 to prd0051-experimental-section
+- **Branch at time:** m5-prd0051-experimental-section (dirty)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI components + refactoring, no architectural changes)
+- **Commit hash:** ae25599
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
 ## 2026-05-27
+
+### prd end — m5-prd0050-switch-component
+- **Source:** user request — labeled Switch component with invalid state
+- **Branch at time:** m5-prd0050-switch-component (clean)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** short-form (component addition, no architectural changes)
+- **Commit hash:** c893b4c
+- **Pre-commit guard:** no changes (already committed)
 
 ### update — document container/presenter pattern in architecture.md
 - **Source:** user request — "use dev-workflow and update our dev-docs"

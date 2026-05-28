@@ -1,11 +1,6 @@
-import { Plus, ArrowCounterClockwise, Trash, Hourglass, WarningCircle, CaretDown } from "@phosphor-icons/react"
+import { Plus, ArrowCounterClockwise, Trash, Hourglass, WarningCircle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "@/components/ui/collapsible"
-import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "@/components/ui/sidebar"
+import { CollapsibleSection } from "./CollapsibleSection"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
 
 function formatRelativeTime(timestamp: number): string {
@@ -73,15 +68,8 @@ export default function BackupsSection({
 }) {
   return (
     <>
-      <Collapsible defaultOpen>
-        <SidebarGroup>
-          <CollapsibleTrigger nativeButton={false} render={<SidebarGroupLabel />}>
-            <CaretDown className="size-3 shrink-0" />
-            <span>Backups</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <SidebarGroupContent>
-              <div className="flex flex-col gap-2 px-1 pt-1">
+      <CollapsibleSection title="Backups" defaultOpen>
+        <div className="flex flex-col gap-2 pt-1">
                 <Button
                   variant="outline"
                   size="sm"
@@ -186,11 +174,8 @@ export default function BackupsSection({
                     No backups yet. Create one with the + button above.
                   </div>
                 )}
-              </div>
-            </SidebarGroupContent>
-          </CollapsibleContent>
-        </SidebarGroup>
-      </Collapsible>
+        </div>
+      </CollapsibleSection>
 
       <Dialog open={confirmRestoreOpen} onOpenChange={(open) => { if (!open) onCancelRestore() }}>
         <DialogContent showCloseButton={false}>

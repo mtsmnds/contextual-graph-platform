@@ -1,13 +1,8 @@
 import type { HistoryEntry } from "@/types/graph"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "@/components/ui/collapsible"
-import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "@/components/ui/sidebar"
-import { ArrowUUpLeft, ArrowUUpRight, CaretDown } from "@phosphor-icons/react"
+import { CollapsibleSection } from "./CollapsibleSection"
+import { ArrowUUpLeft, ArrowUUpRight } from "@phosphor-icons/react"
 
 export default function WorkspaceInfoSection({
   folderName,
@@ -30,15 +25,8 @@ export default function WorkspaceInfoSection({
   const redoDescription = redoStack.length > 0 ? `Redo ${redoStack[redoStack.length - 1].description}` : undefined
 
   return (
-    <Collapsible>
-      <SidebarGroup>
-        <CollapsibleTrigger nativeButton={false} render={<SidebarGroupLabel />}>
-          <CaretDown className="size-3 shrink-0" />
-          <span>Workspace Info</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarGroupContent>
-            <div className="flex flex-col gap-2 px-1 pt-1">
+    <CollapsibleSection title="Workspace Info">
+      <div className="flex flex-col gap-2 pt-1">
               {folderName && (
                 <div className="flex items-center justify-between px-2">
                   <span className="text-xs text-muted-foreground">Folder</span>
@@ -83,10 +71,7 @@ export default function WorkspaceInfoSection({
                   </span>
                 </div>
               )}
-            </div>
-          </SidebarGroupContent>
-        </CollapsibleContent>
-      </SidebarGroup>
-    </Collapsible>
+        </div>
+    </CollapsibleSection>
   )
 }
