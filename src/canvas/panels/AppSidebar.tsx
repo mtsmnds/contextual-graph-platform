@@ -25,9 +25,9 @@ export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void 
         <span className="text-sm font-semibold">Workspace</span>
       </SidebarHeader>
       <SidebarContent>
-        <FeatureFlagsSectionContainer />
         <BackupsSectionContainer />
         <WorkspaceInfoSectionContainer viewport={viewport} />
+        <FeatureFlagsSectionContainer />
       </SidebarContent>
       <SidebarFooter>
         <Button

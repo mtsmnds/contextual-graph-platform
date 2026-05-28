@@ -12,6 +12,26 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-05-28
+
+### m5 — prd0051 — experimental section, CollapsibleSection component, ViewLogger and MiniMap toggles
+- **What:** Extracted shared `CollapsibleSection` component with rotating caret, renamed "Feature Flags" to "Experimental" and moved it to the bottom of the sidebar. Added ViewLogger display (live x/y/zoom in the top-right button group) and MiniMap, both toggleable via switches in the Experimental section. Set `:root { font-size: 16px }` to match Storybook. Reduced Switch label from `text-sm` to `text-xs` to match section labels.
+- **Reason:** The collapsible section pattern was duplicated across three sections — extracting a shared component reduces boilerplate and ensures consistent caret behavior. ViewLogger and MiniMap toggles give users control over canvas chrome. Font-size reset fixes a mismatch where browser defaults (18px) caused rem-based text to render larger than Storybook.
+- **Files changed:**
+  - `src/index.css`: added `:root { font-size: 16px }` reset
+  - `src/components/ui/switch.tsx`: label changed from `text-sm` to `text-xs`
+  - `src/canvas/panels/sections/CollapsibleSection.tsx`: new — shared collapsible section component
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: refactored to use CollapsibleSection, renamed "Experimental", added viewLogger/minimap labels
+  - `src/canvas/panels/sections/BackupsSection.tsx`: refactored to use CollapsibleSection
+  - `src/canvas/panels/sections/WorkspaceInfoSection.tsx`: refactored to use CollapsibleSection
+  - `src/canvas/panels/ViewLogger.tsx`: new — viewport display (x, y, zoom)
+  - `src/canvas/GraphCanvas.tsx`: conditional rendering of ViewLogger and MiniMap, added ViewLogger to button group
+  - `src/canvas/panels/AppSidebar.tsx`: moved Experimental section to last position
+  - `src/store/useGraphStore.ts`: added `viewLogger` and `minimap` to `DEFAULT_FEATURE_FLAGS`
+- **Impact:** Three sections dropped ~15 lines of boilerplate each. Caret rotation is centralized. ViewLogger and MiniMap are now user-toggleable. Font rendering is consistent between Storybook and the app.
+- **Archive:** `dev-docs/archive/m5/m5-prd0051-experimental-section.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0051-experimental-section-adr.md`
+
 ## 2026-05-27
 
 ### m5 — prd0050 — switch component with label, description, invalid state

@@ -117,6 +117,8 @@ export function migrateSnapshot(snapshot: {
 
 const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
   dragToNest: false,
+  viewLogger: true,
+  minimap: true,
 }
 
 function loadFeatureFlags(): Record<string, boolean> {

@@ -3,6 +3,8 @@ import { Switch } from "@/components/ui/switch"
 
 const FEATURE_FLAG_LABELS: Record<string, string> = {
   dragToNest: "Drag to Nest",
+  viewLogger: "ViewLogger",
+  minimap: "MiniMap",
 }
 
 export default function FeatureFlagsSection({
