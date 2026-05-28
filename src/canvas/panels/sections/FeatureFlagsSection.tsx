@@ -34,16 +34,13 @@ export default function FeatureFlagsSection({
                 <p className="text-xs text-muted-foreground px-1">No feature flags available</p>
               ) : (
                 entries.map(([key, value]) => (
-                  <label
+                  <Switch
                     key={key}
-                    className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-sidebar-accent cursor-pointer"
-                  >
-                    <span className="text-xs">{FEATURE_FLAG_LABELS[key] ?? key}</span>
-                    <Switch
-                      checked={value}
-                      onCheckedChange={(v) => onToggle(key, v)}
-                    />
-                  </label>
+                    label={FEATURE_FLAG_LABELS[key] ?? key}
+                    checked={value}
+                    onCheckedChange={(v) => onToggle(key, v)}
+                    className="rounded-md px-2 py-1.5 hover:bg-sidebar-accent cursor-pointer"
+                  />
                 ))
               )}
             </div>

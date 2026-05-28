@@ -1,0 +1,206 @@
+uid=2_0 RootWebArea "Buttons & Sidebar / Button - Docs ⋅ Storybook" url="http://localhost:6006/?path=/docs/buttons-sidebar-button--docs"
+  uid=2_1 log live="assertive" relevant="additions"
+  uid=2_2 log live="polite" relevant="additions"
+    uid=2_3 StaticText "Test run started."
+  uid=2_4 banner "Storybook"
+    uid=2_5 heading "Storybook" level="1"
+    uid=2_6 link "Skip to content" url="http://localhost:6006/?path=/docs/buttons-sidebar-button--docs#storybook-preview-wrapper"
+      uid=2_7 StaticText "Skip to content"
+    uid=2_8 link "Storybook" description="Storybook" url="http://localhost:6006/"
+      uid=2_9 image "Storybook"
+    uid=2_10 switch "Settings" expandable haspopup="dialog"
+    uid=2_11 button "Open onboarding guide"
+    uid=2_12 button "Collapse onboarding guide" expandable expanded
+    uid=2_13 button "76% completed" expandable haspopup="dialog"
+    uid=2_14 button "Open onboarding guide for Share your Storybook for feedback"
+    uid=2_15 button "Share"
+    uid=2_16 button "Open onboarding guide for Run visual tests"
+    uid=2_17 button "Open onboarding guide for Generate a coverage report"
+    uid=2_18 StaticText "Search for components"
+    uid=2_19 search
+      uid=2_20 combobox "Search for components" expandable haspopup="listbox"
+        uid=2_21 searchbox "Search for components" autocomplete="list"
+        uid=2_22 button "Tag filters" expandable haspopup="dialog"
+      uid=2_23 button "Create a new story"
+    uid=2_24 switch "Review new and modified stories"
+    uid=2_25 generic
+      uid=2_26 navigation "Stories"
+        uid=2_27 heading "Stories" level="2"
+        uid=2_28 link "Configure your project" url="http://localhost:6006/?path=/docs/configure-your-project--docs"
+          uid=2_29 StaticText "Configure your project"
+        uid=2_30 button "Collapse" expandable expanded
+        uid=2_31 button "Expand all"
+        uid=2_32 button "Button" expandable expanded
+        uid=2_33 link "Docs" url="http://localhost:6006/?path=/docs/buttons-sidebar-button--docs"
+          uid=2_34 StaticText "Docs"
+        uid=2_35 link "Skip to content" url="http://localhost:6006/?path=/docs/buttons-sidebar-button--docs#storybook-preview-wrapper"
+          uid=2_36 StaticText "Skip to content"
+        uid=2_37 link "Default" url="http://localhost:6006/?path=/story/buttons-sidebar-button--default"
+          uid=2_38 StaticText "Default"
+        uid=2_39 link "Outline" url="http://localhost:6006/?path=/story/buttons-sidebar-button--outline"
+          uid=2_40 StaticText "Outline"
+        uid=2_41 link "Secondary" url="http://localhost:6006/?path=/story/buttons-sidebar-button--secondary"
+          uid=2_42 StaticText "Secondary"
+        uid=2_43 link "Ghost" url="http://localhost:6006/?path=/story/buttons-sidebar-button--ghost"
+          uid=2_44 StaticText "Ghost"
+        uid=2_45 link "Destructive" url="http://localhost:6006/?path=/story/buttons-sidebar-button--destructive"
+          uid=2_46 StaticText "Destructive"
+        uid=2_47 link "Link" url="http://localhost:6006/?path=/story/buttons-sidebar-button--link"
+          uid=2_48 StaticText "Link"
+        uid=2_49 link "Small" url="http://localhost:6006/?path=/story/buttons-sidebar-button--small"
+          uid=2_50 StaticText "Small"
+        uid=2_51 link "Extra Small" url="http://localhost:6006/?path=/story/buttons-sidebar-button--extra-small"
+          uid=2_52 StaticText "Extra Small"
+        uid=2_53 link "Large" url="http://localhost:6006/?path=/story/buttons-sidebar-button--large"
+          uid=2_54 StaticText "Large"
+        uid=2_55 link "With Icon" url="http://localhost:6006/?path=/story/buttons-sidebar-button--with-icon"
+          uid=2_56 StaticText "With Icon"
+        uid=2_57 link "Icon Only" url="http://localhost:6006/?path=/story/buttons-sidebar-button--icon-only"
+          uid=2_58 StaticText "Icon Only"
+        uid=2_59 link "Disabled" url="http://localhost:6006/?path=/story/buttons-sidebar-button--disabled"
+          uid=2_60 StaticText "Disabled"
+        uid=2_61 link "Click Interaction" url="http://localhost:6006/?path=/story/buttons-sidebar-button--click-interaction"
+          uid=2_62 StaticText "Click Interaction"
+        uid=2_63 button "IconButton" expandable
+        uid=2_64 button "ButtonGroup" expandable
+        uid=2_65 button "SidebarTrigger" expandable
+        uid=2_66 button "ZoomControls" expandable
+        uid=2_67 button "AppSidebar" expandable
+        uid=2_68 button "FeatureFlagsSection" expandable
+        uid=2_69 button "WorkspaceInfoSection" expandable
+        uid=2_70 button "BackupsSection" expandable
+        uid=2_71 button "Switch" expandable
+        uid=2_72 button "Change status: New"
+        uid=2_73 button "Collapse" expandable expanded
+        uid=2_74 button "Expand all"
+        uid=2_75 button "BaseHandle" expandable
+        uid=2_76 button "ContainerGroupNode" expandable
+        uid=2_77 button "EntityNode" expandable
+        uid=2_78 button "GraphContextMenu" expandable
+        uid=2_79 button "Collapse" expandable expanded
+        uid=2_80 button "Expand all"
+        uid=2_81 button "Badge" expandable
+        uid=2_82 button "Dialog" expandable
+        uid=2_83 button "Input" expandable
+        uid=2_84 button "Separator" expandable
+        uid=2_85 button "Skeleton" expandable
+    uid=2_86 region "Component tests"
+      uid=2_87 heading "Component tests" level="2"
+      uid=2_88 button "Running..." disableable disabled
+      uid=2_89 button "Expand testing module"
+      uid=2_90 button "Can't clear statuses while tests are running" disableable disabled
+  uid=2_91 separator "Sidebar resize handle" orientation="vertical" value="300" valuemax="1580" valuemin="0" valuetext=""
+  uid=2_92 region "Toolbar"
+    uid=2_93 heading "Toolbar" level="2"
+    uid=2_94 switch "Grid visibility"
+    uid=2_95 button "Preview background" expandable haspopup="listbox"
+    uid=2_96 switch "Outline tool"
+    uid=2_97 button "Enter full screen" keyshortcuts="alt+F"
+    uid=2_98 button "Open in editor"
+    uid=2_99 button "Share" expandable haspopup="dialog"
+  uid=2_100 main "Main preview area"
+    uid=2_101 heading "Main preview area" level="2"
+    uid=2_102 link "Skip to sidebar" url="http://localhost:6006/?path=/docs/buttons-sidebar-button--docs#buttons-sidebar-button--docs"
+      uid=2_103 StaticText "Skip to sidebar"
+    uid=2_104 Iframe "storybook-preview-iframe"
+      uid=2_105 RootWebArea "buttons-sidebar-button--docs" url="http://localhost:6006/iframe.html?id=buttons-sidebar-button--docs&viewMode=docs"
+        uid=2_106 heading "Button" level="1"
+        uid=2_107 button "Reload story"
+        uid=2_108 button "Zoom in"
+        uid=2_109 button "Zoom out"
+        uid=2_110 button "Reset zoom"
+        uid=2_111 link "Open canvas in new tab" url="http://localhost:6006/iframe.html?id=buttons-sidebar-button--default"
+        uid=2_112 button "Button"
+        uid=2_113 switch "Show code" expandable
+        uid=2_114 button "Copy code"
+        uid=2_115 button "Reset controls"
+        uid=2_116 StaticText "Name"
+        uid=2_117 StaticText "Description"
+        uid=2_118 StaticText "Default"
+        uid=2_119 StaticText "Control"
+        uid=2_120 StaticText "variant"
+        uid=2_121 StaticText "unknown"
+        uid=2_122 StaticText ""default""
+        uid=2_123 StaticText "variant"
+        uid=2_124 combobox "variant" expandable haspopup="menu" value="outline"
+          uid=2_125 option "Choose option..." selectable value="Choose option..."
+          uid=2_126 option "default" selectable value="default"
+          uid=2_127 option "outline" selectable selected value="outline"
+          uid=2_128 option "secondary" selectable value="secondary"
+          uid=2_129 option "ghost" selectable value="ghost"
+          uid=2_130 option "destructive" selectable value="destructive"
+          uid=2_131 option "link" selectable value="link"
+        uid=2_132 StaticText "onClick"
+        uid=2_133 StaticText "function"
+        uid=2_134 StaticText "-"
+        uid=2_135 StaticText "-"
+        uid=2_136 StaticText "children"
+        uid=2_137 StaticText "string"
+        uid=2_138 StaticText "-"
+        uid=2_139 textbox multiline value="Button"
+        uid=2_140 StaticText "size"
+        uid=2_141 StaticText "unknown"
+        uid=2_142 StaticText ""default""
+        uid=2_143 StaticText "size"
+        uid=2_144 combobox "size" expandable haspopup="menu" value="Choose option..."
+          uid=2_145 option "default" selectable value="default"
+          uid=2_146 option "xs" selectable value="xs"
+          uid=2_147 option "sm" selectable value="sm"
+          uid=2_148 option "lg" selectable value="lg"
+          uid=2_149 option "icon" selectable value="icon"
+          uid=2_150 option "icon-xs" selectable value="icon-xs"
+          uid=2_151 option "icon-sm" selectable value="icon-sm"
+          uid=2_152 option "icon-lg" selectable value="icon-lg"
+        uid=2_153 heading "STORIES" level="2"
+        uid=2_154 heading "Default" level="3"
+        uid=2_155 button "Button"
+        uid=2_156 switch "Show code" expandable
+        uid=2_157 button "Copy code"
+        uid=2_158 heading "Outline" level="3"
+        uid=2_159 button "Outline"
+        uid=2_160 switch "Show code" expandable
+        uid=2_161 button "Copy code"
+        uid=2_162 heading "Secondary" level="3"
+        uid=2_163 button "Secondary"
+        uid=2_164 switch "Show code" expandable
+        uid=2_165 button "Copy code"
+        uid=2_166 heading "Ghost" level="3"
+        uid=2_167 button "Ghost"
+        uid=2_168 switch "Show code" expandable
+        uid=2_169 button "Copy code"
+        uid=2_170 heading "Destructive" level="3"
+        uid=2_171 button "Delete"
+        uid=2_172 switch "Show code" expandable
+        uid=2_173 button "Copy code"
+        uid=2_174 heading "Link" level="3"
+        uid=2_175 button "Link"
+        uid=2_176 switch "Show code" expandable
+        uid=2_177 button "Copy code"
+        uid=2_178 heading "Small" level="3"
+        uid=2_179 button "Small"
+        uid=2_180 switch "Show code" expandable
+        uid=2_181 button "Copy code"
+        uid=2_182 heading "Extra Small" level="3"
+        uid=2_183 button "Tiny"
+        uid=2_184 switch "Show code" expandable
+        uid=2_185 button "Copy code"
+        uid=2_186 heading "Large" level="3"
+        uid=2_187 button "Large"
+        uid=2_188 switch "Show code" expandable
+        uid=2_189 button "Copy code"
+        uid=2_190 heading "With Icon" level="3"
+        uid=2_191 button "Add"
+        uid=2_192 switch "Show code" expandable
+        uid=2_193 button "Copy code"
+        uid=2_194 heading "Icon Only" level="3"
+        uid=2_195 button "Add"
+        uid=2_196 switch "Show code" expandable
+        uid=2_197 button "Copy code"
+        uid=2_198 heading "Disabled" level="3"
+        uid=2_199 button "Disabled" disableable disabled
+        uid=2_200 switch "Show code" expandable
+        uid=2_201 button "Copy code"
+        uid=2_202 heading "Click Interaction" level="3"
+        uid=2_203 button "Click me"
+        uid=2_204 switch "Show code" expandable
+        uid=2_205 button "Copy code"
