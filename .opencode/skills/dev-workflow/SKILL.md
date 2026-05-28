@@ -393,7 +393,7 @@ Stack-aware branch merging. The user picks the merge order; the agent executes.
 7. **For each branch in the chosen order:**
    ```
    git checkout main
-   git merge {branch} --no-ff
+   git merge --no-ff {branch}
    ```
    - If merge succeeds → proceed to next branch.
    - **If conflict:** abort the entire merge, list conflicting files, hand off to the user for resolution. Do NOT try to resolve automatically.

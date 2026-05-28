@@ -92,6 +92,7 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
 - **ESLint ignores `.ts`/`.tsx`** — use `npx tsc --noEmit` for type checking.
 - **Changelog: most recent on top** — entries sorted newest-to-oldest, grouped by `## YYYY-MM-DD`. Purpose/Rules section stays at the very top. No duplicate date headings.
 - **Roadmap: flat lists only** — three sections (Now/Next/Later), no milestones or phases. Completed items go in changelog, not roadmap.
+- **Merge style:** always use `git merge --no-ff <feature-branch>` when merging feature branches into `main`. This preserves branch history as explicit merge commits. Never merge downstream (higher stack into lower stack).
 
 ## Code style
 
