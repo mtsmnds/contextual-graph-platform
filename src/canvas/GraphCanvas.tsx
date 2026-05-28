@@ -38,6 +38,26 @@ import EdgeLabel from "./edges/EdgeLabel"
 const nodeTypes = { entity: EntityNode, metadata: MetadataNode, containerGroup: ContainerGroupNode }
 const edgeTypes = { edgelabel: EdgeLabel }
 
+const CONTAINER_PADDING = 16
+const CONTAINER_HEADER_HEIGHT = 40
+
+function clampToPaddedBounds(
+  x: number,
+  y: number,
+  containerWidth: number,
+  containerHeight: number,
+  childWidth: number,
+  childHeight: number,
+) {
+  const topOffset = CONTAINER_HEADER_HEIGHT + CONTAINER_PADDING
+  const maxX = containerWidth - childWidth - CONTAINER_PADDING
+  const maxY = containerHeight - childHeight - CONTAINER_PADDING
+  return {
+    x: Math.max(CONTAINER_PADDING, Math.min(x, maxX)),
+    y: Math.max(topOffset, Math.min(y, maxY)),
+  }
+}
+
 function nodeStyle(
   cd: { width?: number; height?: number },
   isContainer: boolean,
@@ -641,10 +661,23 @@ function GraphCanvasContent() {
         for (const id of movedIds) {
           const node = allNodes.find((n) => n.id === id)
           if (!node) continue
+          let { x, y } = node.position
+          if (node.parentId) {
+            const parent = allNodes.find((n) => n.id === node.parentId)
+            if (parent) {
+              const pw = parent.measured?.width ?? parent.width ?? 400
+              const ph = parent.measured?.height ?? parent.height ?? 300
+              const cw = node.measured?.width ?? node.width ?? 208
+              const ch = node.measured?.height ?? node.height ?? 32
+              const clamped = clampToPaddedBounds(x, y, pw, ph, cw, ch)
+              x = clamped.x
+              y = clamped.y
+            }
+          }
           s.updateEntity(id, {
             canvasData: {
-              x: node.position.x,
-              y: node.position.y,
+              x,
+              y,
               width: node.measured?.width ?? node.width ?? undefined,
               height: node.measured?.height ?? node.height ?? undefined,
             },
@@ -671,13 +704,21 @@ function GraphCanvasContent() {
             const entity = s.entities.find((e) => e.id === node.id)
             // Only assign if not already a child of this container
             if (entity && entity.parentId !== container.id) {
-              const relativeX = node.position.x - container.position.x
-              const relativeY = node.position.y - container.position.y
+              const cw = node.measured?.width ?? node.width ?? 208
+              const ch = node.measured?.height ?? node.height ?? 32
+              const clamped = clampToPaddedBounds(
+                node.position.x - container.position.x,
+                node.position.y - container.position.y,
+                container.measured?.width ?? container.width ?? 400,
+                container.measured?.height ?? container.height ?? 300,
+                cw,
+                ch,
+              )
               s.updateEntity(node.id, {
                 parentId: container.id,
                 canvasData: {
-                  x: relativeX,
-                  y: relativeY,
+                  x: clamped.x,
+                  y: clamped.y,
                   width: entity.canvasData.width,
                   height: entity.canvasData.height,
                 },
@@ -721,11 +762,17 @@ function GraphCanvasContent() {
           x: e.clientX,
           y: e.clientY,
         })
-        const relativePos = {
-          x: position.x - containerNode.position.x,
-          y: position.y - containerNode.position.y,
-        }
-        createChildNode(containerId, relativePos)
+        const cw = containerNode.measured?.width ?? containerNode.width ?? 400
+        const ch = containerNode.measured?.height ?? containerNode.height ?? 300
+        const clamped = clampToPaddedBounds(
+          position.x - containerNode.position.x,
+          position.y - containerNode.position.y,
+          cw,
+          ch,
+          208,
+          64,
+        )
+        createChildNode(containerId, { x: clamped.x, y: clamped.y })
         return
       }
 
