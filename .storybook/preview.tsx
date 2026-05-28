@@ -13,7 +13,12 @@ const preview: Preview = {
     },
     a11y: {
       test: 'todo'
-    }
+    },
+    options: {
+      storySort: {
+        order: ['Buttons & Sidebar', ['Button', 'IconButton', 'ButtonGroup', 'SidebarTrigger', 'ZoomControls', 'AppSidebar', 'FeatureFlagsSection', 'WorkspaceInfoSection', 'BackupsSection']],
+      },
+    },
   },
   decorators: [
     (Story) => (

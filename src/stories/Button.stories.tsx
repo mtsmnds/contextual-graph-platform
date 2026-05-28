@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Plus } from '@phosphor-icons/react'
 
 const meta = {
-  title: 'UI/Button',
+  title: 'Buttons & Sidebar/Button',
   component: Button,
   parameters: { layout: 'centered' },
   tags: ['autodocs', 'ai-generated'],
@@ -18,7 +18,7 @@ const meta = {
       options: ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
     },
   },
-  args: { onClick: fn() },
+  args: { variant: 'outline', onClick: fn() },
 } satisfies Meta<typeof Button>
 
 export default meta

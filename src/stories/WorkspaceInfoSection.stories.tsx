@@ -4,7 +4,7 @@ import WorkspaceInfoSection from '@/canvas/panels/sections/WorkspaceInfoSection'
 import { withSidebarSection } from '../../.storybook/decorators'
 
 const meta = {
-  title: 'Canvas/Sidebar/WorkspaceInfoSection',
+  title: 'Buttons & Sidebar/WorkspaceInfoSection',
   component: WorkspaceInfoSection,
   decorators: [withSidebarSection],
   parameters: { layout: 'centered' },

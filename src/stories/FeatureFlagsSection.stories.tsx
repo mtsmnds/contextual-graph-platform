@@ -5,7 +5,7 @@ import FeatureFlagsSection from '@/canvas/panels/sections/FeatureFlagsSection'
 import { withSidebarSection } from '../../.storybook/decorators'
 
 const meta = {
-  title: 'Canvas/Sidebar/FeatureFlagsSection',
+  title: 'Buttons & Sidebar/FeatureFlagsSection',
   component: FeatureFlagsSection,
   decorators: [withSidebarSection],
   parameters: { layout: 'centered' },

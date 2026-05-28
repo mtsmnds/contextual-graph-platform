@@ -12,7 +12,7 @@ function SidebarDemo({ defaultOpen }: { defaultOpen?: boolean }) {
       <div className="flex h-screen w-full">
         <div className="relative flex-1">
           <div className="absolute top-2 right-2">
-            <SidebarTrigger variant="outline" size="icon-sm" aria-label="Workspace menu" />
+            <SidebarTrigger variant="ghost" aria-label="Workspace menu" />
           </div>
           <div className="p-4 text-sm text-muted-foreground">
             Main content area
@@ -25,7 +25,7 @@ function SidebarDemo({ defaultOpen }: { defaultOpen?: boolean }) {
 }
 
 const meta = {
-  title: 'Canvas/AppSidebar',
+  title: 'Buttons & Sidebar/AppSidebar',
   component: SidebarDemo,
   parameters: { layout: 'fullscreen' },
   tags: ['autodocs', 'ai-generated'],

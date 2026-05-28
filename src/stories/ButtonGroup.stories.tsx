@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Button } from '@/components/ui/button'
+import { IconButton } from '@/components/ui/icon-button'
 import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from '@/components/ui/button-group'
-import { ArrowUUpLeft, ArrowUUpRight, Plus } from '@phosphor-icons/react'
+import { ArrowUUpLeft, ArrowUUpRight, Plus, FolderOpen } from '@phosphor-icons/react'
 
 const meta = {
-  title: 'UI/ButtonGroup',
+  title: 'Buttons & Sidebar/ButtonGroup',
   component: ButtonGroup,
   parameters: { layout: 'centered' },
   tags: ['autodocs', 'ai-generated'],
@@ -39,6 +40,17 @@ export const WithTextGroup: Story = {
       <ButtonGroupText>items: 3</ButtonGroupText>
       <ButtonGroupSeparator />
       <Button variant="outline" size="sm"><Plus /></Button>
+    </ButtonGroup>
+  ),
+}
+
+export const WithIconButtons: Story = {
+  render: () => (
+    <ButtonGroup>
+      <IconButton aria-label="Undo"><ArrowUUpLeft /></IconButton>
+      <IconButton aria-label="Redo"><ArrowUUpRight /></IconButton>
+      <ButtonGroupSeparator />
+      <IconButton aria-label="Open" variant="outline"><FolderOpen /></IconButton>
     </ButtonGroup>
   ),
 }

@@ -4,7 +4,7 @@ import BackupsSection from '@/canvas/panels/sections/BackupsSection'
 import { withSidebarSection } from '../../.storybook/decorators'
 
 const meta = {
-  title: 'Canvas/Sidebar/BackupsSection',
+  title: 'Buttons & Sidebar/BackupsSection',
   component: BackupsSection,
   decorators: [withSidebarSection],
   parameters: { layout: 'centered' },

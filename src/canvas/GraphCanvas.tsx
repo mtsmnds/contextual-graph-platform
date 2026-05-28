@@ -22,10 +22,8 @@ import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
-import { ZoomIn, ZoomOut, Maximize } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import ZoomControls from "./panels/ZoomControls"
 import GraphContextMenu from "./GraphContextMenu"
 import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
@@ -997,21 +995,13 @@ function GraphCanvasContent() {
       <MiniMap pannable zoomable position="bottom-right" style={{ margin: "0 8px 16px 0" }} />
       <Panel position="top-right" style={{ margin: "16px 8px" }}>
         <div className="flex items-center gap-2">
-          <ButtonGroup>
-            <Button variant="outline" size="icon" aria-label="Zoom In" onClick={onZoomIn}>
-              <ZoomIn data-icon />
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Zoom Out" onClick={onZoomOut}>
-              <ZoomOut data-icon />
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Fit View" onClick={onFitView}>
-              <Maximize data-icon />
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Zoom to 100%" onClick={onZoom100}>
-              <span className="text-xs font-semibold tabular-nums">1:1</span>
-            </Button>
-          </ButtonGroup>
-          <SidebarTrigger variant="outline" size="icon-sm" aria-label="Workspace menu" />
+          <ZoomControls
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onFitView={onFitView}
+            onZoom100={onZoom100}
+          />
+          <SidebarTrigger variant="ghost" aria-label="Workspace menu" />
         </div>
       </Panel>
       <GraphContextMenu
