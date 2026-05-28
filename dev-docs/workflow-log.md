@@ -7,6 +7,24 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd end — m5-prd0049-button-components
+- **Source:** user request — archive remaining PRDs
+- **Branch at time:** main (clean)
+- **User decision:** archival only (already merged into main)
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI components, no architectural changes)
+- **Commit hash:** 9fb0a21
+- **Pre-commit guard:** no changes (archival only)
+
+### prd end — m5-prd0047-workspace-sidebar
+- **Source:** user request — archive remaining PRDs
+- **Branch at time:** main (clean)
+- **User decision:** archival only (already merged into main)
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI components, no architectural changes)
+- **Commit hash:** 9fb0a21
+- **Pre-commit guard:** no changes (archival only)
+
 ### prd end — m5-prd0052-canvas-header-and-undo-redo
 - **Source:** user request — PRD0052 implementation
 - **Branch at time:** main (dirty → committed)

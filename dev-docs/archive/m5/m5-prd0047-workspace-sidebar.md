@@ -1,3 +1,9 @@
+> **Completion note (2026-05-28):**
+> - **What was built:** Right-side floating sidebar replacing WorkspaceMenu popover. Three collapsible sections (Feature Flags, Backups, Workspace Info). SidebarTrigger replaces DotsThreeOutline. Sidebar state persisted via shadcn cookie mechanism. Feature flags persisted to localStorage with `dragToNest` flag. All sections are context-independent containers with stories.
+> - **Key decisions:** Used shadcn sidebar primitives (`collapsible="offcanvas"`, `side="right"`). Sections are independent of React Flow — only depend on Zustand store. Feature flags stored in store with localStorage persistence.
+> - **Deviations from plan:** None — scope matched plan exactly.
+> - **Postponed:** None.
+
 # PRD0047 — Workspace Sidebar
 
 ## Overview

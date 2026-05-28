@@ -1,3 +1,9 @@
+> **Completion note (2026-05-28):**
+> - **What was built:** `IconButton` component (wraps Button, locks `size="icon"`), `ZoomControls` component (IconButton + ButtonGroup), SidebarTrigger refactored to use IconButton, ButtonGroup stories verified. Consistent 32px icon buttons across the entire project.
+> - **Key decisions:** IconButton locks `size` to prevent callers from overriding — if a different size is needed, use Button directly. SidebarTrigger hardcodes `variant="outline"`.
+> - **Deviations from plan:** SidebarTrigger uses `variant="outline"` instead of `variant="ghost"` (visible border preferred). Added `ButtonGroup` stories.
+> - **Postponed:** None.
+
 # PRD 0049: Project-Wide Button Components (IconButton + ZoomControls)
 
 ## Overview

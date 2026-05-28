@@ -46,6 +46,34 @@ Use this to recover context after breaks.
 - **Archive:** `dev-docs/archive/m5/m5-prd0052-canvas-header-and-undo-redo.md`
 - **ADR:** `dev-docs/archive/m5/2026-05-28-prd0052-canvas-header-and-undo-redo-adr.md`
 
+### m5 — prd0049 — project-wide button components (IconButton + ZoomControls)
+- **What:** Created `IconButton` (wraps Button, locks `size="icon"` to 32px) and `ZoomControls` (IconButton + ButtonGroup for zoom in/out/fit/1:1). Refactored `SidebarTrigger` to use IconButton. Verified ButtonGroup works with IconButton children.
+- **Reason:** Button sizes were inconsistent across the project — every icon button needed explicit sizing. A project-level IconButton enforces 32px consistently.
+- **Files changed:**
+  - `src/components/ui/icon-button.tsx`: new — wraps Button, locks `size="icon"`
+  - `src/canvas/panels/ZoomControls.tsx`: new — ZoomControls with IconButton + ButtonGroup
+  - `src/components/ui/sidebar.tsx`: SidebarTrigger uses IconButton with `variant="outline"`
+  - `src/canvas/GraphCanvas.tsx`: uses ZoomControls, removes inline zoom buttons
+- **Impact:** All icon buttons are consistent 32px. Future button groups use the same pattern.
+- **Archive:** `dev-docs/archive/m5/m5-prd0049-button-components.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0049-button-components-adr.md`
+
+### m5 — prd0047 — workspace sidebar (replaces WorkspaceMenu)
+- **What:** Replaced the `WorkspaceMenu` popover with a persistent right-side floating sidebar using shadcn `Sidebar` primitives. Three collapsible sections: Feature Flags (with `dragToNest` toggle), Backups (checkpoint save, manual backup list with restore/delete, auto-snapshot prompts), and Workspace Info (folder name, entity count, undo/redo, viewport). SidebarToggle replaces DotsThreeOutline icon. State persisted via shadcn cookie mechanism. Feature flags persisted to localStorage.
+- **Reason:** The popover-based WorkspaceMenu closed on click-outside, making it unusable while interacting with the canvas. A persistent sidebar stays open during pan, zoom, select, and edit operations.
+- **Files changed:**
+  - `src/canvas/panels/AppSidebar.tsx`: new — sidebar container
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: new — feature flag toggles
+  - `src/canvas/panels/sections/BackupsSection.tsx`: new — backup controls (migrated from WorkspaceMenu)
+  - `src/canvas/panels/sections/WorkspaceInfoSection.tsx`: new — workspace info
+  - `src/canvas/GraphCanvas.tsx`: add SidebarProvider + AppSidebar + SidebarTrigger, remove WorkspaceMenu
+  - `src/canvas/panels/WorkspaceMenu.tsx`: removed
+  - `src/store/useGraphStore.ts`: added `featureFlags` slice with localStorage persistence
+  - `src/components/ui/sidebar.tsx`: SidebarTrigger component
+- **Impact:** Sidebar stays open during canvas interactions. Sections are context-independent (no React Flow dependency) and reusable in other routes. Feature flags persisted across sessions.
+- **Archive:** `dev-docs/archive/m5/m5-prd0047-workspace-sidebar.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0047-workspace-sidebar-adr.md`
+
 ## 2026-05-27
 
 ### m5 — prd0050 — switch component with label, description, invalid state
