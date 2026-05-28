@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd end — m5-prd0052-canvas-header-and-undo-redo
+- **Source:** user request — PRD0052 implementation
+- **Branch at time:** main (dirty → committed)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI component props and layout changes, no architectural changes)
+- **Commit hash:** 57223c2 (implementation) + 1d43cfa (docs)
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
 ### prd merge — m5-prd0051-experimental-section
 - **Branch at time:** main (clean)
 - **User decision:** merge single branch
