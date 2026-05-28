@@ -202,6 +202,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   adapterId: null,
   folderName: null,
   hydrated: false,
+  selectedNodeId: null,
 
   undoStack: [],
   redoStack: [],
@@ -479,7 +480,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
     set((state: GraphStore) => ({
       entities: state.entities.map((e) =>
-        e.id === resolvedId
+        e.id === id
           ? {
               ...e,
               ...data,
