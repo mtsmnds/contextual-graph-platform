@@ -1,3 +1,9 @@
+> **Completion note (2026-05-28):**
+> - **What was built:** Dynamic sidebar header (folderName from store), Undo/Redo moved to canvas top-right panel, disabled button styling fixed (solid muted colors instead of opacity-50).
+> - **Key decisions:** Removed viewport coordinates from WorkspaceInfoSection (ViewLogger in panel replaces it). Removed undo/redo completely from sidebar.
+> - **Deviations from plan:** Added disabled button fix (`disabled:opacity-50` → `disabled:text-muted-foreground/40 disabled:border-muted-foreground/20`) — discovered during implementation.
+> - **Postponed:** None.
+
 # PRD 0052: Canvas Top-Right Controls — Dynamic Header, Undo/Redo Relocation
 
 ## Overview

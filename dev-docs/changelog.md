@@ -32,6 +32,20 @@ Use this to recover context after breaks.
 - **Archive:** `dev-docs/archive/m5/m5-prd0051-experimental-section.md`
 - **ADR:** `dev-docs/archive/m5/2026-05-28-prd0051-experimental-section-adr.md`
 
+### m5 — prd0052 — canvas header, undo/redo relocation, disabled button fix
+- **What:** Sidebar header now reads `folderName` from the store (falls back to "Workspace"). Undo/Redo buttons moved from WorkspaceInfoSection to the top-right canvas controls panel (between ViewLogger and ZoomControls). Disabled buttons use solid muted text/border instead of `opacity-50` — canvas background no longer shows through disabled buttons. Removed viewport coordinates from WorkspaceInfoSection (ViewLogger in the top-right panel replaces it). Updated WorkspaceInfoSection stories.
+- **Reason:** The sidebar header should reflect the current folder name when available. Undo/Redo in the sidebar is hidden when collapsed — moving them to the canvas panel makes them always accessible. `disabled:opacity-50` on buttons caused the canvas background to bleed through, creating visual noise.
+- **Files changed:**
+  - `src/canvas/panels/AppSidebar.tsx`: read `folderName` from store, dynamic header with fallback to "Workspace"
+  - `src/canvas/panels/sections/WorkspaceInfoSection.tsx`: removed undo/redo props, viewport display, and button group
+  - `src/canvas/panels/sections/WorkspaceInfoSectionContainer.tsx`: removed undo/redo and viewport store reads
+  - `src/canvas/GraphCanvas.tsx`: added undo/redo buttons to top-right panel between ViewLogger and ZoomControls
+  - `src/components/ui/button.tsx`: replaced `disabled:opacity-50` with `disabled:text-muted-foreground/40 disabled:border-muted-foreground/20`
+  - `src/stories/WorkspaceInfoSection.stories.tsx`: updated to match new props (no undo/redo, no viewport)
+- **Impact:** Header now shows the active folder. Undo/Redo always visible in the canvas panel. Disabled buttons are solid — no background bleed-through.
+- **Archive:** `dev-docs/archive/m5/m5-prd0052-canvas-header-and-undo-redo.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0052-canvas-header-and-undo-redo-adr.md`
+
 ## 2026-05-27
 
 ### m5 — prd0050 — switch component with label, description, invalid state
