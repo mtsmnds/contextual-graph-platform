@@ -25,7 +25,7 @@ export default function FeatureFlagsSection({
       <SidebarGroup>
         <CollapsibleTrigger nativeButton={false} render={<SidebarGroupLabel />}>
           <CaretDown className="size-3 shrink-0" />
-          <span>Feature Flags</span>
+          <span>Experimental</span>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <SidebarGroupContent>
