@@ -1,3 +1,9 @@
+> **Completion note (2026-05-27):**
+> - **What was built:** Full labeled Switch component replacing the bare toggle. JSDoc, stories, argTypes, invalid/disabled states.
+> - **Key decisions:** Replaced Switch directly (kept name), used `<label htmlFor>` with `useId()` for clickable label.
+> - **Deviations from plan:** None — scope expanded slightly to include invalid state description styling.
+> - **Postponed:** None.
+
 # PRD 0050: Switch Component (Labeled Switch with Layout)
 
 ## Overview

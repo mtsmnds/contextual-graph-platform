@@ -14,6 +14,18 @@ Use this to recover context after breaks.
 
 ## 2026-05-27
 
+### m5 — prd0050 — switch component with label, description, invalid state
+- **What:** Replaced the bare `<Switch>` toggle with a full labeled component. The new `<Switch>` accepts `label` (required), `description` (optional), `disabled`, and `invalid` props. Uses `<label htmlFor>` so clicking the label text toggles the switch. Invalid state shows a red border on the switch and red description text. Four stories: Default, WithDescription, Disabled, Invalid. FeatureFlagsSection updated to use the new API.
+- **Reason:** The bare switch required callers to write the label layout themselves. A self-contained labeled switch reduces duplication and ensures consistent layout across the codebase (label left, switch right, optional description below label).
+- **Files changed:**
+  - `src/components/ui/switch.tsx`: full rewrite — added label/description/invalid props, `<label>` wrapper with `useId()`
+  - `src/stories/Switch.stories.tsx`: new — 4 stories with JSDoc + argTypes descriptions
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: simplified to use new Switch API
+  - `.storybook/preview.tsx`: added Switch to storySort order
+- **Impact:** All future toggle settings use a single consistent pattern. Invalid state patterns established for form components.
+- **Archive:** `dev-docs/archive/m5/m5-prd0050-switch-component.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-27-prd0050-switch-component-adr.md`
+
 ### m5 — prd0048 — container/presenter pattern for sidebar sections
 - **What:** Extracted Zustand store access from three sidebar sections into container wrappers. Each section file (`FeatureFlagsSection`, `WorkspaceInfoSection`, `BackupsSection`) is now a pure presenter accepting explicit props. New `*Container.tsx` files own store reads, async operations, and dialog state. `AppSidebar` imports containers. Shared `withSidebarSection` decorator added to `.storybook/decorators.tsx`.
 - **Reason:** Components with hidden store dependencies are hard to test, storybook, and refactor. Explicit props make dependencies visible, enable isolated rendering, and eliminate state leakage between stories.
