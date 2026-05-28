@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd merge — m5-prd0051-experimental-section
+- **Branch at time:** main (clean)
+- **User decision:** merge single branch
+- **Merge order:** m5-prd0051-experimental-section (0051)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** committed docs
+
 ### prd end — m5-prd0051-experimental-section
 - **Source:** user request — relate everything after prd0050 to prd0051-experimental-section
 - **Branch at time:** m5-prd0051-experimental-section (dirty)

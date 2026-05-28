@@ -17,16 +17,16 @@ import WorkspaceInfoSectionContainer from "./sections/WorkspaceInfoSectionContai
  * Collapses to an off-canvas overlay — use `SidebarTrigger` to toggle.
  */
 export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void }) {
-  const viewport = useGraphStore((s) => s.canvas.viewport)
+  const folderName = useGraphStore((s) => s.folderName)
 
   return (
     <Sidebar side="right" collapsible="offcanvas" variant="floating" className="py-4">
       <SidebarHeader className="px-3 py-2">
-        <span className="text-sm font-semibold">Workspace</span>
+        <span className="text-sm font-semibold truncate">{folderName ?? "Workspace"}</span>
       </SidebarHeader>
       <SidebarContent>
         <BackupsSectionContainer />
-        <WorkspaceInfoSectionContainer viewport={viewport} />
+        <WorkspaceInfoSectionContainer />
         <FeatureFlagsSectionContainer />
       </SidebarContent>
       <SidebarFooter>

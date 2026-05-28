@@ -23,8 +23,11 @@ import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getLayoutedElements } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { IconButton } from "@/components/ui/icon-button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import ZoomControls from "./panels/ZoomControls"
 import ViewLogger from "./panels/ViewLogger"
+import { ArrowUUpLeft, ArrowUUpRight } from "@phosphor-icons/react"
 import GraphContextMenu from "./GraphContextMenu"
 import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
@@ -929,6 +932,10 @@ function GraphCanvasContent() {
   const hydrated = useGraphStore((s) => s.hydrated)
   const savedViewport = useGraphStore((s) => s.canvas.viewport)
   const setViewport = useGraphStore((s) => s.setViewport)
+  const undoStack = useGraphStore((s) => s.undoStack)
+  const redoStack = useGraphStore((s) => s.redoStack)
+  const onUndo = useGraphStore((s) => s.undo)
+  const onRedo = useGraphStore((s) => s.redo)
 
   const transform = useStore((s: { transform: [number, number, number] }) => s.transform)
   const [x, y, zoom] = transform
@@ -999,6 +1006,26 @@ function GraphCanvasContent() {
       <Panel position="top-right" style={{ margin: "16px 8px" }}>
         <div className="flex items-center gap-2">
           {featureFlags.viewLogger && <ViewLogger />}
+          <ButtonGroup>
+              <IconButton
+                variant="outline"
+                aria-label="Undo"
+                title={undoStack.length > 0 ? `Undo ${undoStack[undoStack.length - 1].description}` : undefined}
+                disabled={undoStack.length === 0}
+                onClick={onUndo}
+              >
+                <ArrowUUpLeft />
+              </IconButton>
+              <IconButton
+                variant="outline"
+                aria-label="Redo"
+                title={redoStack.length > 0 ? `Redo ${redoStack[redoStack.length - 1].description}` : undefined}
+                disabled={redoStack.length === 0}
+                onClick={onRedo}
+              >
+                <ArrowUUpRight />
+              </IconButton>
+            </ButtonGroup>
           <ZoomControls
             onZoomIn={onZoomIn}
             onZoomOut={onZoomOut}
