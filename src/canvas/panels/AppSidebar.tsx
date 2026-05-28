@@ -26,10 +26,10 @@ export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void 
         <span className="text-sm font-semibold truncate">{folderName ?? "Workspace"}</span>
       </SidebarHeader>
       <SidebarContent>
+        <SelectionMetadataSectionContainer />
         <BackupsSectionContainer />
         <WorkspaceInfoSectionContainer />
         <FeatureFlagsSectionContainer />
-        <SelectionMetadataSectionContainer />
       </SidebarContent>
       <SidebarFooter>
         <Button
