@@ -527,140 +527,162 @@ export default function VizTest1() {
           )}
         </div>
 
-        <div className="border-l border-border bg-card overflow-y-auto">
-          {selectedEntity ? (
-            <>
-              <div className="p-4 border-b border-border">
-                <div className="text-base font-semibold leading-tight">
-                  {selectedEntity.content || selectedEntity.id}
-                </div>
-                <div className="text-[10px] text-muted-foreground font-mono mt-1.5 break-all">
-                  {selectedEntity.id}
-                </div>
-                <div className="flex gap-1.5 mt-2">
-                  <span
-                    className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm"
-                    style={{
-                      background: `${nodeColor(selectedEntity.type)}20`,
-                      color: nodeColor(selectedEntity.type),
-                    }}
-                  >
-                    {selectedEntity.type}
-                  </span>
-                  {selectedEntity.parentId && (
-                    <span className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm bg-accent text-muted-foreground">
-                      child
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {selectedEntity.content && (
+        <div className="border-l border-border bg-card overflow-hidden flex flex-col">
+          <div className="overflow-y-auto flex-1 min-h-0">
+            {selectedEntity ? (
+              <>
                 <div className="p-4 border-b border-border">
-                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                    Content
-                  </h3>
-                  <div className="text-xs p-2.5 bg-accent/30 border-l-2 border-primary rounded-r">
-                    {selectedEntity.content}
+                  <div className="text-base font-semibold leading-tight">
+                    {selectedEntity.content || selectedEntity.id}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground font-mono mt-1.5 break-all">
+                    {selectedEntity.id}
+                  </div>
+                  <div className="flex gap-1.5 mt-2">
+                    <span
+                      className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm"
+                      style={{
+                        background: `${nodeColor(selectedEntity.type)}20`,
+                        color: nodeColor(selectedEntity.type),
+                      }}
+                    >
+                      {selectedEntity.type}
+                    </span>
+                    {selectedEntity.parentId && (
+                      <span className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm bg-accent text-muted-foreground">
+                        child
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
 
-              {Object.keys(selectedEntity.metadata).length > 0 && (
-                <div className="p-4 border-b border-border">
-                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                    Metadata
-                  </h3>
-                  <table className="w-full text-xs">
-                    <tbody>
-                      {Object.entries(selectedEntity.metadata).map(
-                        ([key, value]) => (
-                          <tr key={key}>
-                            <td className="text-[10px] text-muted-foreground font-mono w-[80px] py-0.5 align-top pr-2">
-                              {key}
-                            </td>
-                            <td className="py-0.5 break-all">
-                              {typeof value === "object"
-                                ? JSON.stringify(value)
-                                : String(value)}
-                            </td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                {selectedEntity.content && (
+                  <div className="p-4 border-b border-border">
+                    <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                      Content
+                    </h3>
+                    <div className="text-xs p-2.5 bg-accent/30 border-l-2 border-primary rounded-r">
+                      {selectedEntity.content}
+                    </div>
+                  </div>
+                )}
 
-              {outgoingRelations.length > 0 && (
-                <div className="p-4 border-b border-border">
-                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                    Outgoing ({outgoingRelations.length})
-                  </h3>
-                  <ul className="list-none space-y-1">
-                    {outgoingRelations.map((r) => {
-                      const target = entityMap.get(r.target)
-                      return (
-                        <li
-                          key={r.id}
-                          className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => {
-                            setSelectedId(r.target)
-                            selectNodeInGraph(svgRef.current, r.target, visibleRelations)
-                          }}
-                        >
-                          <span className="text-muted-foreground shrink-0 mt-px">
-                            &rarr;
-                          </span>
-                          <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
-                            {r.type}
-                          </span>
-                          <span className="break-all">
-                            {target?.content || r.target}
-                          </span>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              )}
+                {Object.keys(selectedEntity.metadata).length > 0 && (
+                  <div className="p-4 border-b border-border">
+                    <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                      Metadata
+                    </h3>
+                    <table className="w-full text-xs">
+                      <tbody>
+                        {Object.entries(selectedEntity.metadata).map(
+                          ([key, value]) => (
+                            <tr key={key}>
+                              <td className="text-[10px] text-muted-foreground font-mono w-[80px] py-0.5 align-top pr-2">
+                                {key}
+                              </td>
+                              <td className="py-0.5 break-all">
+                                {typeof value === "object"
+                                  ? JSON.stringify(value)
+                                  : String(value)}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
-              {incomingRelations.length > 0 && (
-                <div className="p-4 border-b border-border">
-                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                    Incoming ({incomingRelations.length})
-                  </h3>
-                  <ul className="list-none space-y-1">
-                    {incomingRelations.map((r) => {
-                      const source = entityMap.get(r.source)
-                      return (
-                        <li
-                          key={r.id}
-                          className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => {
-                            setSelectedId(r.source)
-                            selectNodeInGraph(svgRef.current, r.source, visibleRelations)
-                          }}
-                        >
-                          <span className="text-muted-foreground shrink-0 mt-px">
-                            &larr;
-                          </span>
-                          <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
-                            {r.type}
-                          </span>
-                          <span className="break-all">
-                            {source?.content || r.source}
-                          </span>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">
-              Click a node to inspect
+                {outgoingRelations.length > 0 && (
+                  <div className="p-4 border-b border-border">
+                    <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                      Outgoing ({outgoingRelations.length})
+                    </h3>
+                    <ul className="list-none space-y-1">
+                      {outgoingRelations.map((r) => {
+                        const target = entityMap.get(r.target)
+                        return (
+                          <li
+                            key={r.id}
+                            className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => {
+                              setSelectedId(r.target)
+                              selectNodeInGraph(svgRef.current, r.target, visibleRelations)
+                            }}
+                          >
+                            <span className="text-muted-foreground shrink-0 mt-px">
+                              &rarr;
+                            </span>
+                            <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
+                              {r.type}
+                            </span>
+                            <span className="break-all">
+                              {target?.content || r.target}
+                            </span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {incomingRelations.length > 0 && (
+                  <div className="p-4 border-b border-border">
+                    <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                      Incoming ({incomingRelations.length})
+                    </h3>
+                    <ul className="list-none space-y-1">
+                      {incomingRelations.map((r) => {
+                        const source = entityMap.get(r.source)
+                        return (
+                          <li
+                            key={r.id}
+                            className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => {
+                              setSelectedId(r.source)
+                              selectNodeInGraph(svgRef.current, r.source, visibleRelations)
+                            }}
+                          >
+                            <span className="text-muted-foreground shrink-0 mt-px">
+                              &larr;
+                            </span>
+                            <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
+                              {r.type}
+                            </span>
+                            <span className="break-all">
+                              {source?.content || r.source}
+                            </span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">
+                Click a node to inspect
+              </div>
+            )}
+          </div>
+
+          {selectedEntity && (
+            <div className="border-t border-border flex flex-col min-h-0" style={{ flex: "0 0 40%" }}>
+              <div className="p-2.5 border-b border-border shrink-0">
+                <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  JSON Inspector
+                </h3>
+              </div>
+              <pre className="p-3 text-[10px] font-mono whitespace-pre text-muted-foreground leading-relaxed overflow-auto flex-1 min-h-0">
+                {JSON.stringify(
+                  {
+                    entity: selectedEntity,
+                    edges: [...outgoingRelations, ...incomingRelations],
+                  },
+                  null,
+                  2,
+                )}
+              </pre>
             </div>
           )}
         </div>
