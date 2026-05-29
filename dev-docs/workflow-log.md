@@ -7,6 +7,24 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd end — m5-prd0055-node-hooks
+- **Source:** user request — shared resize + edit hooks
+- **Branch at time:** m5-prd0055-node-hooks (clean)
+- **User decision:** classification: Feature change + Architecture change
+- **Change classification:** Feature change + Architecture change
+- **ADR type:** full (shared hooks pattern, new hooks/ directory)
+- **Commit hash:** e826c20
+- **Pre-commit guard:** no changes
+
+### prd end — m5-prd0054-metadata-in-sidebar
+- **Source:** user request — metadata section in sidebar
+- **Branch at time:** m5-prd0054-metadata-in-sidebar (clean)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI components, no architectural changes)
+- **Commit hash:** fcaa549
+- **Pre-commit guard:** no changes
+
 ### prd end — m5-prd0049-button-components
 - **Source:** user request — archive remaining PRDs
 - **Branch at time:** main (clean)
