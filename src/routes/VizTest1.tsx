@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { useGraphStore } from "../store/useGraphStore"
 import type { Entity, Relation } from "../types/graph"
 import * as d3 from "d3"
@@ -37,9 +37,21 @@ function clamp(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1) + "\u2026" : s
 }
 
+function isValidGraphData(json: unknown): json is { entities: unknown[]; relations: unknown[] } {
+  return (
+    typeof json === "object" &&
+    json !== null &&
+    "entities" in json &&
+    Array.isArray((json as Record<string, unknown>).entities) &&
+    "relations" in json &&
+    Array.isArray((json as Record<string, unknown>).relations)
+  )
+}
+
 export default function VizTest1() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"graph" | "json">("graph")
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -54,6 +66,8 @@ export default function VizTest1() {
     entities: Entity[]
     relations: Relation[]
   } | null>(null)
+  const [dropState, setDropState] = useState<"idle" | "dragover" | "error">("idle")
+  const [parseError, setParseError] = useState<string | null>(null)
 
   const hydrated = useGraphStore((s) => s.hydrated)
 
@@ -63,6 +77,57 @@ export default function VizTest1() {
       setGraphData({ entities, relations })
     }
   }, [hydrated, graphData])
+
+  const loadFromFile = useCallback((file: File) => {
+    setDropState("idle")
+    setParseError(null)
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const json = JSON.parse(reader.result as string)
+        if (!isValidGraphData(json)) {
+          setDropState("error")
+          setParseError('Invalid format — expected { "entities": [...], "relations": [...] }')
+          return
+        }
+        setGraphData({
+          entities: json.entities as Entity[],
+          relations: json.relations as Relation[],
+        })
+      } catch {
+        setDropState("error")
+        setParseError("Could not parse file as JSON")
+      }
+    }
+    reader.readAsText(file)
+  }, [])
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      setDropState("idle")
+      const file = e.dataTransfer.files[0]
+      if (file) loadFromFile(file)
+    },
+    [loadFromFile],
+  )
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDropState("dragover")
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setDropState("idle")
+  }, [])
+
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) loadFromFile(file)
+    },
+    [loadFromFile],
+  )
 
   const allEntities = graphData?.entities ?? []
   const allRelations = graphData?.relations ?? []
@@ -302,21 +367,47 @@ export default function VizTest1() {
     (t) => toggles[t] !== false,
   ).length
 
-  if (!hydrated) {
-    return (
-      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-        Loading workspace...
-      </div>
-    )
-  }
-
   if (!graphData || allEntities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground">
-        <p>No entities found in the workspace.</p>
-        <a href="/" className="text-primary underline">
-          Go to workspace
-        </a>
+      <div className="flex items-center justify-center h-full bg-background">
+        <div
+          className={[
+            "flex flex-col items-center justify-center gap-4 p-12 rounded-lg border-2 border-dashed transition-colors",
+            dropState === "dragover"
+              ? "border-primary bg-primary/5"
+              : dropState === "error"
+                ? "border-destructive bg-destructive/5"
+                : "border-border hover:border-muted-foreground/30",
+          ].join(" ")}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleFileInput}
+          />
+          <p className="text-sm text-muted-foreground">
+            Drop <code className="text-[13px] bg-accent px-1 rounded">graph.json</code> here
+          </p>
+          <button
+            className="text-sm text-muted-foreground underline hover:text-foreground cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            or click to browse
+          </button>
+          {parseError && (
+            <p className="text-xs text-destructive">{parseError}</p>
+          )}
+          {hydrated && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Workspace loaded but has no entities.
+            </p>
+          )}
+        </div>
       </div>
     )
   }
