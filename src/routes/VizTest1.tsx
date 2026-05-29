@@ -37,6 +37,45 @@ function clamp(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1) + "\u2026" : s
 }
 
+function selectNodeInGraph(
+  svgEl: SVGSVGElement | null,
+  nodeId: string,
+  relations: Relation[],
+) {
+  if (!svgEl) return
+  const connectedIds = new Set<string>()
+  connectedIds.add(nodeId)
+  for (const r of relations) {
+    if (r.source === nodeId) connectedIds.add(r.target)
+    if (r.target === nodeId) connectedIds.add(r.source)
+  }
+
+  d3.select(svgEl)
+    .selectAll<SVGGElement, any>(".viz-group")
+    .classed("selected", (d) => d.id === nodeId)
+    .classed("dimmed", (d) => !connectedIds.has(d.id))
+
+  d3.select(svgEl)
+    .selectAll<SVGLineElement, any>(".viz-link")
+    .transition()
+    .duration(200)
+    .attr("stroke-opacity", (d) => {
+      const sid =
+        typeof d.source === "object" ? d.source.id : d.source
+      const tid =
+        typeof d.target === "object" ? d.target.id : d.target
+      return sid === nodeId || tid === nodeId ? 1 : 0.06
+    })
+    .attr("stroke-width", (d) => {
+      const sid =
+        typeof d.source === "object" ? d.source.id : d.source
+      const tid =
+        typeof d.target === "object" ? d.target.id : d.target
+      if (sid === nodeId || tid === nodeId) return 2
+      return d.type === "contains" ? 1 : 1.5
+    })
+}
+
 function isValidGraphData(json: unknown): json is { entities: unknown[]; relations: unknown[] } {
   return (
     typeof json === "object" &&
@@ -52,6 +91,12 @@ export default function VizTest1() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const nodeSelRef = useRef<
+    d3.Selection<SVGGElement, Entity & d3.SimulationNodeDatum, null, unknown> | null
+  >(null)
+  const linkSelRef = useRef<
+    d3.Selection<SVGLineElement, Relation, null, unknown> | null
+  >(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"graph" | "json">("graph")
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -185,14 +230,10 @@ export default function VizTest1() {
       })
     svg.call(zoom)
 
-    const nodes = visibleEntities.map(
-      (e) => ({ ...e }) as Entity & d3.SimulationNodeDatum,
+    const nodes: (Entity & d3.SimulationNodeDatum)[] = visibleEntities.map(
+      (e) => ({ ...e }),
     )
-    const links = visibleRelations.map((r) => ({
-      ...r,
-      source: r.source,
-      target: r.target,
-    }))
+    const links = visibleRelations.map((r) => ({ ...r }))
 
     const linkSel = g
       .append("g")
@@ -206,6 +247,7 @@ export default function VizTest1() {
       .attr("stroke-dasharray", (d) =>
         d.type === "related_to" ? "4,3" : null,
       )
+    linkSelRef.current = linkSel as any
 
     const linkLabelSel = g
       .append("g")
@@ -223,14 +265,14 @@ export default function VizTest1() {
       .selectAll("g")
       .data(nodes)
       .join("g")
-      .style("cursor", "pointer")
+      .attr("class", "viz-group")
       .call(
         d3
           .drag<SVGGElement, Entity & d3.SimulationNodeDatum>()
           .on("start", (event, d) => {
             if (!event.active) sim.alphaTarget(0.3).restart()
-            d.fx = d.canvasData?.x ?? w / 2
-            d.fy = d.canvasData?.y ?? h / 2
+            d.fx = d.x
+            d.fy = d.y
           })
           .on("drag", (event, d) => {
             d.fx = event.x
@@ -245,8 +287,23 @@ export default function VizTest1() {
       .on("click", (event, d) => {
         event.stopPropagation()
         setSelectedId(d.id)
-        applyHighlight(d.id)
+        selectNodeInGraph(svgEl, d.id, visibleRelations)
       })
+      .on("mouseenter", function (_event, d) {
+        const circle = d3.select(this).select<SVGCircleElement>("circle")
+        circle
+          .transition()
+          .duration(150)
+          .attr("r", nodeRadius(d.type) + 3)
+      })
+      .on("mouseleave", function (_event, d) {
+        const circle = d3.select(this).select<SVGCircleElement>("circle")
+        circle
+          .transition()
+          .duration(150)
+          .attr("r", nodeRadius(d.type))
+      })
+    nodeSelRef.current = nodeSel as any
 
     nodeSel
       .append("circle")
@@ -271,7 +328,7 @@ export default function VizTest1() {
 
     svg.on("click", () => {
       setSelectedId(null)
-      resetHighlight()
+      resetAll()
     })
 
     const sim = d3
@@ -312,45 +369,16 @@ export default function VizTest1() {
       nodeSel.attr("transform", (d: any) => `translate(${d.x},${d.y})`)
     })
 
-    function applyHighlight(nodeId: string) {
-      if (!svgEl) return
-      const connectedIds = new Set<string>()
-      connectedIds.add(nodeId)
-      for (const r of visibleRelations) {
-        if (r.source === nodeId) connectedIds.add(r.target)
-        if (r.target === nodeId) connectedIds.add(r.source)
-      }
-
-      d3.select(svgEl)
-        .selectAll<SVGCircleElement, any>(".viz-node")
-        .attr("opacity", (d) => (connectedIds.has(d.id) ? 1 : 0.12))
-
-      d3.select(svgEl)
-        .selectAll<SVGLineElement, any>(".viz-link")
-        .attr("stroke-opacity", (d) => {
-          const sid =
-            typeof d.source === "object" ? d.source.id : d.source
-          const tid =
-            typeof d.target === "object" ? d.target.id : d.target
-          return sid === nodeId || tid === nodeId ? 1 : 0.06
-        })
-        .attr("stroke-width", (d) => {
-          const sid =
-            typeof d.source === "object" ? d.source.id : d.source
-          const tid =
-            typeof d.target === "object" ? d.target.id : d.target
-          if (sid === nodeId || tid === nodeId) return 2
-          return d.type === "contains" ? 1 : 1.5
-        })
-    }
-
-    function resetHighlight() {
+    function resetAll() {
       if (!svgEl) return
       d3.select(svgEl)
-        .selectAll<SVGCircleElement, any>(".viz-node")
-        .attr("opacity", 1)
+        .selectAll<SVGGElement, any>(".viz-group")
+        .classed("selected", false)
+        .classed("dimmed", false)
       d3.select(svgEl)
         .selectAll<SVGLineElement, any>(".viz-link")
+        .transition()
+        .duration(200)
         .attr("stroke-opacity", 0.4)
         .attr("stroke-width", (d) => (d.type === "contains" ? 1 : 1.5))
     }
@@ -425,209 +453,218 @@ export default function VizTest1() {
     "bg-transparent text-muted-foreground border-border hover:bg-accent"
 
   return (
-    <div className="grid grid-cols-[1fr_340px] grid-rows-[48px_1fr] h-full">
-      <header className="col-span-2 flex items-center justify-between px-4 border-b border-border bg-card gap-3">
-        <h1 className="text-sm font-semibold whitespace-nowrap">
-          Graph Viz — Test 1
-        </h1>
+    <>
+      <style>{`
+        .viz-group { cursor: pointer; }
+        .viz-node { transition: opacity 0.2s, r 0.15s, stroke-width 0.2s, stroke 0.2s; }
+        .viz-group.selected .viz-node { stroke-width: 3; stroke: #C45D3E; }
+        .viz-group.dimmed { opacity: 0.12; pointer-events: none; }
+        .viz-link { transition: stroke-opacity 0.2s, stroke-width 0.2s; }
+      `}</style>
+      <div className="grid grid-cols-[1fr_340px] grid-rows-[48px_1fr] h-full">
+        <header className="col-span-2 flex items-center justify-between px-4 border-b border-border bg-card gap-3">
+          <h1 className="text-sm font-semibold whitespace-nowrap">
+            Graph Viz — Test 1
+          </h1>
 
-        <div className="flex items-center gap-3">
-          {availableTypes.length > 0 && (
-            <div className="flex gap-px">
-              {availableTypes.map((type) => (
-                <button
-                  key={type}
-                  className={`${toggleBtnClass(type)} ${toggles[type] ? toggleBtnActive : toggleBtnInactive}`}
-                  onClick={() => toggleType(type)}
-                >
-                  {type}
-                </button>
-              ))}
+          <div className="flex items-center gap-3">
+            {availableTypes.length > 0 && (
+              <div className="flex gap-px">
+                {availableTypes.map((type) => (
+                  <button
+                    key={type}
+                    className={`${toggleBtnClass(type)} ${toggles[type] ? toggleBtnActive : toggleBtnInactive}`}
+                    onClick={() => toggleType(type)}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex">
+              <button
+                className={`px-2.5 py-1 text-[11px] font-mono border border-border cursor-pointer rounded-l transition-colors ${
+                  viewMode === "graph"
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-transparent text-muted-foreground hover:bg-accent"
+                }`}
+                onClick={() => setViewMode("graph")}
+              >
+                Graph
+              </button>
+              <button
+                className={`px-2.5 py-1 text-[11px] font-mono border border-border cursor-pointer rounded-r transition-colors ${
+                  viewMode === "json"
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-transparent text-muted-foreground hover:bg-accent"
+                }`}
+                onClick={() => setViewMode("json")}
+              >
+                JSON
+              </button>
             </div>
-          )}
 
-          <div className="flex">
-            <button
-              className={`px-2.5 py-1 text-[11px] font-mono border border-border cursor-pointer rounded-l transition-colors ${
-                viewMode === "graph"
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-transparent text-muted-foreground hover:bg-accent"
-              }`}
-              onClick={() => setViewMode("graph")}
-            >
-              Graph
-            </button>
-            <button
-              className={`px-2.5 py-1 text-[11px] font-mono border border-border cursor-pointer rounded-r transition-colors ${
-                viewMode === "json"
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-transparent text-muted-foreground hover:bg-accent"
-              }`}
-              onClick={() => setViewMode("json")}
-            >
-              JSON
-            </button>
+            <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
+              {visibleEntities.length} nodes · {visibleRelations.length} edges
+              {activeTypes < availableTypes.length
+                ? ` · ${activeTypes}/${availableTypes.length} types`
+                : ""}
+            </span>
           </div>
+        </header>
 
-          <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
-            {visibleEntities.length} nodes · {visibleRelations.length} edges
-            {activeTypes < availableTypes.length
-              ? ` · ${activeTypes}/${availableTypes.length} types`
-              : ""}
-          </span>
+        <div
+          ref={containerRef}
+          className="relative overflow-hidden bg-background"
+        >
+          {viewMode === "graph" ? (
+            <svg ref={svgRef} className="w-full h-full" />
+          ) : (
+            <pre className="p-4 text-xs font-mono overflow-auto h-full whitespace-pre text-muted-foreground">
+              {JSON.stringify(graphData, null, 2)}
+            </pre>
+          )}
         </div>
-      </header>
 
-      <div
-        ref={containerRef}
-        className="relative overflow-hidden bg-background"
-      >
-        {viewMode === "graph" ? (
-          <svg ref={svgRef} className="w-full h-full" />
-        ) : (
-          <pre className="p-4 text-xs font-mono overflow-auto h-full whitespace-pre text-muted-foreground">
-            {JSON.stringify(graphData, null, 2)}
-          </pre>
-        )}
-      </div>
-
-      <div className="border-l border-border bg-card overflow-y-auto">
-        {selectedEntity ? (
-          <>
-            <div className="p-4 border-b border-border">
-              <div className="text-base font-semibold leading-tight">
-                {selectedEntity.content || selectedEntity.id}
-              </div>
-              <div className="text-[10px] text-muted-foreground font-mono mt-1.5 break-all">
-                {selectedEntity.id}
-              </div>
-              <div className="flex gap-1.5 mt-2">
-                <span
-                  className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm"
-                  style={{
-                    background: `${nodeColor(selectedEntity.type)}20`,
-                    color: nodeColor(selectedEntity.type),
-                  }}
-                >
-                  {selectedEntity.type}
-                </span>
-                {selectedEntity.parentId && (
-                  <span className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm bg-accent text-muted-foreground">
-                    child
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {selectedEntity.content && (
+        <div className="border-l border-border bg-card overflow-y-auto">
+          {selectedEntity ? (
+            <>
               <div className="p-4 border-b border-border">
-                <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                  Content
-                </h3>
-                <div className="text-xs p-2.5 bg-accent/30 border-l-2 border-primary rounded-r">
-                  {selectedEntity.content}
+                <div className="text-base font-semibold leading-tight">
+                  {selectedEntity.content || selectedEntity.id}
+                </div>
+                <div className="text-[10px] text-muted-foreground font-mono mt-1.5 break-all">
+                  {selectedEntity.id}
+                </div>
+                <div className="flex gap-1.5 mt-2">
+                  <span
+                    className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm"
+                    style={{
+                      background: `${nodeColor(selectedEntity.type)}20`,
+                      color: nodeColor(selectedEntity.type),
+                    }}
+                  >
+                    {selectedEntity.type}
+                  </span>
+                  {selectedEntity.parentId && (
+                    <span className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm bg-accent text-muted-foreground">
+                      child
+                    </span>
+                  )}
                 </div>
               </div>
-            )}
 
-            {Object.keys(selectedEntity.metadata).length > 0 && (
-              <div className="p-4 border-b border-border">
-                <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                  Metadata
-                </h3>
-                <table className="w-full text-xs">
-                  <tbody>
-                    {Object.entries(selectedEntity.metadata).map(
-                      ([key, value]) => (
-                        <tr key={key}>
-                          <td className="text-[10px] text-muted-foreground font-mono w-[80px] py-0.5 align-top pr-2">
-                            {key}
-                          </td>
-                          <td className="py-0.5 break-all">
-                            {typeof value === "object"
-                              ? JSON.stringify(value)
-                              : String(value)}
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              {selectedEntity.content && (
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Content
+                  </h3>
+                  <div className="text-xs p-2.5 bg-accent/30 border-l-2 border-primary rounded-r">
+                    {selectedEntity.content}
+                  </div>
+                </div>
+              )}
 
-            {outgoingRelations.length > 0 && (
-              <div className="p-4 border-b border-border">
-                <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                  Outgoing ({outgoingRelations.length})
-                </h3>
-                <ul className="list-none space-y-1">
-                  {outgoingRelations.map((r) => {
-                    const target = entityMap.get(r.target)
-                    return (
-                      <li
-                        key={r.id}
-                        className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => {
-                          setSelectedId(r.target)
-                          setRebuildKey((k) => k + 1)
-                        }}
-                      >
-                        <span className="text-muted-foreground shrink-0 mt-px">
-                          &rarr;
-                        </span>
-                        <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
-                          {r.type}
-                        </span>
-                        <span className="break-all">
-                          {target?.content || r.target}
-                        </span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
+              {Object.keys(selectedEntity.metadata).length > 0 && (
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Metadata
+                  </h3>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {Object.entries(selectedEntity.metadata).map(
+                        ([key, value]) => (
+                          <tr key={key}>
+                            <td className="text-[10px] text-muted-foreground font-mono w-[80px] py-0.5 align-top pr-2">
+                              {key}
+                            </td>
+                            <td className="py-0.5 break-all">
+                              {typeof value === "object"
+                                ? JSON.stringify(value)
+                                : String(value)}
+                            </td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-            {incomingRelations.length > 0 && (
-              <div className="p-4 border-b border-border">
-                <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                  Incoming ({incomingRelations.length})
-                </h3>
-                <ul className="list-none space-y-1">
-                  {incomingRelations.map((r) => {
-                    const source = entityMap.get(r.source)
-                    return (
-                      <li
-                        key={r.id}
-                        className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => {
-                          setSelectedId(r.source)
-                          setRebuildKey((k) => k + 1)
-                        }}
-                      >
-                        <span className="text-muted-foreground shrink-0 mt-px">
-                          &larr;
-                        </span>
-                        <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
-                          {r.type}
-                        </span>
-                        <span className="break-all">
-                          {source?.content || r.source}
-                        </span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">
-            Click a node to inspect
-          </div>
-        )}
+              {outgoingRelations.length > 0 && (
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Outgoing ({outgoingRelations.length})
+                  </h3>
+                  <ul className="list-none space-y-1">
+                    {outgoingRelations.map((r) => {
+                      const target = entityMap.get(r.target)
+                      return (
+                        <li
+                          key={r.id}
+                          className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => {
+                            setSelectedId(r.target)
+                            selectNodeInGraph(svgRef.current, r.target, visibleRelations)
+                          }}
+                        >
+                          <span className="text-muted-foreground shrink-0 mt-px">
+                            &rarr;
+                          </span>
+                          <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
+                            {r.type}
+                          </span>
+                          <span className="break-all">
+                            {target?.content || r.target}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {incomingRelations.length > 0 && (
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Incoming ({incomingRelations.length})
+                  </h3>
+                  <ul className="list-none space-y-1">
+                    {incomingRelations.map((r) => {
+                      const source = entityMap.get(r.source)
+                      return (
+                        <li
+                          key={r.id}
+                          className="flex items-start gap-1.5 text-xs cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => {
+                            setSelectedId(r.source)
+                            selectNodeInGraph(svgRef.current, r.source, visibleRelations)
+                          }}
+                        >
+                          <span className="text-muted-foreground shrink-0 mt-px">
+                            &larr;
+                          </span>
+                          <span className="text-[9px] font-mono px-1 py-px rounded-sm bg-accent text-muted-foreground shrink-0 mt-px">
+                            {r.type}
+                          </span>
+                          <span className="break-all">
+                            {source?.content || r.source}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">
+              Click a node to inspect
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
