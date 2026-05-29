@@ -1,9 +1,14 @@
 import { useEffect, useState, useCallback } from "react"
-import type { Entity } from "@/types/graph"
-import { cn } from "@/lib/utils"
+import type { Entity, EntityType } from "@/types/graph"
 import { CollapsibleSection } from "./CollapsibleSection"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { ArrowsClockwise, Plus, Trash } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
@@ -13,14 +18,6 @@ function formatTimestamp(ts: number) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(ts)
-}
-
-const ENTITY_TYPE_COLORS: Record<string, string> = {
-  segment: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  container: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  concept: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  annotation: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  summary: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300",
 }
 
 function GhostInput({
@@ -139,12 +136,8 @@ export default function SelectionMetadataSection({
     onUpdateEntity(entity.id, { metadata })
   }, [entity, metadataEntries, onUpdateEntity])
 
-  const title = entity
-    ? `${entity.type}: ${entity.content || entity.id}`
-    : "Selection"
-
   return (
-    <CollapsibleSection title={title} defaultOpen>
+    <CollapsibleSection title="Node Properties" defaultOpen>
       {!entity ? (
         <p className="text-xs text-muted-foreground px-2 py-4 text-center">
           Click a node to inspect its properties
@@ -179,9 +172,21 @@ export default function SelectionMetadataSection({
               </div>
             </PropertyRow>
             <PropertyRow label="type">
-              <Badge className={cn("font-mono text-[11px] px-1.5 py-0", ENTITY_TYPE_COLORS[entity.type] ?? "")}>
-                {entity.type}
-              </Badge>
+              <Select
+                value={entity.type}
+                onValueChange={(value) => onUpdateEntity(entity.id, { type: value as EntityType })}
+              >
+                <SelectTrigger size="sm" className="h-7 text-xs px-1.5 border-transparent hover:border-muted focus:border-ring">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="segment">segment</SelectItem>
+                  <SelectItem value="container">container</SelectItem>
+                  <SelectItem value="annotation">annotation</SelectItem>
+                  <SelectItem value="concept">concept</SelectItem>
+                  <SelectItem value="summary">summary</SelectItem>
+                </SelectContent>
+              </Select>
             </PropertyRow>
             <PropertyRow label="parent">
               <span className="text-xs text-muted-foreground truncate">

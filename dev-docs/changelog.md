@@ -97,6 +97,19 @@ Use this to recover context after breaks.
 - **Archive:** `dev-docs/archive/m5/m5-prd0056-create-auto-select.md`
 - **ADR:** `dev-docs/archive/m5/2026-05-28-prd0056-create-auto-select-adr.md`
 
+### m5 — prd0054 — metadata section in sidebar (Node Properties)
+- **What:** New "Node Properties" collapsible section in the right sidebar showing all fields of the selected node. Groups: Identity (editable `id` with Refresh Edges button, editable `type` via Select dropdown, `parentId` read-only), Timestamps (`createdAt`, `updatedAt` formatted dates), Canvas (editable `x`, `y`, `width`, `height` with grid snap on blur), and Metadata (dynamic key-value editor with add/remove/save). Section uses ghost inputs (borderless, border on hover/focus). Added `selectedNodeId` to the Zustand store with `useOnSelectionChange` hook to track the selected entity across React Flow render cycles.
+- **Reason:** Previously the only way to inspect node properties was via the MetadataNode canvas panel (toggled from context menu). An always-visible sidebar section gives faster access to all entity fields.
+- **Files changed:**
+  - `src/canvas/panels/sections/SelectionMetadataSection.tsx`: new — property grid presenter with GhostInput, Select for type, metadata editor
+  - `src/canvas/panels/sections/SelectionMetadataSectionContainer.tsx`: new — reads `selectedNodeId` from Zustand store
+  - `src/canvas/panels/AppSidebar.tsx`: imports SelectionMetadataSectionContainer as first section
+  - `src/canvas/GraphCanvas.tsx`: added `useOnSelectionChange` hook to sync selection to store
+  - `src/store/useGraphStore.ts`: added `selectedNodeId` + `setSelectedNode`
+- **Impact:** Node properties visible in sidebar on click. Type and canvas position are editable inline.
+- **Archive:** `dev-docs/archive/m5/m5-prd0054-metadata-in-sidebar.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0054-metadata-in-sidebar-adr.md`
+
 ## 2026-05-27
 
 ### m5 — prd0050 — switch component with label, description, invalid state

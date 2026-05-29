@@ -714,7 +714,6 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     }));
   },
 
-  selectedNodeId: null,
   setSelectedNode: (id: string | null) => {
     set({ selectedNodeId: id });
   },
