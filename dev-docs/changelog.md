@@ -74,6 +74,18 @@ Use this to recover context after breaks.
 - **Archive:** `dev-docs/archive/m5/m5-prd0047-workspace-sidebar.md`
 - **ADR:** `dev-docs/archive/m5/2026-05-28-prd0047-workspace-sidebar-adr.md`
 
+### m5 — prd0055 — shared node hooks (useResizePersistence + useNodeEdit)
+- **What:** Extracted two duplicated patterns from `EntityNode` and `ContainerGroupNode` into shared hooks. `useResizePersistence` persists node resize to the store with 16px grid snapping. `useNodeEdit` manages the inline editing state machine (enter/commit/cancel/escape/auto-focus). Both nodes now use both hooks — removes ~30 lines of duplicated inline editing code from each. Container resize now persists to the store on drag end (was previously only visual).
+- **Reason:** Container resize didn't persist because `ContainerGroupNode` had no `onResizeEnd` handler (unlike `EntityNode`). The duplicated inline editing state machine in both nodes was ~25 lines each with nearly identical logic. Shared hooks prevent this class of bug from recurring — any future custom node just calls the hook instead of reimplementing resize persistence.
+- **Files changed:**
+  - `src/canvas/hooks/useResizePersistence.ts`: new — shared resize-to-store hook
+  - `src/canvas/hooks/useNodeEdit.ts`: new — shared inline edit state machine
+  - `src/canvas/nodes/EntityNode.tsx`: uses both hooks, -27 lines
+  - `src/canvas/nodes/ContainerGroupNode.tsx`: uses both hooks, adds `onResizeEnd` to Right and Bottom; fixes resize persistence bug
+- **Impact:** Container resize now persists across reloads (-27 lines per node). Shared hooks establish a pattern for future custom nodes. Resize-and-reload test passes.
+- **Archive:** `dev-docs/archive/m5/m5-prd0055-node-hooks.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0055-node-hooks-adr.md`
+
 ## 2026-05-27
 
 ### m5 — prd0050 — switch component with label, description, invalid state
