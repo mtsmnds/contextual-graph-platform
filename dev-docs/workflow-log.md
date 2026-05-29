@@ -7,6 +7,13 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd merge — m5-prd0056-create-auto-select
+- **Branch at time:** main (clean)
+- **Merge order:** m5-prd0056-create-auto-select (0056)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** no changes
+
 ### prd end — m5-prd0056-create-auto-select
 - **Source:** user request — auto-select on create, context menu position fix
 - **Branch at time:** m5-prd0056-create-auto-select (clean)
