@@ -7,6 +7,13 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd merge — m5-prd0055-node-hooks
+- **Branch at time:** main (clean)
+- **Merge order:** m5-prd0055-node-hooks (0055)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** no changes
+
 ### prd end — m5-prd0055-node-hooks
 - **Source:** user request — shared resize + edit hooks
 - **Branch at time:** m5-prd0055-node-hooks (clean)
