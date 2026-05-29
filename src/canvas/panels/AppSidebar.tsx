@@ -10,6 +10,7 @@ import { FolderOpen } from "@phosphor-icons/react"
 import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContainer"
 import BackupsSectionContainer from "./sections/BackupsSectionContainer"
 import WorkspaceInfoSectionContainer from "./sections/WorkspaceInfoSectionContainer"
+import SelectionMetadataSectionContainer from "./sections/SelectionMetadataSectionContainer"
 
 /**
  * Right-side collapsible workspace sidebar.
@@ -25,6 +26,7 @@ export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void 
         <span className="text-sm font-semibold truncate">{folderName ?? "Workspace"}</span>
       </SidebarHeader>
       <SidebarContent>
+        <SelectionMetadataSectionContainer />
         <BackupsSectionContainer />
         <WorkspaceInfoSectionContainer />
         <FeatureFlagsSectionContainer />

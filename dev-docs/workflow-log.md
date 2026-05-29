@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd end — m5-prd0054-metadata-in-sidebar
+- **Source:** user request — metadata section in sidebar
+- **Branch at time:** m5-prd0054-metadata-in-sidebar (dirty)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI components, no architectural changes)
+- **Commit hash:** 62a24bc
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
 ### prd merge — m5-prd0056-create-auto-select
 - **Branch at time:** main (clean)
 - **Merge order:** m5-prd0056-create-auto-select (0056)
