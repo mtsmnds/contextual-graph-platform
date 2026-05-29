@@ -86,6 +86,17 @@ Use this to recover context after breaks.
 - **Archive:** `dev-docs/archive/m5/m5-prd0055-node-hooks.md`
 - **ADR:** `dev-docs/archive/m5/2026-05-28-prd0055-node-hooks-adr.md`
 
+### m5 — prd0056 — auto-select on creation, context menu position fix
+- **What:** Newly created nodes/containers are now automatically selected and enter inline edit mode. Context menu "Add Child Node" and "Add Child Container" use the right-click position (converted to relative flow coordinates) instead of hardcoded offsets. Fixed three bugs: `useNodeEdit` `lastTriggerRef` initialized to `0` instead of `data.editTrigger` (prevented edit-on-creation), `pendingNodeRef` consumption moved outside `setNodes` callback (survives Strict Mode double-fire), selection uses `storeApi.addSelectedNodes` instead of setting `selected: true` on the node object (React Flow v12 API requirement).
+- **Reason:** New nodes should be immediately editable without an extra click. Hardcoded positions in the context menu caused children to always appear at the same position regardless of where the user right-clicked.
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: context menu position fix, auto-select via `storeApi.addSelectedNodes`, `pendingNodeRef` captured before `setNodes` callback
+  - `src/canvas/hooks/useNodeEdit.ts`: `lastTriggerRef` initialized to `0`
+  - `src/store/useGraphStore.ts`: added `selectedNodeId` and `setSelectedNode`
+- **Impact:** New nodes are selected, editable, and positioned at the click location.
+- **Archive:** `dev-docs/archive/m5/m5-prd0056-create-auto-select.md`
+- **ADR:** `dev-docs/archive/m5/2026-05-28-prd0056-create-auto-select-adr.md`
+
 ## 2026-05-27
 
 ### m5 — prd0050 — switch component with label, description, invalid state

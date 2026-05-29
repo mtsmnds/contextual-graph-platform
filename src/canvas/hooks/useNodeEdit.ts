@@ -5,7 +5,7 @@ export function useNodeEdit(data: { content: string; editTrigger?: number }, onC
   const [editValue, setEditValue] = useState(data.content)
   const editRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
   const commitRef = useRef(false)
-  const lastTriggerRef = useRef(data.editTrigger ?? 0)
+  const lastTriggerRef = useRef(0)
 
   const enterEdit = useCallback(() => {
     setIsEditing(true)

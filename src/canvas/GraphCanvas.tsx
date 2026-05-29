@@ -9,6 +9,8 @@ import {
   useEdgesState,
   useReactFlow,
   useStore,
+  useStoreApi,
+  useOnSelectionChange,
   BackgroundVariant,
   ConnectionMode,
   SelectionMode,
@@ -128,6 +130,7 @@ function GraphCanvasContent() {
   const keyboardMoveIdsRef = useRef<Set<string>>(new Set())
 
   const reactFlowInstance = useReactFlow()
+  const storeApi = useStoreApi()
 
   const featureFlags = useGraphStore((s) => s.featureFlags)
 
@@ -143,6 +146,8 @@ function GraphCanvasContent() {
 
   useEffect(() => {
     if (__experimentalNoDagre) {
+      const pendingId = pendingNodeRef.current
+      pendingNodeRef.current = null
       setNodes((prev) => {
         const prevById = new Map(prev.map((n) => [n.id, n]))
         const merged = [...prev]
@@ -199,9 +204,7 @@ function GraphCanvasContent() {
               merged.push(newNode)
             }
 
-            const pending = pendingNodeRef.current
-            if (pending === entity.id) {
-              pendingNodeRef.current = null
+            if (pendingId === entity.id) {
               newNode.data = { ...newNode.data, editTrigger: 1 }
             }
 
@@ -333,11 +336,16 @@ function GraphCanvasContent() {
         return merged
       })
 
+      if (pendingId) {
+        setTimeout(() => storeApi.getState().addSelectedNodes([pendingId]), 0)
+      }
+
       return
     }
 
     const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations })
 
+    const dagrePendingId = pendingNodeRef.current
     setNodes((prev) => {
       const prevById = new Map(prev.map((n) => [n.id, n]))
       const merged: Node[] = []
@@ -376,6 +384,10 @@ function GraphCanvasContent() {
 
       return merged
     })
+
+    if (dagrePendingId) {
+      storeApi.getState().addSelectedNodes([dagrePendingId])
+    }
   }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds])
 
   useEffect(() => {
@@ -555,6 +567,7 @@ function GraphCanvasContent() {
       canvasData: { x: position.x, y: position.y, height: 64 },
     })
     pendingNodeRef.current = id
+    useGraphStore.getState().setSelectedNode(id)
   }, [])
 
   const createContainerNode = useCallback((position: { x: number; y: number }) => {
@@ -562,6 +575,7 @@ function GraphCanvasContent() {
       canvasData: { x: position.x, y: position.y, width: 400, height: 304 },
     })
     pendingNodeRef.current = id
+    useGraphStore.getState().setSelectedNode(id)
   }, [])
 
   const createChildNode = useCallback((parentId: string, position: { x: number; y: number }) => {
@@ -569,6 +583,7 @@ function GraphCanvasContent() {
       canvasData: { x: position.x, y: position.y, height: 64 },
     }, parentId)
     pendingNodeRef.current = id
+    useGraphStore.getState().setSelectedNode(id)
   }, [])
 
   const onNodeDragStop = useCallback(
@@ -819,10 +834,19 @@ function GraphCanvasContent() {
             label: "Add Child Node",
             action: () => {
               if (contextMenu.nodeId) {
+                const flowPos = reactFlowInstance.screenToFlowPosition({ x: contextMenu.x, y: contextMenu.y })
+                const parentNode = nodes.find((n) => n.id === contextMenu.nodeId)
+                if (!parentNode) return
+                const grid = 16
+                const relativePos = {
+                  x: Math.round((flowPos.x - parentNode.position.x) / grid) * grid,
+                  y: Math.round((flowPos.y - parentNode.position.y) / grid) * grid,
+                }
                 const id = useGraphStore.getState().addEntity("segment", {
-                  canvasData: { x: 16, y: 64, height: 64 },
+                  canvasData: { x: relativePos.x, y: relativePos.y, height: 64 },
                 }, contextMenu.nodeId)
                 pendingNodeRef.current = id
+                useGraphStore.getState().setSelectedNode(id)
               }
             },
           })
@@ -830,10 +854,19 @@ function GraphCanvasContent() {
             label: "Add Child Container",
             action: () => {
               if (contextMenu.nodeId) {
+                const flowPos = reactFlowInstance.screenToFlowPosition({ x: contextMenu.x, y: contextMenu.y })
+                const parentNode = nodes.find((n) => n.id === contextMenu.nodeId)
+                if (!parentNode) return
+                const grid = 16
+                const relativePos = {
+                  x: Math.round((flowPos.x - parentNode.position.x) / grid) * grid,
+                  y: Math.round((flowPos.y - parentNode.position.y) / grid) * grid,
+                }
                 const id = useGraphStore.getState().addEntity("container", {
-                  canvasData: { x: 16, y: 128, width: 400, height: 304 },
+                  canvasData: { x: relativePos.x, y: relativePos.y, width: 400, height: 304 },
                 }, contextMenu.nodeId)
                 pendingNodeRef.current = id
+                useGraphStore.getState().setSelectedNode(id)
               }
             },
           })
@@ -963,6 +996,14 @@ function GraphCanvasContent() {
       if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current)
     }
   }, [x, y, zoom, setViewport])
+
+  const setSelectedNode = useGraphStore((s) => s.setSelectedNode)
+  useOnSelectionChange({
+    onChange: ({ nodes }) => {
+      const last = nodes[nodes.length - 1]
+      setSelectedNode(last?.id ?? null)
+    },
+  })
 
   const onZoom100 = useCallback(() => {
     reactFlowInstance.zoomTo(1)

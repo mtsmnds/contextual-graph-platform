@@ -181,6 +181,9 @@ interface GraphStore {
   applyMeasuredDimensions: (dimensions: Record<string, CanvasData>) => void;
   setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 
+  selectedNodeId: string | null;
+  setSelectedNode: (id: string | null) => void;
+
   featureFlags: Record<string, boolean>;
   setFeatureFlag: (key: string, value: boolean) => void;
 }
@@ -708,6 +711,11 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set((state: GraphStore) => ({
       canvas: { ...state.canvas, viewport },
     }));
+  },
+
+  selectedNodeId: null,
+  setSelectedNode: (id: string | null) => {
+    set({ selectedNodeId: id });
   },
 
   featureFlags: loadFeatureFlags(),

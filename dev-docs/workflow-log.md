@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-05-28
 
+### prd end — m5-prd0056-create-auto-select
+- **Source:** user request — auto-select on create, context menu position fix
+- **Branch at time:** m5-prd0056-create-auto-select (clean)
+- **User decision:** classification: Feature change
+- **Change classification:** Feature change
+- **ADR type:** short-form (UI behavior fixes, no architectural changes)
+- **Commit hash:** 049cb80
+- **Pre-commit guard:** no changes
+
 ### prd merge — m5-prd0055-node-hooks
 - **Branch at time:** main (clean)
 - **Merge order:** m5-prd0055-node-hooks (0055)
