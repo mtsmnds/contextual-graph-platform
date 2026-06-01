@@ -1,3 +1,9 @@
+> **Completion note (2026-06-01):**
+> - **What was built:** Dependency swap to `fractional-indexing-jittered`, 4 store actions (`appendChild`, `insertChild`, `moveChild`, `backfillContainerOrder`), sort order conventions documented in `domain.ts`.
+> - **Key decisions:** Store actions as shared interface; no migration-on-load; no bulk `backfillAllOrders`.
+> - **Deviations from plan:** `queries.ts`, `WorkspaceRoot.tsx`, and `VizTest1.tsx` were not touched — the store actions and domain docs were sufficient. `backfillContainerOrder` kept as migration helper; `backfillAllOrders` removed as scope creep.
+> - **Postponed:** Wiring `appendChild` into canvas context menus (deferred to renderer-specific PRD).
+
 # m5-prd0057: Sort Order & Fractional Indexing
 
 ## Overview

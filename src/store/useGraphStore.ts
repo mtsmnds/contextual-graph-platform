@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { generateKeyBetween } from "fractional-indexing";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing-jittered";
 import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
 import { wouldCreateCycle } from "../engine/queries";
@@ -160,6 +160,10 @@ interface GraphStore {
   getAdapterHandle: () => FileSystemDirectoryHandle | null;
 
   addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId?: string | null) => string;
+  appendChild: (containerId: string, childId: string) => void;
+  insertChild: (containerId: string, childId: string, prevKey: string | null, nextKey: string | null) => void;
+  moveChild: (containerId: string, childId: string, newPrevKey: string | null, newNextKey: string | null) => void;
+  backfillContainerOrder: (containerId: string) => void;
   updateEntity: (id: string, data: Partial<Entity>) => void;
   deleteEntity: (id: string) => void;
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => string;
@@ -167,7 +171,6 @@ interface GraphStore {
   removeRelation: (id: string) => void;
   getEdgesForNode: (id: string, direction?: "in" | "out" | "both") => Relation[];
   queryThread: (filter: { target: string; relationType: string }) => Entity[];
-
   focusEntity: (id: string | null, anchorId?: string | null) => void;
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
@@ -555,6 +558,42 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
           : r,
       ),
     }));
+    get().endBatch();
+  },
+
+  appendChild: (containerId: string, childId: string) => {
+    const state = get() as GraphStore;
+    const siblings = state.relations
+      .filter((r) => r.source === containerId && r.type === "contains")
+      .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder));
+    const lastKey = siblings.length > 0 ? siblings[siblings.length - 1].sortOrder : null;
+    get().addRelation(containerId, childId, "contains", {}, generateKeyBetween(lastKey, null));
+  },
+
+  insertChild: (containerId: string, childId: string, prevKey: string | null, nextKey: string | null) => {
+    get().addRelation(containerId, childId, "contains", {}, generateKeyBetween(prevKey, nextKey));
+  },
+
+  moveChild: (containerId: string, childId: string, newPrevKey: string | null, newNextKey: string | null) => {
+    const state = get() as GraphStore;
+    const edge = state.relations.find(
+      (r) => r.source === containerId && r.target === childId && r.type === "contains",
+    );
+    if (!edge) return;
+    get().updateRelation(edge.id, { sortOrder: generateKeyBetween(newPrevKey, newNextKey) });
+  },
+
+  backfillContainerOrder: (containerId: string) => {
+    const state = get() as GraphStore;
+    const edges = state.relations
+      .filter((r) => r.source === containerId && r.type === "contains");
+    const needKey = edges.filter((r) => !r.sortOrder || r.sortOrder === "");
+    if (needKey.length === 0) return;
+    const keys = generateNKeysBetween(null, null, needKey.length);
+    get().beginBatch("Backfill sort order");
+    for (let i = 0; i < needKey.length; i++) {
+      get().updateRelation(needKey[i].id, { sortOrder: keys[i] });
+    }
     get().endBatch();
   },
 

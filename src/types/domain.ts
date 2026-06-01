@@ -54,6 +54,43 @@ import type { Entity, EntityType } from "./graph"
  */
 
 // ---------------------------------------------------------------------------
+// Sort order convention
+// ---------------------------------------------------------------------------
+
+/**
+ * Children within a container are ordered by the `sortOrder` field on
+ * `contains` edges. The field holds a fractional-indexing key generated
+ * by the `fractional-indexing-jittered` package.
+ *
+ * Key properties:
+ *
+ *   - Keys are strings that sort lexicographically in the desired order.
+ *   - `generateKeyBetween(a, b)` produces a key strictly between two
+ *     neighbours. Either argument can be null (before first / after last).
+ *   - `generateNKeysBetween(a, b, n)` produces n evenly-spaced keys.
+ *   - Jitter (random suffix) prevents collisions during concurrent edits.
+ *
+ * Rules:
+ *
+ *   1. **Append** — `generateKeyBetween(lastSiblingKey, null)`
+ *   2. **Insert** — `generateKeyBetween(prevKey, nextKey)`
+ *   3. **Move** — update `sortOrder` on the existing `contains` edge
+ *      (preserves `createdAt` and other edge metadata)
+ *   4. **Delete** — no reindex; remaining siblings keep their keys
+ *   5. **Batch import** — `generateNKeysBetween(null, null, count)`
+ *
+ * Sort order is **global within a container**: `contains` edges for all
+ * entity types (containers, segments, annotations, concepts, summaries)
+ * interleave under the same parent. There is no type-based partitioning.
+ *
+ * Store actions that manage sort order:
+ *   - `appendChild(containerId, childId)`
+ *   - `insertChild(containerId, childId, prevKey, nextKey)`
+ *   - `moveChild(containerId, childId, newPrevKey, newNextKey)`
+ *   - `backfillContainerOrder(containerId)`
+ */
+
+// ---------------------------------------------------------------------------
 // Author entity
 // ---------------------------------------------------------------------------
 
