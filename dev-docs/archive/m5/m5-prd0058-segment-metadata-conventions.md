@@ -1,3 +1,9 @@
+> **Completion note (2026-06-01):**
+> - **What was built:** "Graph & Object Shapes" section in `architecture.md` with metadata conventions (`lineNumber`, `character`), plus linking doc comment in `domain.ts`.
+> - **Key decisions:** Documentation goes in `architecture.md` (not just `domain.ts`) so there's a single discoverable section for all graph shape conventions.
+> - **Deviations from plan:** None.
+> - **Postponed:** Type-system enforcement of metadata fields (discriminated union on `Entity.metadata`).
+
 # m5-prd0058: Segment Metadata Conventions
 
 ## Overview

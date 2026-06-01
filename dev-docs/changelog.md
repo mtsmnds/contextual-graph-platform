@@ -14,6 +14,16 @@ Use this to recover context after breaks.
 
 ## 2026-06-01
 
+### m5 — prd0058 — segment metadata conventions
+- **What:** Added "Graph & Object Shapes" section to `architecture.md` referencing `domain.ts` and `graph.ts` as source of truth, with `metadata.lineNumber` and `metadata.character` conventions documented. Added linking doc comment in `domain.ts` pointing to the architecture doc.
+- **Reason:** `lineNumber` and `character` metadata fields were already used in practice (Hamlet import) but had no documented conventions — only a draft PRD file. Codified them in the project's documentation layer.
+- **Files changed:**
+  - `dev-docs/architecture.md`: New "Graph & Object Shapes" section with metadata conventions
+  - `src/types/domain.ts`: Linking doc comment → architecture.md
+- **Impact:** Single source of truth for metadata field semantics. No type-system enforcement (deferred).
+- **Archive:** `dev-docs/archive/m5/m5-prd0058-segment-metadata-conventions.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-01-prd0058-segment-metadata-conventions-adr.md`
+
 ### m5 — prd0057 — sort order & fractional indexing
 - **What:** Swapped `fractional-indexing` for `fractional-indexing-jittered` (collision-resistant keys). Added `appendChild`, `insertChild`, `moveChild`, `backfillContainerOrder` store actions as the canonical interface for sort order management. Documented sort order conventions in `domain.ts` — append, insert, move, delete (no reindex), batch import rules. Removed `backfillAllOrders` (scope creep — unnecessary since `backfillContainerOrder` can be called in a loop).
 - **Reason:** Sort order existed as a schema field but had no documented rules or store-level API. Jittered keys prevent collisions from concurrent edits. Reverse-architected conventions so all renderers (canvas, threaded view) share the same ordering logic.

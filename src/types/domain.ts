@@ -1,6 +1,16 @@
 import type { Entity, EntityType } from "./graph"
 
 // ---------------------------------------------------------------------------
+// Source of truth
+// ---------------------------------------------------------------------------
+
+/**
+ * Graph-shape definitions live in `src/types/graph.ts` (core primitives) and
+ * `src/types/domain.ts` (domain-typed shapes).  See "Graph & Object Shapes"
+ * in `dev-docs/architecture.md` for metadata conventions and cross-references.
+ */
+
+// ---------------------------------------------------------------------------
 // ID conventions
 // ---------------------------------------------------------------------------
 

@@ -251,6 +251,36 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 - `dist/` — production build.
 - Store persists through the active `PersistenceAdapter`. Default adapter is IndexedDB (`react-roadmap` database). Optional FS Access adapter writes `graph.json` + `documents/` folder to a user-picked directory. On first visit (no stored data), seed data from `src/data/seed.ts` is loaded automatically.
 
+## Graph & Object Shapes
+
+The canonical shape definitions live in two files:
+
+| File | Purpose |
+|------|---------|
+| `src/types/graph.ts` | Core graph primitives — `Entity`, `Relation`, `ViewState`, `GraphSnapshot` |
+| `src/types/domain.ts` | Domain-typed entity shapes — `AuthorEntity`, `BookEntity`, and their metadata types (`AuthorMetadata`, `BookMetadata`) |
+
+Entity/Relation shapes in this document are summaries. Always refer to the source files above as the single source of truth.
+
+### Metadata conventions
+
+The `Entity.metadata` field (`Record<string, unknown>`) carries per-entity-type data. The following conventions are documented here (type-system enforcement is deferred to a future PRD):
+
+#### `metadata.lineNumber`
+
+- Type: `number`.
+- User decides whether a segment has a `lineNumber` (not enforced by the system).
+- Usually present for works with canonical line numbering (plays, poems).
+- Usually absent for prose (novels, essays).
+- Example: `{ metadata: { character: "barnardo", lineNumber: 1 } }`
+
+#### `metadata.character`
+
+- Type: `string`.
+- User decides whether a segment has a `character` (not enforced by the system).
+- Usually present in play dialogue lines.
+- Usually absent for prose, narration, stage directions, and non-dialogue segments.
+
 ## Module Map
 
 | Path | Role |
