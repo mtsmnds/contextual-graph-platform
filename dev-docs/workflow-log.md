@@ -7,6 +7,15 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-01
 
+### prd end — m5-prd0057-sort-order-fractional-indexing
+- **Source:** user text — "prd-end for prd0057"
+- **Branch at time:** m5-prd0057-sort-order-fractional-indexing (clean — committed)
+- **User decision:** classification: Feature change + Architecture change
+- **Change classification:** Feature change + Architecture change
+- **ADR type:** full (new store actions as shared interface, dependency swap)
+- **Commit hash:** 4bb3d99
+- **Pre-commit guard:** auto-proceeded (uncommitted changes from implementation)
+
 ### prd start — m5-prd0057-sort-order-fractional-indexing
 - **Source:** user text — "lets prd start for prd0057"
 - **Branch at time:** main (clean — committed PRD docs)
