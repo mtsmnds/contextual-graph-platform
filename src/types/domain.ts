@@ -11,15 +11,46 @@ import type { Entity, EntityType } from "./graph"
  *
  * Geography concepts use `{level}--{name}`.
  *
- *   country--united-kingdom   state--england   county--warwickshire   city--stratford-upon-avon
+ *   country--united-kingdom   state--england   city--stratford-upon-avon
  *
- * Person entities use a name-based slug.
+ * Person entities use a name-based slug.  Familiar figures may be
+ * shortened — there is no loss of information for the user:
  *
- *   william-shakespeare   lygia-fagundes-telles
+ *   shakespeare             (instead of william-shakespeare)
+ *   lygia-fagundes-telles   (full name — less well known)
  *
- * Book entities use `{title-slug}--{author-slug}`.
+ * Book entities use `{title-slug}--{author-slug}`.  Both halves may
+ * be shortened for brevity.  The `--` separator is the only invariant:
  *
- *   hamlet--william-shakespeare   ciranda-de-pedra--lygia-fagundes-telles
+ *   hamlet--shakespeare     (shortened title + shortened author)
+ *   midsummer--shakespeare
+ *   ciranda-de-pedra--lygia-fagundes-telles  (full — less well known)
+ *
+ * Book top-level containers use `{book-id}--{descriptive-name}`:
+ *
+ *   hamlet--shakespeare--synopsis
+ *   hamlet--shakespeare--content
+ *   hamlet--shakespeare--notes
+ *
+ * Book structural levels use short codes directly under the book
+ * prefix.  The hierarchy lives in `contains` edges, not the ID:
+ *
+ *   Structure           Code    Example ID
+ *   ───────────────────────────────────────────────────
+ *   Act 1               a1      hamlet--shakespeare--a1
+ *   Act 1, Scene 1      a1s1    hamlet--shakespeare--a1s1
+ *   Part 2, Chapter 3   p2c3    some-novel--some-author--p2c3
+ *   Chapter 12          c12     some-novel--some-author--c12
+ *
+ * Segments use three-digit sequential numbers under a parent,
+ * with no prefix.  The entity `type: "segment"` already identifies
+ * what it is:
+ *
+ *   hamlet--shakespeare--a1s1-001
+ *   hamlet--shakespeare--a1s1-002
+ *
+ * Three digits → up to 999 per container.  Hamlet's longest scene
+ * has ~180 speeches, well within range.
  */
 
 // ---------------------------------------------------------------------------
@@ -31,7 +62,7 @@ import type { Entity, EntityType } from "./graph"
  *
  * Represented as a `container` node.  The `content` field holds the
  * display name (which may differ from the entity id, e.g. "William
- * Shakespeare" vs. `william-shakespeare`).
+ * Shakespeare" vs. `shakespeare`).
  *
  * Classification attributes (type, gender, global) are **not** stored as
  * metadata.  They are encoded as edges to concept nodes so that graph
@@ -72,7 +103,7 @@ type AuthorMetadata = {
  *  - the concept id prefix that names the target node
  *
  * Example:
- *   "gender" → creates a `william-shakespeare --gender--> gender--male` edge
+ *   "gender" → creates a `shakespeare --gender--> gender--male` edge
  *
  * The edge is always **source = author, target = concept node**.
  */
@@ -108,6 +139,105 @@ const AUTHOR_EDGE_FIELDS: Record<
 }
 
 // ---------------------------------------------------------------------------
+// Book entity
+// ---------------------------------------------------------------------------
+
+/**
+ * Book — a published work.
+ *
+ * Represented as a `container` node.  The `content` field holds the
+ * display title (e.g. "Hamlet").
+ *
+ * Classification attributes (type, year, language, format, setting,
+ * author) are **not** stored as metadata.  They are encoded as edges
+ * so that graph traversal can answer questions like "show me all
+ * books from the 1620s" or "show me all french books".
+ */
+type BookEntity = Entity & {
+  type: "container"
+  content: string // display title, e.g. "Hamlet"
+  metadata: BookMetadata
+}
+
+type BookMetadata = {
+  /** Page count */
+  pages?: number
+
+  /**
+   * Reading history — tracked as metadata for now, but
+   * likely to become its own domain concept later.
+   * Each entry's date_start / date_finish are dates
+   * (treated the same as birth_date / death_date —
+   * strings, not edges).  The language field inside
+   * a reading_history entry can differ from the book's
+   * language (reader reads a translation).
+   */
+  reading_history?: ReadingHistoryEntry[]
+
+  /** When the book was first imported */
+  date_created?: string
+}
+
+type ReadingHistoryEntry = {
+  status: "finished" | "reading" | "next" | string
+  media: string // "ebook" | "paperback" | …
+  date_start: string // YYYY-MM-DD
+  date_finish: string // YYYY-MM-DD
+  language: string // language the reader read in
+}
+
+// ---------------------------------------------------------------------------
+// Fields that become edges — books
+// ---------------------------------------------------------------------------
+
+/**
+ * Registry of book fields that map to edges instead of metadata.
+ *
+ * The edge is always **source = book, target = concept node**,
+ * except `author` which targets the author container directly
+ * and `setting` which targets a geography leaf node.
+ */
+const BOOK_EDGE_FIELDS: Record<
+  string,
+  {
+    relationType: string
+    targetType: EntityType
+    conceptPrefix: string
+  }
+> = {
+  type: {
+    relationType: "type",
+    targetType: "concept",
+    conceptPrefix: "type--",
+  },
+  author: {
+    relationType: "author",
+    targetType: "container",
+    conceptPrefix: "",
+  },
+  year: {
+    relationType: "year",
+    targetType: "concept",
+    conceptPrefix: "year--",
+  },
+  language: {
+    relationType: "language",
+    targetType: "concept",
+    conceptPrefix: "language--",
+  },
+  format: {
+    relationType: "format",
+    targetType: "concept",
+    conceptPrefix: "format--",
+  },
+  setting: {
+    relationType: "setting",
+    targetType: "concept",
+    conceptPrefix: "",
+  },
+}
+
+// ---------------------------------------------------------------------------
 // Geography convention
 // ---------------------------------------------------------------------------
 
@@ -133,7 +263,7 @@ const AUTHOR_EDGE_FIELDS: Record<
  *
  * An entity connects only to the smallest relevant geography node:
  *
- *   william-shakespeare ── city ──▶ city--stratford-upon-avon
+ *   shakespeare ── city ──▶ city--stratford-upon-avon
  *
  * Queries like "all authors from England" require recursive traversal
  * from the ancestor node, following `contains` edges down to leaf
@@ -152,5 +282,5 @@ const AUTHOR_EDGE_FIELDS: Record<
 // Exports
 // ---------------------------------------------------------------------------
 
-export type { AuthorEntity, AuthorMetadata }
-export { AUTHOR_EDGE_FIELDS }
+export type { AuthorEntity, AuthorMetadata, BookEntity, BookMetadata, ReadingHistoryEntry }
+export { AUTHOR_EDGE_FIELDS, BOOK_EDGE_FIELDS }

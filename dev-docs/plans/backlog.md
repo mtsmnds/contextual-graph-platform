@@ -1,5 +1,20 @@
 
 
+## current challenge: 
+- adding data gradually and verifying and building the shape of the data for the graph. 
+
+- we have ways to visualize the data but now we need more reliable v1 ways of adding data to the graph. 
+  
+- because we are moving towards more than one route paths we need more robust components to be applied across those paths, including crud, sidebar, file system access.
+  - some of those are a matter of implementing others need rework
+  - for reliable creation of entities and relations we need to implement fractional indexing
+
+- for now the react-flow canvas relies in parentId key, but i don't like it. the truth is in edge relations and this is a duplication of the data in the object. id rather we use only the truth (the edges) in the graph and don't write the parentId to the graph. if react-flow needs it we can have it exist in a layer that the canvas uses, but not written back to local storage. 
+
+- we need to see "rich text" but we don't need to overcomplicate it so we are going with remark as the choice. content is written in markdown, displayed via remark
+
+
+
 recent snapshots
 - clickable
 - persist after reload
