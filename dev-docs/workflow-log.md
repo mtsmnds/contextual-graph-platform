@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-01
 
+### prd merge — m5-prd0057-sort-order-fractional-indexing
+- **Source:** user request — "merge this branch back to main no ff"
+- **Branch at time:** main (clean — just merged)
+- **Merge order:** m5-prd0057-sort-order-fractional-indexing (0057)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** no changes
+
 ### prd end — m5-prd0057-sort-order-fractional-indexing
 - **Source:** user text — "prd-end for prd0057"
 - **Branch at time:** m5-prd0057-sort-order-fractional-indexing (clean — committed)
