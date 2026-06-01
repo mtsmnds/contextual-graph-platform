@@ -5,6 +5,16 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-06-01
+
+### prd write — m5-prd0057-sort-order-fractional-indexing
+- **Source:** user text — draft `dev-docs/plans/hello-migration-sort-order.md` → full PRD
+- **Branch at time:** main (clean)
+- **User decision:** milestone m5 (fallback, highest existing); NNNN=0057; universal sort scope with interleaving; any entity type can have sort order
+- **PRD file:** `dev-docs/plans/m5-prd0057-sort-order-fractional-indexing.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** no changes
+
 ## 2026-05-28
 
 ### prd merge — m5-prd0054-metadata-in-sidebar
