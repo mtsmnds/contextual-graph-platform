@@ -7,6 +7,21 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-01
 
+### prd end — m5-prd0058-segment-metadata-conventions
+- **Source:** user text — "prd-end, prd merge"
+- **Branch at time:** m5-prd0058-segment-metadata-conventions (clean — committed)
+- **Change classification:** Planning
+- **ADR type:** short-form (no architectural changes)
+- **Commit hash:** c516099
+- **Pre-commit guard:** auto-proceeded (expected dirty from prd start)
+
+### prd start — m5-prd0058-segment-metadata-conventions
+- **Source:** user text — "ok prd-start prod0058"
+- **Branch at time:** main (clean — committed pre-existing wip)
+- **Branch decision:** create from main → m5-prd0058-segment-metadata-conventions
+- **Scope:** full PRD (single phase)
+- **Pre-commit guard:** committed wip (PRD update from user request)
+
 ### prd merge — m5-prd0057-sort-order-fractional-indexing
 - **Source:** user request — "merge this branch back to main no ff"
 - **Branch at time:** main (clean — just merged)
