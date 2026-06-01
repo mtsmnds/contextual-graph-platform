@@ -54,7 +54,7 @@ When a child is deleted, the entity and its edges are removed. Remaining sibling
 
 ### 6. Move within container
 
-Delete the old `contains` edge, create a new edge with `generateKeyBetween` of the new neighbours.
+Update the `sortOrder` field on the existing `contains` edge to `generateKeyBetween(newPrevKey, newNextKey)`. Same reordering result as delete-and-recreate, but preserves `createdAt` and any other edge metadata. Simpler operation.
 
 ### 7. Move across containers
 
@@ -70,14 +70,31 @@ Any entity type placed under a container via a `contains` edge gets a `sortOrder
 
 When querying children of a container, sort by the `sortOrder` field of the `contains` edges, **not** by `createdAt`, `updatedAt`, or array position.
 
+### 10. Route-agnostic store actions
+
+Sort order operations are not tied to any renderer. Shared Zustand store actions provide the canonical interface:
+
+| Action | Behaviour |
+|--------|-----------|
+| `appendChild(containerId, childId)` | Creates a `contains` edge with `sortOrder = generateKeyBetween(lastSiblingKey, null)` |
+| `insertChild(containerId, childId, prevKey, nextKey)` | Creates a `contains` edge at a specific position |
+| `moveChild(containerId, childId, newPrevKey, newNextKey)` | Updates `sortOrder` on the existing `contains` edge |
+| `backfillContainerOrder(containerId)` | Generates `sortOrder` for any `contains` edges that lack one (migration helper) |
+
+Both routes — React Flow canvas (`src/routes/WorkspaceRoot.tsx`) and d3 viz-test-1 (`src/routes/VizTest1.tsx`) — call the same store actions. Each renderer reads the sorted child list from the store via the existing query engine (AC 9). No route-specific ordering logic.
+
+This design directly enables "Threaded Container View" in the i2 roadmap: adding a new renderer (threaded list) means it plugs into the same store actions and query engine.
+
 ## Files changed (inferred)
 
 | File | Change |
 |------|--------|
 | `package.json` | Dependency swap |
 | `src/types/domain.ts` | Document `sortOrder` convention and fractional-indexing rules |
+| `src/store/useGraphStore.ts` | Add `appendChild`, `insertChild`, `moveChild`, `backfillContainerOrder` actions |
 | `src/engine/queries.ts` | Ensure child queries sort by `sortOrder` on `contains` edges |
-| Files that create `contains` edges | Use `generateKeyBetween` / `generateNKeysBetween` wherever `contains` edges are created |
+| `src/routes/WorkspaceRoot.tsx` | Consume store actions (no route-local ordering logic) |
+| `src/routes/VizTest1.tsx` | Consume same store actions |
 | `dev-docs/plans/hello-migration-sort-order.md` | Replace with this PRD (the draft served its purpose) |
 
 ## Migration: Existing sortOrder values

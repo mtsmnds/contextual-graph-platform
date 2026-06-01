@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-01
 
+### prd write — m5-prd0058-segment-metadata-conventions
+- **Source:** user request — extracted AC 10 from PRD 0057 into separate PRD
+- **Branch at time:** main (dirty — 0057 + workflow-log from previous write)
+- **User decision:** skip commit; documentation-only PRD, no type-system enforcement deferred
+- **PRD file:** `dev-docs/plans/m5-prd0058-segment-metadata-conventions.md`
+- **Phases:** none (single phase)
+- **Pre-commit guard:** skipped
+
 ### prd write — m5-prd0057-sort-order-fractional-indexing
 - **Source:** user text — draft `dev-docs/plans/hello-migration-sort-order.md` → full PRD
 - **Branch at time:** main (clean)
