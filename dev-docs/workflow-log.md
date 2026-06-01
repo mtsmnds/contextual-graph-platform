@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-01
 
+### prd start — m5-prd0057-sort-order-fractional-indexing
+- **Source:** user text — "lets prd start for prd0057"
+- **Branch at time:** main (clean — committed PRD docs)
+- **User decision:** branch from main
+- **Branch name:** m5-prd0057-sort-order-fractional-indexing
+- **Scope:** full (single phase)
+- **Pre-commit guard:** committed wip ("m5: prd docs (0057 + 0058)")
+
 ### prd write — m5-prd0058-segment-metadata-conventions
 - **Source:** user request — extracted AC 10 from PRD 0057 into separate PRD
 - **Branch at time:** main (dirty — 0057 + workflow-log from previous write)

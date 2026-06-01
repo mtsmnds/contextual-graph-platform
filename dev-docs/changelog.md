@@ -12,6 +12,19 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-01
+
+### m5 — prd0057 — sort order & fractional indexing
+- **What:** Swapped `fractional-indexing` for `fractional-indexing-jittered` (collision-resistant keys). Added `appendChild`, `insertChild`, `moveChild`, `backfillContainerOrder` store actions as the canonical interface for sort order management. Documented sort order conventions in `domain.ts` — append, insert, move, delete (no reindex), batch import rules. Removed `backfillAllOrders` (scope creep — unnecessary since `backfillContainerOrder` can be called in a loop).
+- **Reason:** Sort order existed as a schema field but had no documented rules or store-level API. Jittered keys prevent collisions from concurrent edits. Reverse-architected conventions so all renderers (canvas, threaded view) share the same ordering logic.
+- **Files changed:**
+  - `package.json`: `fractional-indexing` → `fractional-indexing-jittered`
+  - `src/store/useGraphStore.ts`: Added 4 sort-order actions, removed `backfillAllOrders`
+  - `src/types/domain.ts`: Documented sort order convention (5 rules, API reference)
+- **Impact:** Sort order is now a first-class, documented capability. All future renderers call the same store actions. Dependency adds jitter for safe concurrent inserts. No migration code needed — sort order is assigned at relation creation time.
+- **Archive:** `dev-docs/archive/m5/m5-prd0057-sort-order-fractional-indexing.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-01-prd0057-sort-order-fractional-indexing-adr.md`
+
 ## 2026-05-28
 
 ### m5 — prd0051 — experimental section, CollapsibleSection component, ViewLogger and MiniMap toggles
