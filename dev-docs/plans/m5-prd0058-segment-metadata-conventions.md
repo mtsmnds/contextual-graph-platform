@@ -23,7 +23,7 @@ Codify the `metadata.lineNumber` and `metadata.character` conventions for segmen
 
 ### 3. Documentation location
 
-Both conventions are documented in a new metadata conventions section in `src/types/domain.ts` (or in an adjacent type-level doc comment). The project has a single source of truth for these field semantics — no more relying on the draft PRD file.
+Both conventions are documented in a new **"Graph & Object Shapes"** section in `dev-docs/architecture.md`. That section references `src/types/domain.ts` and `src/types/graph.ts` as the source of truth for all entity/relation shapes, and documents the metadata field conventions (`lineNumber`, `character`) inline. A linking comment is also added in `src/types/domain.ts` pointing to the architecture doc. The project has a single source of truth for these field semantics — no more relying on the draft PRD file.
 
 ### 4. No type-system enforcement (open)
 
@@ -33,7 +33,8 @@ Whether to tighten `Entity.metadata` from `Record<string, unknown>` to a typed u
 
 | File | Change |
 |------|--------|
-| `src/types/domain.ts` | Add metadata conventions section documenting `lineNumber` and `character` |
+| `dev-docs/architecture.md` | Add "Graph & Object Shapes" section referencing `domain.ts` & `graph.ts`, with metadata conventions |
+| `src/types/domain.ts` | Add linking doc comment pointing to architecture.md |
 | `dev-docs/plans/hello-migration-sort-order.md` | Remove segment metadata content (now lives here) |
 
 ## Phases
