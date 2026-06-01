@@ -13,7 +13,10 @@
 
 - we need to see "rich text" but we don't need to overcomplicate it so we are going with remark as the choice. content is written in markdown, displayed via remark
 
+- start using dagre seriously now in the canvas to organize the data
 
+
+- - -
 
 recent snapshots
 - clickable

@@ -48,7 +48,7 @@ Depends on: Container group nodes (PRD0045) — ✅ done.
 
 ### 3. Threaded Container View
 
-**PRD:** `m5-prd0047-threaded-container-view`
+**PRD:** `m5-prd00xx-threaded-container-view`
 
 A vertical projection layer that renders containers as collapsible sections with threaded children stacked top-to-bottom. Children ordered by `sortOrder`. Collapse/expand handles "annotations-only" views. Operates separately from the free-form canvas layout — same data, different projection.
 
@@ -56,7 +56,7 @@ Depends on: Container group nodes (PRD0045) + nested containers (PRD0046).
 
 ### 4. Contextual Subgraph Loading
 
-**PRD:** `m5-prd0044-contextual-subgraph`
+**PRD:** `m5-prd00xx-contextual-subgraph`
 
 New query engine function: `getContextualSubgraph(entityId, maxDepth)` — BFS outward from the focused entity up to N hops. Pure query over store state. Foundation for performance at scale.
 
@@ -64,7 +64,7 @@ Depends on: Container group nodes + threaded view + Hamlet test data.
 
 ### 5. Metadata-as-Edge Resolution
 
-**PRD:** `m5-prd0043-metadata-edge-resolution`
+**PRD:** `m5-prd00xx-metadata-edge-resolution`
 
 Define which metadata keys resolve to edges at read time and create edges at write time. Registry-driven (`src/engine/edge-metadata.ts`). `author` key maps to `contains` relation. Metadata panel already exists from i1 — this adds edge-awareness to it.
 
@@ -72,7 +72,7 @@ Depends on: metadata panel (built in i1). Non-blocking for grouping/threading.
 
 ### 6. View Toggling
 
-**PRD:** `m5-prd0049-view-toggling`
+**PRD:** `m5-prd00xx-view-toggling`
 
 Focus modes: text-focus (full content + annotations aligned) vs annotations-focus (text collapsed, annotations threaded). Toggle control near viewport. Projection filter over contextual subgraph, not a data mutation.
 

@@ -84,8 +84,11 @@ book's structure.
 
 ### 7. `metadata.lineNumber`
 
-Present for works with canonical line numbering (plays, poems).
-Absent for prose (novels, essays).
+Can be present in a work. Usually present for works with canonical
+line numbering (plays, poems). Usually absent for prose (novels,
+essays).
+However, this is not enforced by the system. the user decides if the segment will have lineNumber or not.
+`lineNumber` is a `number`. not a string.
 
 ```ts
 { metadata: { character: "barnardo", lineNumber: 1 } }
@@ -93,25 +96,15 @@ Absent for prose (novels, essays).
 
 ### 8. `metadata.character`
 
-Speaker name for dialogue lines in plays.  Absent for prose, narration,
+User decides if the segment will have character or not.
+Usually present in plays dialogue lines. Usually absent for prose, narration,
 stage directions, and non-dialogue segments.
+`character` is a `string`.
 
-### 9. `content` field format
-
-Character name and speech text are separated by `\n` inside the
-`content` string.  No HTML in the data layer.
-
-```
-content: "BARNARDO\nWho's there?"
-```
-
-The relational layer never uses `<br>` or other markup.  Rendering
-escapes and formats the text (e.g. bold character name, line break
-between name and speech) is the view layer's job.
 
 ## Querying
 
-### 10. Child order
+### 9. Child order
 
 When querying children of a container, sort by the `sortOrder` field of
 the `contains` edges, **not** by `createdAt`, `updatedAt`, or array
@@ -121,21 +114,14 @@ position.
 
 | File | What to add |
 |---|---|
-| `src/types/domain.ts` | New section documenting `sortOrder` convention, fractional-indexing rules, segment metadata (`lineNumber`, `character`), and `\n` content format |
+| `src/types/domain.ts` | New section documenting `sortOrder` convention, fractional-indexing rules, segment metadata (`lineNumber`, `character`)
 | `dev-docs/plans/hello-migration-data-tiers.md` | No change (out of scope) |
 | `AGENTS.md` | No change (already references domain.ts) |
 | `hello2/graph.json` | The dev-docs nodes already cover fractional indexing and sort order. Verify the `dev-docs--sort-order` segments match this PRD. |
 
 ## Open questions
 
-1. Should `lineNumber` be `number` or `string`?  Some plays have
-   unconventional numbering (e.g. "1a", "1b").  Initial decision:
-   `number` for standard plays, fall back to metadata only for
-   edge cases.
-   1. Answer: lineNumber is a number
-
-
-2. Should there be a global `sortOrder` across edges of different types
+1. Should there be a global `sortOrder` across edges of different types
    (e.g. interleaving `contains` and `references` under the same
-   parent)?  No — `sortOrder` is scoped to edges of the same type
-   from the same source container.
+   parent)?  ~~No — `sortOrder` is scoped to edges of the same type from the same source container.~~
+   1. Answer: the way i see it the sort order should be global within the container, interleaving  objects of different types that are under the same parent.
