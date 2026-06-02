@@ -15,12 +15,20 @@ Append-only, newest on top within same-day groupings.
 - **Pre-commit guard:** no changes
 - **Implementation summary:**
   - Created 7 new files in `src/components/entity-form/` (EntityTypeField, ContentField, RelationEditor, RelationsSection, MetadataFields, EntityForm, EntityFormDialog)
-  - Mounted EntityFormDialog trigger in `src/routes/VizTest1.tsx`
+  - Mounted EntityFormDialog trigger in `src/routes/VizTest1.tsx` and `src/canvas/GraphCanvas.tsx`
   - Created 2 Storybook story files (EntityForm, RelationsSection)
   - No `parentId` passed to `addEntity` — parent-child via `contains` edges + `appendChild`/`insertChild` only
   - All comboboxes use shadcn Popover + Command pattern
   - Position picker uses `getSortedContainsEdges` query for sibling sort order
   - TypeScript: clean (`npx tsc --noEmit`), Build: clean (`npm run build`), Storybook tests: 3/3 passing (0 accessibility violations)
+
+### prd end — m5-prd0059-entity-form-create-mode
+- **Source:** user text — "ok, you can prd-end"
+- **Branch at time:** m5-prd0059-entity-form-create-mode (dirty — expected from prd start)
+- **Change classification:** Feature change
+- **ADR type:** short-form (no architectural changes)
+- **Commit hash:** 5ca4b25
+- **Pre-commit guard:** auto-proceeded (expected dirty from prd start)
 
 ---
 
