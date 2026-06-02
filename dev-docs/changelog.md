@@ -12,6 +12,27 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-02
+
+### m5 — prd0059 — entity form (create mode)
+- **What:** Route-agnostic entity creation form with composable section components. 7 new files: `EntityTypeField` (combobox), `ContentField` (textarea), `RelationEditor` (single relation row with type/target comboboxes + conditional position picker), `RelationsSection` (list manager), `MetadataFields` (segment-specific `lineNumber`/`character`), `EntityForm` (composition + submit), `EntityFormDialog` (dialog wrapper). Mounted in VizTest1.tsx header and GraphCanvas.tsx top-right panel. 2 Storybook story files.
+- **Reason:** First UI consumer of sort order store actions (PRD 0057). Enables entity creation without requiring the React Flow canvas — works from any route. Architecture prioritizes section-level composability so new fields can be added without rewriting the form.
+- **Files changed:**
+  - `src/components/entity-form/EntityTypeField.tsx`: New — entity type combobox
+  - `src/components/entity-form/ContentField.tsx`: New — content textarea
+  - `src/components/entity-form/RelationEditor.tsx`: New — single relation row
+  - `src/components/entity-form/RelationsSection.tsx`: New — manages relation rows
+  - `src/components/entity-form/MetadataFields.tsx`: New — conditional metadata
+  - `src/components/entity-form/EntityForm.tsx`: New — full form composition
+  - `src/components/entity-form/EntityFormDialog.tsx`: New — dialog wrapper
+  - `src/routes/VizTest1.tsx`: Mount EntityFormDialog trigger in header
+  - `src/canvas/GraphCanvas.tsx`: Mount EntityFormDialog trigger in top-right panel
+  - `src/stories/EntityForm.stories.tsx`: New — EntityForm stories
+  - `src/stories/RelationsSection.stories.tsx`: New — RelationsSection stories
+- **Impact:** Entity creation available from both routes. Sort order integration via `appendChild`/`insertChild`. No `parentId` set on `addEntity` (parentId field being deprecated).
+- **Archive:** `dev-docs/archive/m5/m5-prd0059-entity-form-create-mode.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-02-prd0059-entity-form-create-mode-adr.md`
+
 ## 2026-06-01
 
 ### m5 — prd0058 — segment metadata conventions

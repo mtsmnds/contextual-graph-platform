@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { useGraphStore } from "../store/useGraphStore"
 import type { Entity, Relation } from "../types/graph"
 import * as d3 from "d3"
+import { EntityFormDialog } from "../components/entity-form/EntityFormDialog"
 
 const TYPE_COLORS: Record<string, string> = {
   container: "#C45D3E",
@@ -468,6 +469,7 @@ export default function VizTest1() {
           </h1>
 
           <div className="flex items-center gap-3">
+            <EntityFormDialog />
             {availableTypes.length > 0 && (
               <div className="flex gap-px">
                 {availableTypes.map((type) => (
