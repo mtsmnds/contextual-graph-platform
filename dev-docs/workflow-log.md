@@ -5,6 +5,25 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-06-02
+
+### prd start — m5-prd0059-entity-form-create-mode
+- **Source:** user text — "ok, lets implement with prd-start"
+- **Branch at time:** main (clean)
+- **Branch decision:** create from main → m5-prd0059-entity-form-create-mode
+- **Scope:** full PRD (single phase)
+- **Pre-commit guard:** no changes
+- **Implementation summary:**
+  - Created 7 new files in `src/components/entity-form/` (EntityTypeField, ContentField, RelationEditor, RelationsSection, MetadataFields, EntityForm, EntityFormDialog)
+  - Mounted EntityFormDialog trigger in `src/routes/VizTest1.tsx`
+  - Created 2 Storybook story files (EntityForm, RelationsSection)
+  - No `parentId` passed to `addEntity` — parent-child via `contains` edges + `appendChild`/`insertChild` only
+  - All comboboxes use shadcn Popover + Command pattern
+  - Position picker uses `getSortedContainsEdges` query for sibling sort order
+  - TypeScript: clean (`npx tsc --noEmit`), Build: clean (`npm run build`), Storybook tests: 3/3 passing (0 accessibility violations)
+
+---
+
 ## 2026-06-01
 
 ### prd merge — m5-prd0058-segment-metadata-conventions
