@@ -24,9 +24,10 @@ const meta = {
       </SidebarProvider>
     ),
   ],
-  args: { onOpenFolder: fn() },
+  args: { onOpenFolder: fn(), onRunLayout: fn() },
   argTypes: {
     onOpenFolder: { description: 'Opens a folder from the filesystem (FS Access API).' },
+    onRunLayout: { description: 'Runs dagre layout with current options.' },
   },
   parameters: { layout: 'fullscreen', sidebarOpen: true },
   tags: ['autodocs'],

@@ -7,7 +7,9 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { FolderOpen } from "@phosphor-icons/react"
+import type { LayoutOptions } from "@/engine/layout"
 import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContainer"
+import CanvasLayoutSectionContainer from "./sections/CanvasLayoutSectionContainer"
 import BackupsSectionContainer from "./sections/BackupsSectionContainer"
 import WorkspaceInfoSectionContainer from "./sections/WorkspaceInfoSectionContainer"
 import SelectionMetadataSectionContainer from "./sections/SelectionMetadataSectionContainer"
@@ -17,8 +19,15 @@ import SelectionMetadataSectionContainer from "./sections/SelectionMetadataSecti
  * Shows feature flags, backups/snapshots, and workspace metadata.
  * Collapses to an off-canvas overlay — use `SidebarTrigger` to toggle.
  */
-export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void }) {
+export default function AppSidebar({
+  onOpenFolder,
+  onRunLayout,
+}: {
+  onOpenFolder: () => void
+  onRunLayout: (options: LayoutOptions) => void
+}) {
   const folderName = useGraphStore((s) => s.folderName)
+  const autoLayout = useGraphStore((s) => s.featureFlags.autoLayout)
 
   return (
     <Sidebar side="right" collapsible="offcanvas" variant="floating" className="py-4">
@@ -30,6 +39,7 @@ export default function AppSidebar({ onOpenFolder }: { onOpenFolder: () => void 
         <BackupsSectionContainer />
         <WorkspaceInfoSectionContainer />
         <FeatureFlagsSectionContainer />
+        {autoLayout && <CanvasLayoutSectionContainer onRunLayout={onRunLayout} />}
       </SidebarContent>
       <SidebarFooter>
         <Button

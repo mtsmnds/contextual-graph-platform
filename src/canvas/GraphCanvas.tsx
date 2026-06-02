@@ -22,7 +22,8 @@ import {
 import "@xyflow/react/dist/style.css"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
-import { getLayoutedElements } from "../engine/layout"
+import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS } from "../engine/layout"
+import type { LayoutOptions } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { IconButton } from "@/components/ui/icon-button"
@@ -53,7 +54,7 @@ function nodeStyle(
   }
 }
 
-function GraphCanvasContent() {
+function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: React.MutableRefObject<() => void> }) {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
 
@@ -67,12 +68,7 @@ function GraphCanvasContent() {
   }
   if (layoutRef.current === null) {
     if (autoLayout) {
-      const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
-      const nodes = dagreNodes.map((n) => {
-        const saved = entities.find((e) => e.id === n.id)?.canvasData
-        if (saved && saved.x !== undefined) return { ...n, position: { x: saved.x, y: saved.y } }
-        return n
-      })
+      const { nodes, edges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
       layoutRef.current = { nodes, edges }
     } else {
       const nodes: Node[] = []
@@ -139,6 +135,10 @@ function GraphCanvasContent() {
   const storeApi = useStoreApi()
 
   const featureFlags = useGraphStore((s) => s.featureFlags)
+
+  useEffect(() => {
+    fitViewRefProp.current = () => reactFlowInstance.fitView({ duration: 200 })
+  }, [reactFlowInstance, fitViewRefProp])
 
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -349,7 +349,7 @@ function GraphCanvasContent() {
       return
     }
 
-    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations })
+    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
 
     const dagrePendingId = pendingNodeRef.current
     setNodes((prev) => {
@@ -1097,6 +1097,7 @@ function GraphCanvasContent() {
 function GraphCanvas() {
   const storeInit = useGraphStore((s) => s.init)
   const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
+  const fitViewRef = useRef<() => void>(() => {})
 
   const onOpenFolder = useCallback(async () => {
     const fsa = getFSAccessInstance()
@@ -1122,14 +1123,18 @@ function GraphCanvas() {
     }
   }, [storeInit, refreshFolderName])
 
+  const onRunLayout = useCallback((options: LayoutOptions) => {
+    runFullLayout(options, () => fitViewRef.current?.())
+  }, [])
+
   return (
     <SidebarProvider>
       <div className="flex-1 min-w-0 min-h-0">
         <ReactFlowProvider>
-          <GraphCanvasContent />
+          <GraphCanvasContent onFitViewRef={fitViewRef} />
         </ReactFlowProvider>
       </div>
-      <AppSidebar onOpenFolder={onOpenFolder} />
+      <AppSidebar onOpenFolder={onOpenFolder} onRunLayout={onRunLayout} />
     </SidebarProvider>
   )
 }
