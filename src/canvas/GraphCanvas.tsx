@@ -31,6 +31,7 @@ import ZoomControls from "./panels/ZoomControls"
 import ViewLogger from "./panels/ViewLogger"
 import { ArrowUUpLeft, ArrowUUpRight } from "@phosphor-icons/react"
 import GraphContextMenu from "./GraphContextMenu"
+import { EntityFormDialog } from "@/components/entity-form/EntityFormDialog"
 import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
@@ -1047,6 +1048,7 @@ function GraphCanvasContent() {
       <Panel position="top-right" style={{ margin: "16px 8px" }}>
         <div className="flex items-center gap-2">
           {featureFlags.viewLogger && <ViewLogger />}
+          <EntityFormDialog />
           <ButtonGroup>
               <IconButton
                 variant="outline"
