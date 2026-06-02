@@ -7,8 +7,13 @@ interface LayoutInput {
   relations: Relation[]
 }
 
-const NODE_WIDTH = 200
-const NODE_HEIGHT = 80
+function dims(entity: Entity) {
+  const isContainer = entity.type === "container"
+  return {
+    w: entity.canvasData?.width ?? (isContainer ? 400 : 200),
+    h: entity.canvasData?.height ?? (isContainer ? 304 : 80),
+  }
+}
 
 export function getLayoutedElements({ entities, relations }: LayoutInput) {
   const g = new dagre.graphlib.Graph()
@@ -17,14 +22,30 @@ export function getLayoutedElements({ entities, relations }: LayoutInput) {
 
   const nodes: Node[] = entities.map((entity) => {
     const content = entity.content || entity.type || entity.id
-    g.setNode(entity.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
-    return {
+    const { w, h } = dims(entity)
+    const isContainer = entity.type === "container"
+
+    g.setNode(entity.id, { width: w, height: h })
+
+    const node: Node = {
       id: entity.id,
       position: { x: 0, y: 0 },
       data: { content, type: entity.type, id: entity.id },
-      type: "entity",
-      style: { width: NODE_WIDTH },
+      type: isContainer ? "containerGroup" : "entity",
+      style: {
+        width: w,
+        ...(h != null ? { height: h } : {}),
+        ...(!isContainer && h == null ? { minHeight: 32 } : {}),
+      },
     }
+
+    if (entity.parentId) {
+      node.parentId = entity.parentId
+      node.extent = "parent"
+      node.expandParent = true
+    }
+
+    return node
   })
 
   const edges: Edge[] = relations.map((rel) => {
@@ -36,7 +57,7 @@ export function getLayoutedElements({ entities, relations }: LayoutInput) {
       sourceHandle: rel.metadata?.sourceHandle as string | undefined,
       targetHandle: rel.metadata?.targetHandle as string | undefined,
       label: rel.type,
-      type: "default",
+      type: "edgelabel",
     }
   })
 
@@ -44,11 +65,12 @@ export function getLayoutedElements({ entities, relations }: LayoutInput) {
 
   const positionedNodes = nodes.map((node) => {
     const pos = g.node(node.id)
+    const { w, h } = dims(entities.find((e) => e.id === node.id)!)
     return {
       ...node,
       position: {
-        x: pos.x - NODE_WIDTH / 2,
-        y: pos.y - NODE_HEIGHT / 2,
+        x: pos.x - w / 2,
+        y: pos.y - h / 2,
       },
     }
   })

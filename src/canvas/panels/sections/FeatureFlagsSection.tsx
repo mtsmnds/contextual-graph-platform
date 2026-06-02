@@ -5,6 +5,7 @@ const FEATURE_FLAG_LABELS: Record<string, string> = {
   dragToNest: "Drag to Nest",
   viewLogger: "ViewLogger",
   minimap: "MiniMap",
+  autoLayout: "Auto Layout (dagre)",
 }
 
 export default function FeatureFlagsSection({

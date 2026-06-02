@@ -57,11 +57,24 @@ function GraphCanvasContent() {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
 
-  const __experimentalNoDagre = true
+  const autoLayout = useGraphStore((s) => s.featureFlags.autoLayout)
 
+  const prevAutoLayoutRef = useRef(autoLayout)
   const layoutRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
+  if (prevAutoLayoutRef.current !== autoLayout) {
+    prevAutoLayoutRef.current = autoLayout
+    layoutRef.current = null
+  }
   if (layoutRef.current === null) {
-    if (__experimentalNoDagre) {
+    if (autoLayout) {
+      const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
+      const nodes = dagreNodes.map((n) => {
+        const saved = entities.find((e) => e.id === n.id)?.canvasData
+        if (saved && saved.x !== undefined) return { ...n, position: { x: saved.x, y: saved.y } }
+        return n
+      })
+      layoutRef.current = { nodes, edges }
+    } else {
       const nodes: Node[] = []
 
       for (const entity of entities) {
@@ -113,14 +126,6 @@ function GraphCanvasContent() {
         type: "edgelabel",
       }))
       layoutRef.current = { nodes, edges }
-    } else {
-      const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
-      const nodes = dagreNodes.map((n) => {
-        const saved = entities.find((e) => e.id === n.id)?.canvasData
-        if (saved && saved.x !== undefined) return { ...n, position: { x: saved.x, y: saved.y } }
-        return n
-      })
-      layoutRef.current = { nodes, edges }
     }
   }
 
@@ -146,7 +151,7 @@ function GraphCanvasContent() {
   const [visibleMetadataNodeIds, setVisibleMetadataNodeIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (__experimentalNoDagre) {
+    if (!autoLayout) {
       const pendingId = pendingNodeRef.current
       pendingNodeRef.current = null
       setNodes((prev) => {
@@ -389,7 +394,7 @@ function GraphCanvasContent() {
     if (dagrePendingId) {
       storeApi.getState().addSelectedNodes([dagrePendingId])
     }
-  }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds])
+  }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds, autoLayout])
 
   useEffect(() => {
     const dims: Record<string, CanvasData> = {}

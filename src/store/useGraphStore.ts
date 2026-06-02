@@ -119,6 +119,7 @@ const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
   dragToNest: false,
   viewLogger: true,
   minimap: true,
+  autoLayout: false,
 }
 
 function loadFeatureFlags(): Record<string, boolean> {

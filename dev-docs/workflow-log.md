@@ -7,6 +7,19 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-02
 
+### prd write + implement phase 1 — m5-prd0060-reintroducing-dagre-to-canvas
+- **Source:** user text — dagre hardcoded off, needs feature flag toggle
+- **Branch at time:** main (clean after commit)
+- **PRD file:** `dev-docs/plans/m5-prd0060-reintroducing-dagre-to-canvas.md`
+- **Phase:** 1 of N — feature flag + basic dagre toggle
+- **Changes:**
+  - `src/store/useGraphStore.ts`: Added `autoLayout: false` to `DEFAULT_FEATURE_FLAGS`
+  - `src/canvas/panels/sections/FeatureFlagsSection.tsx`: Added `"Auto Layout (dagre)"` label
+  - `src/engine/layout.ts`: Fixed `getLayoutedElements()` for containerGroup nodes, parentId, edge type "edgelabel", canvasData dimensions
+  - `src/canvas/GraphCanvas.tsx`: Replaced `__experimentalNoDagre` const with reactive `featureFlags.autoLayout`, `prevAutoLayoutRef` for layoutRef reset on toggle
+- **Verification:** npx tsc --noEmit clean, npm run build clean, 159/159 tests passing
+- **Pre-commit guard:** committed wip (workflow-log.md)
+
 ### prd merge — m5-prd0059-entity-form-create-mode
 - **Source:** user text — "prd merge"
 - **Branch at time:** main (clean)
