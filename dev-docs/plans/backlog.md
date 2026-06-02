@@ -16,6 +16,13 @@
 - start using dagre seriously now in the canvas to organize the data
 
 
+## to do
+
+creating entity form in viz-test-1
+then 
+      - create entity form in update mode
+      - add to canvas
+
 - - -
 
 recent snapshots
