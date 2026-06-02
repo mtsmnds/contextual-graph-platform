@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-01
 
+### prd merge — m5-prd0058-segment-metadata-conventions
+- **Source:** user text — "prd-end, prd merge"
+- **Branch at time:** main (clean)
+- **Merge order:** m5-prd0058-segment-metadata-conventions (0058)
+- **Conflicts:** none
+- **Final status:** merged into main cleanly
+- **Pre-commit guard:** committed wip (workflow log from prd end)
+
 ### prd end — m5-prd0058-segment-metadata-conventions
 - **Source:** user text — "prd-end, prd merge"
 - **Branch at time:** m5-prd0058-segment-metadata-conventions (clean — committed)
