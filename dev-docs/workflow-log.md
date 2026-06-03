@@ -5,7 +5,33 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-06-03
+
+### prd end — m5-prd0061-parent-id-deprecation
+- **Source:** user request — "can you run prd end? i already merged but forgot this workflow"
+- **Branch at time:** m5-prd0060-reintroducing-dagre-to-canvas (dirty — uncommitted changes from implementation)
+- **Change classification:** Architecture change
+- **ADR type:** full (schema change: removed parentId from Entity, nesting via contains edges, migration script, container promotion)
+- **Pre-commit guard:** auto-proceeded (unexpected branch — user said "already merged")
+
 ## 2026-06-02
+
+### prd start — m5-prd0060-reintroducing-dagre-to-canvas (Phase 2)
+- **Source:** user text — "prd start"
+- **Branch at time:** main (clean)
+- **Branch decision:** create from main → m5-prd0060-reintroducing-dagre-to-canvas
+- **Scope:** Phase 2 (Canvas Layout section, Run Layout button, three isolated pieces)
+- **Changes:**
+  - `src/engine/layout.ts`: Added `estimateNodeHeight()` stopgap, `LayoutOptions`, `ignoreSavedPositions` flag, sibling segment width logic, `runFullLayout()` action, `DEFAULT_LAYOUT_OPTIONS`
+  - `src/canvas/GraphCanvas.tsx`: Updated import/usage of `getLayoutedElements` with options; wired `runFullLayout` via `fitViewRef` → `onRunLayout` callback
+  - `src/canvas/panels/sections/CanvasLayoutSection.tsx`: **New** — presenter with rankdir/nodesep/ranksep/nodeWidth controls + Run Layout button
+  - `src/canvas/panels/sections/CanvasLayoutSectionContainer.tsx`: **New** — container with local UI state, wires `onRunLayout`
+  - `src/canvas/panels/AppSidebar.tsx`: Added `onRunLayout` prop; mounts `CanvasLayoutSectionContainer` gated by `autoLayout`
+  - `src/stories/CanvasLayoutSection.stories.tsx`: **New** — 4 stories (Default, ChangeDirection, AdjustSpacing, RunLayout)
+  - `src/stories/AppSidebar.stories.tsx`: Added `onRunLayout` mock to match new prop
+  - `vitest.config.ts`: Added `@dagrejs/dagre` to `optimizeDeps.include`
+- **Verification:** npx tsc --noEmit clean, npm run build clean, 163/163 tests passing
+- **Pre-commit guard:** no changes
 
 ### prd write + implement phase 1 — m5-prd0060-reintroducing-dagre-to-canvas
 - **Source:** user text — dagre hardcoded off, needs feature flag toggle

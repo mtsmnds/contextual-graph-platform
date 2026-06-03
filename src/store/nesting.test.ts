@@ -1,66 +1,60 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { wouldCreateCycle, getNestingDepth } from "../engine/queries";
 import { useGraphStore } from "./useGraphStore";
-import type { Entity } from "../types/graph";
-
-
+import type { Relation } from "../types/graph";
 
 // --- Pure function tests ---
 
 describe("wouldCreateCycle", () => {
-  const entities: Entity[] = [
-    { id: "A", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 } },
-    { id: "B", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 }, parentId: "A" },
-    { id: "C", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 }, parentId: "B" },
-    { id: "D", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 }, parentId: "C" },
+  const relations: Relation[] = [
+    { id: "r1", source: "A", target: "B", type: "contains", sortOrder: "a0", metadata: {} },
+    { id: "r2", source: "B", target: "C", type: "contains", sortOrder: "a1", metadata: {} },
+    { id: "r3", source: "C", target: "D", type: "contains", sortOrder: "a2", metadata: {} },
   ];
 
   it("detects self-nesting", () => {
-    expect(wouldCreateCycle(entities, "A", "A")).toBe(true);
+    expect(wouldCreateCycle({ relations }, "A", "A")).toBe(true);
   });
 
   it("detects direct child becoming parent", () => {
-    expect(wouldCreateCycle(entities, "A", "B")).toBe(true);
+    expect(wouldCreateCycle({ relations }, "A", "B")).toBe(true);
   });
 
   it("detects ancestor in chain", () => {
-    expect(wouldCreateCycle(entities, "A", "D")).toBe(true);
+    expect(wouldCreateCycle({ relations }, "A", "D")).toBe(true);
   });
 
   it("returns false for unrelated entities", () => {
-    const Z: Entity = { id: "Z", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 } };
-    expect(wouldCreateCycle([...entities, Z], "A", "Z")).toBe(false);
+    expect(wouldCreateCycle({ relations }, "A", "Z")).toBe(false);
   });
 
-  it("returns false for sibling move", () => {
-    expect(wouldCreateCycle(entities, "B", "C")).toBe(true); // C is child of B originally, so B→C is a cycle
+  it("detects cycle when moving sibling under descendant", () => {
+    expect(wouldCreateCycle({ relations }, "B", "C")).toBe(true);
   });
 
   it("returns false when moving sibling under unrelated root", () => {
-    const Y: Entity = { id: "Y", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 } };
-    expect(wouldCreateCycle([...entities, Y], "B", "Y")).toBe(false);
+    expect(wouldCreateCycle({ relations }, "B", "Y")).toBe(false);
   });
 });
 
 describe("getNestingDepth", () => {
   it("returns 0 for root entity", () => {
-    expect(getNestingDepth([], "A")).toBe(0);
+    expect(getNestingDepth({ relations: [] }, "A")).toBe(0);
   });
 
   it("returns correct depth for nested entity", () => {
-    const entities: Entity[] = [
-      { id: "A", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 } },
-      { id: "B", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 }, parentId: "A" },
-      { id: "C", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 }, parentId: "B" },
-      { id: "D", type: "container", content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 }, parentId: "C" },
+    const relations: Relation[] = [
+      { id: "r1", source: "A", target: "B", type: "contains", sortOrder: "a0", metadata: {} },
+      { id: "r2", source: "B", target: "C", type: "contains", sortOrder: "a1", metadata: {} },
+      { id: "r3", source: "C", target: "D", type: "contains", sortOrder: "a2", metadata: {} },
     ];
-    expect(getNestingDepth(entities, "D")).toBe(3);
-    expect(getNestingDepth(entities, "A")).toBe(0);
-    expect(getNestingDepth(entities, "C")).toBe(2);
+    expect(getNestingDepth({ relations }, "D")).toBe(3);
+    expect(getNestingDepth({ relations }, "A")).toBe(0);
+    expect(getNestingDepth({ relations }, "C")).toBe(2);
   });
 
-  it("returns 0 for missing entity", () => {
-    expect(getNestingDepth([], "ghost")).toBe(0);
+  it("returns 0 for entity with no relations", () => {
+    expect(getNestingDepth({ relations: [] }, "ghost")).toBe(0);
   });
 });
 
@@ -79,36 +73,40 @@ describe("store nesting operations", () => {
   });
 
   describe("addEntity with parentId", () => {
-    it("creates a container with parentId when specified", () => {
+    it("creates a contains edge when parentId is specified", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 300 } }, "parent-1");
-      const entity = useGraphStore.getState().entities.find((e) => e.parentId === "parent-1");
+      const id = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 300 } }, "parent-1");
+      const entity = useGraphStore.getState().entities.find((e) => e.id === id);
       expect(entity).toBeDefined();
       expect(entity!.type).toBe("container");
+      // parentId is not stored on entity
+      expect("parentId" in entity!).toBe(false);
+      // A contains edge should exist
+      const containsRel = useGraphStore.getState().relations.find(
+        (r) => r.target === id && r.type === "contains",
+      );
+      expect(containsRel).toBeDefined();
+      expect(containsRel!.source).toBe("parent-1");
     });
   });
 
-  describe("updateEntity parentId assignment", () => {
-    it("rejects self-nesting via wouldCreateCycle", () => {
+  describe("nesting via addRelation", () => {
+    it("creates parent-child relationship via contains edge", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const id = useGraphStore.getState().entities[0].id;
-      store.updateEntity(id, { parentId: id });
-      const entity = useGraphStore.getState().entities.find((e) => e.id === id);
-      expect(entity!.parentId).toBeUndefined();
+      const a = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const b = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      store.addRelation(a, b, "contains", {}, "a0");
+      const containsRel = useGraphStore.getState().relations.find(
+        (r) => r.source === a && r.target === b && r.type === "contains",
+      );
+      expect(containsRel).toBeDefined();
     });
 
-    it("rejects cycles", () => {
+    it("prevents self-nesting via wouldCreateCycle", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const entities = useGraphStore.getState().entities;
-      const parentId = entities[0].id;
-      const childId = entities[1].id;
-      store.updateEntity(childId, { parentId });
-      store.updateEntity(parentId, { parentId: childId });
-      const parent = useGraphStore.getState().entities.find((e) => e.id === parentId)!;
-      expect(parent.parentId).toBeUndefined();
+      const a = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      // Direct self-nesting should be caught
+      expect(wouldCreateCycle({ relations: useGraphStore.getState().relations }, a, a)).toBe(true);
     });
 
     it("allows nesting beyond depth 4 (no depth limit)", () => {
@@ -118,51 +116,68 @@ describe("store nesting operations", () => {
         store.addEntity("container", { canvasData: { x: 0, y: 0 } });
         ids.push(useGraphStore.getState().entities[useGraphStore.getState().entities.length - 1].id);
       }
+      // Nest via addRelation (contains edge)
       for (let i = 1; i < 5; i++) {
-        store.updateEntity(ids[i], { parentId: ids[i - 1] });
+        store.addRelation(ids[i - 1], ids[i], "contains", {}, `a${i}`);
       }
-      expect(useGraphStore.getState().entities.find((e) => e.id === ids[4])!.parentId).toBe(ids[3]);
+      const depth = getNestingDepth({ relations: useGraphStore.getState().relations }, ids[4]);
+      expect(depth).toBe(4);
     });
   });
 
   describe("deleteEntity cascade", () => {
     it("reparents direct children of deleted container", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      const parentId = useGraphStore.getState().entities[0].id;
-      store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
-      const childId = useGraphStore.getState().entities[1].id;
+      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
+      const childId = store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
       store.deleteEntity(parentId);
       const child = useGraphStore.getState().entities.find((e) => e.id === childId);
       expect(child).toBeDefined();
-      expect(child!.parentId).toBeUndefined();
+      // Child should have no incoming contains edge (reparented to root)
+      const childRel = useGraphStore.getState().relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(childRel).toBeUndefined();
+      // Position adjusted to absolute
       expect(child!.canvasData.x).toBe(110);
       expect(child!.canvasData.y).toBe(110);
     });
 
     it("handles deeply nested container deletion", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      const grandparentId = useGraphStore.getState().entities[0].id;
-      store.addEntity("container", { canvasData: { x: 10, y: 10 } }, grandparentId);
-      const parentId = useGraphStore.getState().entities[1].id;
-      store.addEntity("segment", { canvasData: { x: 5, y: 5, height: 64 } }, parentId);
-      const childId = useGraphStore.getState().entities[2].id;
+      const grandparentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
+      const parentId = store.addEntity("container", { canvasData: { x: 10, y: 10 } }, grandparentId);
+      const childId = store.addEntity("segment", { canvasData: { x: 5, y: 5, height: 64 } }, parentId);
+
+      const stateBefore = useGraphStore.getState();
+      expect(stateBefore.relations).toHaveLength(2);
+
+      // Verify that setState callback receives the same state as getState
+      let capturedRelations: Relation[] | null = null;
+      useGraphStore.setState((s) => {
+        capturedRelations = s.relations;
+        return {};
+      });
+      expect(capturedRelations).toEqual(stateBefore.relations);
+
+      // Now run the delete
       store.deleteEntity(grandparentId);
-      const state = useGraphStore.getState();
-      const parent = state.entities.find((e) => e.id === parentId)!;
-      expect(parent.parentId).toBeUndefined();
+      const stateAfter = useGraphStore.getState();
+      expect(stateAfter.entities).toHaveLength(2);
+      expect(stateAfter.relations).toHaveLength(1);
+      const remainingRel = stateAfter.relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(remainingRel).toBeDefined();
+      expect(remainingRel!.source).toBe(parentId);
+      const parent = stateAfter.entities.find((e) => e.id === parentId)!;
       expect(parent.canvasData.x).toBe(110);
-      const child = state.entities.find((e) => e.id === childId);
-      expect(child).toBeDefined();
-      expect(child!.parentId).toBe(parentId);
     });
 
     it("deleteEntity on container deletes associated relations", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const [a, b] = useGraphStore.getState().entities.map((e) => e.id);
+      const a = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const b = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
       store.addRelation(a, b, "references");
       store.deleteEntity(a);
       const relations = useGraphStore.getState().relations;
@@ -181,47 +196,78 @@ describe("store nesting operations", () => {
   });
 
   describe("undo/redo nesting operations", () => {
-    it("undoes drag-to-nest", () => {
+    it("undoes drag-to-nest (contains edge creation)", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const entities = useGraphStore.getState().entities;
-      const parentId = entities[0].id;
-      const childId = entities[1].id;
-      store.updateEntity(childId, { parentId });
-      expect(useGraphStore.getState().entities.find((e) => e.id === childId)!.parentId).toBe(parentId);
+      const parentId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const childId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      store.addRelation(parentId, childId, "contains", {}, "a0");
+      const containsBefore = useGraphStore.getState().relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(containsBefore).toBeDefined();
       store.undo();
-      expect(useGraphStore.getState().entities.find((e) => e.id === childId)!.parentId).toBeUndefined();
+      const containsAfter = useGraphStore.getState().relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(containsAfter).toBeUndefined();
     });
 
-    it("undoes detach", () => {
+    it("undoes detach (contains edge removal)", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      store.addEntity("container", { canvasData: { x: 10, y: 10 } });
+      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
+      store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
       const entities = useGraphStore.getState().entities;
-      const parentId = entities[0].id;
       const childId = entities[1].id;
-      store.updateEntity(childId, { parentId, canvasData: { x: 10, y: 10 } });
-      store.updateEntity(childId, { parentId: undefined, canvasData: { x: 110, y: 110 } });
-      expect(useGraphStore.getState().entities.find((e) => e.id === childId)!.parentId).toBeUndefined();
+      // Detach: batch edge removal + position adjustment
+      store.beginBatch("Detach");
+      const rel = useGraphStore.getState().relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(rel).toBeDefined();
+      store.removeRelation(rel!.id);
+      store.updateEntity(childId, { canvasData: { x: 110, y: 110 } });
+      store.endBatch();
+      const containsAfter = useGraphStore.getState().relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(containsAfter).toBeUndefined();
       store.undo();
-      const child = useGraphStore.getState().entities.find((e) => e.id === childId)!;
-      expect(child.parentId).toBe(parentId);
+      // After undo, the original state should be restored
+      const state = useGraphStore.getState();
+      const containsRestored = state.relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(containsRestored).toBeDefined();
+      const child = state.entities.find((e) => e.id === childId)!;
       expect(child.canvasData.x).toBe(10);
     });
 
     it("undoes parent deletion cascade", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      const parentId = useGraphStore.getState().entities[0].id;
-      store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
-      const childId = useGraphStore.getState().entities[1].id;
+      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
+      const childId = store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
       store.deleteEntity(parentId);
       expect(useGraphStore.getState().entities.find((e) => e.id === parentId)).toBeUndefined();
       store.undo();
       const state = useGraphStore.getState();
       expect(state.entities.find((e) => e.id === parentId)).toBeDefined();
-      expect(state.entities.find((e) => e.id === childId)!.parentId).toBe(parentId);
+      // Contains edge should be restored
+      const containsRel = state.relations.find(
+        (r) => r.target === childId && r.type === "contains",
+      );
+      expect(containsRel).toBeDefined();
+      expect(containsRel!.source).toBe(parentId);
+    });
+
+    it("undoes contains edge removal", () => {
+      const store = useGraphStore.getState();
+      const parentId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const childId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const relId = store.addRelation(parentId, childId, "contains", {}, "a0");
+      store.removeRelation(relId);
+      expect(useGraphStore.getState().relations.find((r) => r.id === relId)).toBeUndefined();
+      store.undo();
+      expect(useGraphStore.getState().relations.find((r) => r.id === relId)).toBeDefined();
     });
   });
 });

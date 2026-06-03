@@ -20,9 +20,12 @@ import {
   type NodeChange,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
+import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
-import { getLayoutedElements } from "../engine/layout"
+import { getParentId } from "../engine/queries"
+import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS } from "../engine/layout"
+import type { LayoutOptions } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { IconButton } from "@/components/ui/icon-button"
@@ -53,7 +56,7 @@ function nodeStyle(
   }
 }
 
-function GraphCanvasContent() {
+function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: React.MutableRefObject<() => void> }) {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
 
@@ -67,12 +70,7 @@ function GraphCanvasContent() {
   }
   if (layoutRef.current === null) {
     if (autoLayout) {
-      const { nodes: dagreNodes, edges } = getLayoutedElements({ entities, relations })
-      const nodes = dagreNodes.map((n) => {
-        const saved = entities.find((e) => e.id === n.id)?.canvasData
-        if (saved && saved.x !== undefined) return { ...n, position: { x: saved.x, y: saved.y } }
-        return n
-      })
+      const { nodes, edges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
       layoutRef.current = { nodes, edges }
     } else {
       const nodes: Node[] = []
@@ -93,8 +91,9 @@ function GraphCanvasContent() {
           style: nodeStyle(saved, isContainer),
         }
 
-        if (entity.parentId) {
-          node.parentId = entity.parentId
+        const containsParentId = getParentId({ relations }, entity.id)
+        if (containsParentId) {
+          node.parentId = containsParentId
           node.extent = "parent"
           node.expandParent = true
         }
@@ -140,6 +139,10 @@ function GraphCanvasContent() {
 
   const featureFlags = useGraphStore((s) => s.featureFlags)
 
+  useEffect(() => {
+    fitViewRefProp.current = () => reactFlowInstance.fitView({ duration: 200 })
+  }, [reactFlowInstance, fitViewRefProp])
+
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
@@ -162,13 +165,14 @@ function GraphCanvasContent() {
         for (const entity of entities) {
           const newContent = entity.content || entity.type || entity.id
           const existing = prevById.get(entity.id)
+          const derivedParentId = getParentId({ relations }, entity.id)
           if (existing) {
             const idx = merged.findIndex((n) => n.id === entity.id)
             if (idx === -1) continue
 
             const posChanged = existing.position.x !== entity.canvasData.x || existing.position.y !== entity.canvasData.y
             const contentChanged = existing.data.content !== newContent || existing.data.type !== entity.type
-            const parentChanged = (existing.parentId ?? undefined) !== (entity.parentId ?? undefined)
+            const parentChanged = (existing.parentId ?? undefined) !== (derivedParentId ?? undefined)
             const typeChanged = existing.type !== (entity.type === "container" ? "containerGroup" : "entity")
             const w = entity.canvasData.width
 
@@ -178,9 +182,9 @@ function GraphCanvasContent() {
                 type: entity.type === "container" ? "containerGroup" : "entity",
                 position: { x: entity.canvasData.x, y: entity.canvasData.y },
                 data: { ...merged[idx].data, content: newContent, type: entity.type },
-                parentId: entity.parentId ?? undefined,
-                extent: entity.parentId ? "parent" : undefined,
-                expandParent: entity.parentId ? true : undefined,
+                parentId: derivedParentId ?? undefined,
+                extent: derivedParentId ? "parent" : undefined,
+                expandParent: derivedParentId ? true : undefined,
                 style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container", (merged[idx].style as Record<string, unknown>)?.width as number | undefined) },
               }
             }
@@ -195,12 +199,12 @@ function GraphCanvasContent() {
               style: nodeStyle(entity.canvasData, isContainer),
             }
 
-            if (entity.parentId) {
-              newNode.parentId = entity.parentId
+            if (derivedParentId) {
+              newNode.parentId = derivedParentId
               newNode.extent = "parent"
               newNode.expandParent = true
               // Insert after the parent node for correct ordering
-              const parentIdx = merged.findIndex((n) => n.id === entity.parentId)
+              const parentIdx = merged.findIndex((n) => n.id === derivedParentId)
               if (parentIdx !== -1) {
                 merged.splice(parentIdx + 1, 0, newNode)
               } else {
@@ -349,7 +353,7 @@ function GraphCanvasContent() {
       return
     }
 
-    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations })
+    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
 
     const dagrePendingId = pendingNodeRef.current
     setNodes((prev) => {
@@ -690,12 +694,21 @@ function GraphCanvasContent() {
             node.id !== container.id
           ) {
             const entity = s.entities.find((e) => e.id === node.id)
+            const currentParentId = getParentId({ relations: s.relations }, node.id)
             // Only assign if not already a child of this container
-            if (entity && entity.parentId !== container.id) {
+            if (entity && currentParentId !== container.id) {
+              // Remove old contains edge if moving from another parent
+              const oldParentRel = s.relations.find(
+                (r) => r.target === node.id && r.type === "contains",
+              )
+              if (oldParentRel) s.removeRelation(oldParentRel.id)
+
               const relativeX = node.position.x - container.position.x
               const relativeY = node.position.y - container.position.y
+              s.addRelation(container.id, node.id, "contains", {
+                sortOrder: generateKeyBetween(null, null),
+              })
               s.updateEntity(node.id, {
-                parentId: container.id,
                 canvasData: {
                   x: relativeX,
                   y: relativeY,
@@ -885,11 +898,14 @@ function GraphCanvasContent() {
               if (contextMenu.nodeId) {
                 const s = useGraphStore.getState()
                 const entity = s.entities.find((e) => e.id === contextMenu.nodeId)
-                const parentNode = entity?.parentId ? nodes.find((n) => n.id === entity.parentId) : undefined
+                const parentRel = s.relations.find(
+                  (r) => r.target === contextMenu.nodeId && r.type === "contains",
+                )
+                const parentNode = parentRel ? nodes.find((n) => n.id === parentRel.source) : undefined
                 const absoluteX = (entity?.canvasData.x ?? 0) + (parentNode?.position.x ?? 0)
                 const absoluteY = (entity?.canvasData.y ?? 0) + (parentNode?.position.y ?? 0)
+                if (parentRel) s.removeRelation(parentRel.id)
                 s.updateEntity(contextMenu.nodeId, {
-                  parentId: undefined,
                   canvasData: {
                     x: absoluteX,
                     y: absoluteY,
@@ -1097,6 +1113,7 @@ function GraphCanvasContent() {
 function GraphCanvas() {
   const storeInit = useGraphStore((s) => s.init)
   const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
+  const fitViewRef = useRef<() => void>(() => {})
 
   const onOpenFolder = useCallback(async () => {
     const fsa = getFSAccessInstance()
@@ -1122,14 +1139,18 @@ function GraphCanvas() {
     }
   }, [storeInit, refreshFolderName])
 
+  const onRunLayout = useCallback((options: LayoutOptions) => {
+    runFullLayout(options, () => fitViewRef.current?.())
+  }, [])
+
   return (
     <SidebarProvider>
       <div className="flex-1 min-w-0 min-h-0">
         <ReactFlowProvider>
-          <GraphCanvasContent />
+          <GraphCanvasContent onFitViewRef={fitViewRef} />
         </ReactFlowProvider>
       </div>
-      <AppSidebar onOpenFolder={onOpenFolder} />
+      <AppSidebar onOpenFolder={onOpenFolder} onRunLayout={onRunLayout} />
     </SidebarProvider>
   )
 }

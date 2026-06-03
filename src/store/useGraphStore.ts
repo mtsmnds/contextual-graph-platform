@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing-jittered";
 import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
-import { wouldCreateCycle } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
@@ -440,7 +439,6 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const entity: Entity = {
       id,
       type,
-      parentId: parentId || undefined,
       content,
       metadata: data?.metadata ?? {},
       createdAt: now,
@@ -448,6 +446,10 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       canvasData: data?.canvasData ?? { x: 0, y: 0 },
     };
     set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
+    // parentId param creates a contains edge instead of storing on the entity
+    if (parentId) {
+      get().addRelation(parentId, id, "contains", {}, generateKeyBetween(null, null));
+    }
     get().endBatch();
     return id;
   },
@@ -456,18 +458,6 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     get().beginBatch("Edit node");
     const current = get().entities.find((e: Entity) => e.id === id);
     if (!current) { get().endBatch(); return; }
-
-    const newParentId = data.parentId
-    if (newParentId !== undefined && newParentId !== current.parentId) {
-      const entities = get().entities as Entity[]
-      if (newParentId) {
-        if (wouldCreateCycle(entities, id, newParentId)) {
-          set({ _pendingSnapshot: null })
-          get().endBatch()
-          return
-        }
-      }
-    }
 
     let resolvedId = id;
     if (data.id && data.id !== id) {
@@ -503,22 +493,23 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     delete contentCache[id];
     _adapter?.deleteDocument(id).catch(() => {});
 
-    const deletedEntity = get().entities.find((e: Entity) => e.id === id);
+    set((s: GraphStore) => {
+      const deletedEntity = s.entities.find((e: Entity) => e.id === id);
+      let entities = s.entities.filter((e) => e.id !== id);
+      let relations = s.relations;
 
-    set((state: GraphStore) => {
-      let entities = state.entities.filter((e) => e.id !== id);
-
-      // Cascade: reparent children of deleted container
-      if (deletedEntity?.type === "container") {
+      // Cascade: reparent children via contains edges
+      const childRels = relations.filter((r) => r.source === id && r.type === "contains");
+      for (const childRel of childRels) {
+        relations = relations.filter((r) => r.id !== childRel.id);
         entities = entities.map((e) => {
-          if (e.parentId === id) {
+          if (e.id === childRel.target) {
             return {
               ...e,
-              parentId: undefined,
               canvasData: {
                 ...e.canvasData,
-                x: e.canvasData.x + deletedEntity.canvasData.x,
-                y: e.canvasData.y + deletedEntity.canvasData.y,
+                x: e.canvasData.x + (deletedEntity?.canvasData.x ?? 0),
+                y: e.canvasData.y + (deletedEntity?.canvasData.y ?? 0),
               },
             }
           }
@@ -528,7 +519,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
       return {
         entities,
-        relations: state.relations.filter((r) => r.source !== id && r.target !== id),
+        relations: relations.filter((r) => r.source !== id && r.target !== id),
       }
     })
     get().endBatch()
@@ -536,7 +527,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => {
     get().beginBatch("Connect nodes");
-    const id = `r_${Date.now()}`;
+    const id = `r_${Date.now()}_${idCounter++}`;
     const order = sortOrder ?? generateKeyBetween(null, null);
     const relation: Relation = { id, source, target, type, sortOrder: order, metadata: metadata ?? {} };
     set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
@@ -767,6 +758,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 });
 
+let idCounter = 0;
 export const useGraphStore = create<GraphStore>(storeInitializer);
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
