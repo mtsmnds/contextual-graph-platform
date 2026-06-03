@@ -140,7 +140,7 @@ export function getLayoutedElements({
     return node
   })
 
-  const edges: Edge[] = relations.map((rel) => {
+  const edges: Edge[] = relations.filter((r) => r.type !== "contains").map((rel) => {
     g.setEdge(rel.source, rel.target)
     return {
       id: rel.id,

@@ -115,7 +115,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         }
         nodes.sort((a, b) => depthOf(a.id) - depthOf(b.id))
       }
-      const edges: Edge[] = relations.map((rel) => ({
+      const edges: Edge[] = relations.filter((r) => r.type !== "contains").map((rel) => ({
         id: rel.id,
         source: rel.source,
         target: rel.target,
@@ -296,6 +296,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         const relationIdSet = new Set(relations.map((r) => r.id))
 
         for (const rel of relations) {
+          if (rel.type === "contains") continue
           if (!prevById.has(rel.id)) {
             merged.push({
               id: rel.id,
