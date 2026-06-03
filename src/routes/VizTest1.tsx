@@ -550,7 +550,7 @@ export default function VizTest1() {
                     >
                       {selectedEntity.type}
                     </span>
-                    {selectedEntity.parentId && (
+                    {allRelations.some((r) => r.target === selectedEntity.id && r.type === "contains") && (
                       <span className="inline-block text-[9px] uppercase tracking-wider font-semibold font-mono px-2 py-0.5 rounded-sm bg-accent text-muted-foreground">
                         child
                       </span>

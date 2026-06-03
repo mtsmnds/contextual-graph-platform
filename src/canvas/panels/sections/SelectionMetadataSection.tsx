@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
 import type { Entity, EntityType } from "@/types/graph"
+import { useGraphStore } from "@/store/useGraphStore"
+import { getParentId } from "@/engine/queries"
 import { CollapsibleSection } from "./CollapsibleSection"
 import { Input } from "@/components/ui/input"
 import {
@@ -190,7 +192,7 @@ export default function SelectionMetadataSection({
             </PropertyRow>
             <PropertyRow label="parent">
               <span className="text-xs text-muted-foreground truncate">
-                {entity.parentId || "—"}
+                {getParentId({ relations: useGraphStore.getState().relations }, entity.id) || "—"}
               </span>
             </PropertyRow>
           </div>
