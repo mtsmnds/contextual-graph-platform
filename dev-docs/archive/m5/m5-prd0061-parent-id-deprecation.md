@@ -1,3 +1,9 @@
+> **Completion note (2026-06-03):**
+> - **What was built:** Removed `parentId` from Entity data model. All parentage via `contains` edges. Migration script created and run. Store/engine/canvas updated. Geography leaf nodes promoted to `container`. Tech Stack group hierarchy fixed.
+> - **Key decisions:** Standalone migration script (not in-app). Non-container parents promoted without `metadata.groupType`. `deleteEntity` cascade reads `deletedEntity` from the `set` callback's state parameter (`s`) rather than from a pre-captured `get()` call, preventing stale references.
+> - **Deviations from plan:** The plan specified `concept-7` (vite) as promoted to `container` with `metadata.groupType: "stack-group"`. In practice, the `concept-7 → concept-1` contains edge was incorrect (reversed parentage) — removed the edge and demoted `concept-7` back to `concept`. Geography leaves (`city--stratford-upon-avon`, `place--kronborg-castle`, `city--athens`) were initially left as `concept` but later promoted to `container` to match the geography `contains` chain pattern.
+> - **Postponed:** None.
+
 # PRD: Deprecate `parentId` — Single Source of Parentage via `contains` Edges
 
 ## Overview

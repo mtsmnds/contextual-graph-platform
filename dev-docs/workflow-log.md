@@ -5,6 +5,15 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-06-03
+
+### prd end — m5-prd0061-parent-id-deprecation
+- **Source:** user request — "can you run prd end? i already merged but forgot this workflow"
+- **Branch at time:** m5-prd0060-reintroducing-dagre-to-canvas (dirty — uncommitted changes from implementation)
+- **Change classification:** Architecture change
+- **ADR type:** full (schema change: removed parentId from Entity, nesting via contains edges, migration script, container promotion)
+- **Pre-commit guard:** auto-proceeded (unexpected branch — user said "already merged")
+
 ## 2026-06-02
 
 ### prd start — m5-prd0060-reintroducing-dagre-to-canvas (Phase 2)

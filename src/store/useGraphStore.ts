@@ -493,9 +493,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     delete contentCache[id];
     _adapter?.deleteDocument(id).catch(() => {});
 
-    const deletedEntity = get().entities.find((e: Entity) => e.id === id);
-
     set((s: GraphStore) => {
+      const deletedEntity = s.entities.find((e: Entity) => e.id === id);
       let entities = s.entities.filter((e) => e.id !== id);
       let relations = s.relations;
 

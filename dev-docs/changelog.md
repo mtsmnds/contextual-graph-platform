@@ -12,6 +12,26 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-03
+
+### m5 — prd0061 — parentId deprecation (single source of parentage via contains edges)
+- **What:** Removed `parentId` from the Entity data model. All parentage is now expressed solely through `contains` edges, with `parentId` derived at the React Flow boundary via `getParentId()` query. Migration script (`scripts/migrate-remove-parentId.ts`) handles existing data: creates missing `contains` edges with sequential sort keys, promotes non-container parents to `container`, strips stale `parentId` fields. Three geography leaf nodes (`city--stratford-upon-avon`, `place--kronborg-castle`, `city--athens`) promoted to `container`. Tech Stack group hierarchy fixed (concept-7→vite is now a child of concept-1, with a `contains` edge from concept-1 to concept-7).
+- **Reason:** `parentId` and `contains` edges were redundant sources of parent-child information, causing data drift in practice. `contains` edges are the canonical representation — `parentId` is a cached duplicate with no ordering information. Removing it simplifies the data model and eliminates branching in every entity-processing loop.
+- **Files changed:**
+  - `src/types/graph.ts`: Removed `parentId?: string` from `Entity`
+  - `src/engine/queries.ts`: Added `getParentId`, `getChildIds`, `hasChildren`; rewrote `getNestingDepth` and `wouldCreateCycle` to walk `contains` edges
+  - `src/store/useGraphStore.ts`: `addEntity` converts `parentId` param to `contains` edge; `updateEntity` no longer writes `parentId`; `deleteEntity` cascade uses `contains` edges
+  - `src/canvas/GraphCanvas.tsx`: All node-build sites derive `parentId` from `getParentId`; `onNodeDragStop` creates/removes `contains` edges
+  - `src/engine/layout.ts`: Sibling-width grouping and node builder derive parentage from relations
+  - `src/routes/VizTest1.tsx`: "child" badge derives from relations
+  - `src/canvas/panels/sections/SelectionMetadataSection.tsx`: parent display uses `getParentId()` from store
+  - `src/store/nesting.test.ts`: All tests rewritten for `contains` edges
+  - `src/engine/queries.test.ts`: New tests for `getParentId`, `getChildIds`, `hasChildren`
+  - `scripts/migrate-remove-parentId.ts`: New — one-time migration script
+- **Impact:** Single source of truth for nesting. React Flow derives `parentId` at the boundary. Drag-to-nest, detach, and cascade delete all use `contains` edges. Migration script handles existing data with sequential sort keys and container promotion.
+- **Archive:** `dev-docs/archive/m5/m5-prd0061-parent-id-deprecation.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-03-prd0061-parent-id-deprecation-adr.md`
+
 ## 2026-06-02
 
 ### m5 — prd0059 — entity form (create mode)
