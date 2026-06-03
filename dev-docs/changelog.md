@@ -14,6 +14,21 @@ Use this to recover context after breaks.
 
 ## 2026-06-03
 
+### m5 — prd0060 — reintroduce dagre auto-layout with controllable options
+- **What:** Re-enabled dagre behind `autoLayout` feature flag with three isolated pieces: `estimateNodeHeight()` stopgap, reactive dagre sync (respects saved positions), and `runFullLayout()` one-shot button action (ignores saved positions, batch-writes → undoable). New "Canvas Layout" sidebar section with rankdir/nodesep/ranksep/nodeWidth controls and Run Layout button. Default rankdir TB (top-to-bottom) for book/thread reading order. Sibling segments under same parent share max width.
+- **Why:** Layout was hardcoded off since Container Group Nodes PRD (0045). The i2 threaded-view vision needs dagre arranging nodes in ordered sequences with user control over spacing.
+- **Key decisions:** Three isolated pieces approach avoids coupling between the stopgap, reactive sync, and one-shot action. `runFullLayout` writes via batch (single undo). `fitViewRef` pattern bridges ReactFlowProvider boundary. Default TB matches reading order.
+- **ADR:** `m5-prd0060-reintroducing-dagre-to-canvas`
+- **Files changed:**
+  - `src/engine/layout.ts`: Added `estimateNodeHeight()`, `LayoutOptions`, `ignoreSavedPositions`, `runFullLayout()`, sibling max-width logic, `DEFAULT_LAYOUT_OPTIONS`
+  - `src/canvas/GraphCanvas.tsx`: `fitViewRef`, `onRunLayout` callback, updated dagre call sites
+  - `src/canvas/panels/sections/CanvasLayoutSection.tsx`: New — presenter with form controls
+  - `src/canvas/panels/sections/CanvasLayoutSectionContainer.tsx`: New — container with local options state
+  - `src/canvas/panels/AppSidebar.tsx`: Mounts Canvas Layout section gated by `autoLayout`
+  - `src/stories/CanvasLayoutSection.stories.tsx`: 4 stories (Default, ChangeDirection, AdjustSpacing, RunLayout)
+  - `src/stories/AppSidebar.stories.tsx`: Updated with `onRunLayout` mock
+  - `vitest.config.ts`: Added `@dagrejs/dagre` to `optimizeDeps.include`
+
 ### m5 — prd0061 — parentId deprecation (single source of parentage via contains edges)
 - **What:** Removed `parentId` from the Entity data model. All parentage is now expressed solely through `contains` edges, with `parentId` derived at the React Flow boundary via `getParentId()` query. Migration script (`scripts/migrate-remove-parentId.ts`) handles existing data: creates missing `contains` edges with sequential sort keys, promotes non-container parents to `container`, strips stale `parentId` fields. Three geography leaf nodes (`city--stratford-upon-avon`, `place--kronborg-castle`, `city--athens`) promoted to `container`. Tech Stack group hierarchy fixed (concept-7→vite is now a child of concept-1, with a `contains` edge from concept-1 to concept-7).
 - **Reason:** `parentId` and `contains` edges were redundant sources of parent-child information, causing data drift in practice. `contains` edges are the canonical representation — `parentId` is a cached duplicate with no ordering information. Removing it simplifies the data model and eliminates branching in every entity-processing loop.

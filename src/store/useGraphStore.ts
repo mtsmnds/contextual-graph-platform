@@ -527,7 +527,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   addRelation: (source: string, target: string, type: string, metadata?: Record<string, unknown>, sortOrder?: string) => {
     get().beginBatch("Connect nodes");
-    const id = `r_${Date.now()}`;
+    const id = `r_${Date.now()}_${idCounter++}`;
     const order = sortOrder ?? generateKeyBetween(null, null);
     const relation: Relation = { id, source, target, type, sortOrder: order, metadata: metadata ?? {} };
     set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
@@ -758,6 +758,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 });
 
+let idCounter = 0;
 export const useGraphStore = create<GraphStore>(storeInitializer);
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;

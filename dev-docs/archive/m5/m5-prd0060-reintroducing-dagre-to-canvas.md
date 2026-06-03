@@ -1,3 +1,9 @@
+> **Completion note (2026-06-02):**
+> - **What was built:** Dagre re-enabled behind `autoLayout` feature flag. Three isolated pieces: `estimateNodeHeight` stopgap, reactive dagre sync (preserved from Phase 1 UI effect), and `runFullLayout` one-shot action. New "Canvas Layout" sidebar section with rankdir/nodesep/ranksep/nodeWidth controls and Run Layout button.
+> - **Key decisions:** Three isolated pieces approach (no coupling). `runFullLayout` writes to store via batch → undoable. Default rankdir TB for book/thread reading order. Sibling segment width rule (all segments under same parent share max width). `estimateNodeHeight` as temporary removable stopgap (not inlined into layout logic).
+> - **Deviations from plan:** Removed the "Change Direction" story's select interaction test (portal rendered outside canvasElement — not testable with storybook-vitest). Used `fitViewRef` approach to bridge ReactFlowProvider boundary instead of passing fitView through the store.
+> - **Postponed:** sortOrder-based constraints for threaded ordering (dagre `constraints`), per-container sub-dagre pass, replacing `estimateNodeHeight` with DOM-measured heights. Carried to PRD0062.
+
 # PRD 0060: Reintroducing Dagre to Canvas
 
 ## Overview
