@@ -14,6 +14,14 @@ Use this to recover context after breaks.
 
 ## 2026-06-03
 
+### m5 — prd0062 — hide `contains` edges on canvas
+- **What:** `contains`-type relations now drive `parentId` on React Flow nodes for nesting but no longer render as visible edge lines. Filter added in three edge-building sites: non-dagre initial builder (`GraphCanvas.tsx`), non-dagre sync `useEffect` (`GraphCanvas.tsx`), and `getLayoutedElements` (`layout.ts`). Store data unchanged — query functions (`getContainerChildren`, `getParentId`) unaffected.
+- **Why:** `contains` relations express structural nesting, not visible connections. Drawing them as edges creates visual clutter and misrepresents the containment hierarchy.
+- **ADR:** `m5-prd0062-hide-contains-edges` — no architectural changes
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: Filter `contains` edges in non-dagre initial builder and sync useEffect edge builder
+  - `src/engine/layout.ts`: Filter `contains` edges in `getLayoutedElements` edge builder
+
 ### m5 — prd0060 — reintroduce dagre auto-layout with controllable options
 - **What:** Re-enabled dagre behind `autoLayout` feature flag with three isolated pieces: `estimateNodeHeight()` stopgap, reactive dagre sync (respects saved positions), and `runFullLayout()` one-shot button action (ignores saved positions, batch-writes → undoable). New "Canvas Layout" sidebar section with rankdir/nodesep/ranksep/nodeWidth controls and Run Layout button. Default rankdir TB (top-to-bottom) for book/thread reading order. Sibling segments under same parent share max width.
 - **Why:** Layout was hardcoded off since Container Group Nodes PRD (0045). The i2 threaded-view vision needs dagre arranging nodes in ordered sequences with user control over spacing.

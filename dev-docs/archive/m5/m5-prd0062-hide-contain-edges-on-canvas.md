@@ -1,3 +1,9 @@
+> **Completion note (2026-06-03):**
+> - **What was built:** Filtered `contains` relations out of three edge-building sites in `GraphCanvas.tsx` (non-dagre initial builder, non-dagre sync useEffect) and `layout.ts` (`getLayoutedElements`). `contains` edges no longer render as visible lines; nesting is driven solely by `parentId`.
+> - **Key decisions:** Filter at the view layer only — store and query functions untouched.
+> - **Deviations from plan:** None.
+> - **Postponed:** None.
+
 # PRD 0062: Hide `contains` Edges on Canvas
 
 ## Overview
