@@ -17,6 +17,14 @@ Append-only, newest on top within same-day groupings.
   - `src/engine/layout.ts`: Filter `contains` edges in `getLayoutedElements` edge builder (lines 143-154)
 - **Pre-commit guard:** no changes
 
+### prd end — m5-prd0062-hide-contains-edges
+- **Source:** user request — "do prd end"
+- **Branch at time:** main (dirty — renamed PRD file)
+- **Change classification:** Feature change
+- **ADR type:** short-form (no architectural changes — view-layer filter only)
+- **Commit hash:** efc64f1
+- **Pre-commit guard:** auto-proceeded
+
 ### prd end — m5-prd0061-parent-id-deprecation
 - **Source:** user request — "can you run prd end? i already merged but forgot this workflow"
 - **Branch at time:** m5-prd0060-reintroducing-dagre-to-canvas (dirty — uncommitted changes from implementation)
