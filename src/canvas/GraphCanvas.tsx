@@ -20,8 +20,10 @@ import {
   type NodeChange,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
+import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
+import { getParentId } from "../engine/queries"
 import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS } from "../engine/layout"
 import type { LayoutOptions } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
@@ -89,8 +91,9 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
           style: nodeStyle(saved, isContainer),
         }
 
-        if (entity.parentId) {
-          node.parentId = entity.parentId
+        const containsParentId = getParentId({ relations }, entity.id)
+        if (containsParentId) {
+          node.parentId = containsParentId
           node.extent = "parent"
           node.expandParent = true
         }
@@ -162,13 +165,14 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         for (const entity of entities) {
           const newContent = entity.content || entity.type || entity.id
           const existing = prevById.get(entity.id)
+          const derivedParentId = getParentId({ relations }, entity.id)
           if (existing) {
             const idx = merged.findIndex((n) => n.id === entity.id)
             if (idx === -1) continue
 
             const posChanged = existing.position.x !== entity.canvasData.x || existing.position.y !== entity.canvasData.y
             const contentChanged = existing.data.content !== newContent || existing.data.type !== entity.type
-            const parentChanged = (existing.parentId ?? undefined) !== (entity.parentId ?? undefined)
+            const parentChanged = (existing.parentId ?? undefined) !== (derivedParentId ?? undefined)
             const typeChanged = existing.type !== (entity.type === "container" ? "containerGroup" : "entity")
             const w = entity.canvasData.width
 
@@ -178,9 +182,9 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 type: entity.type === "container" ? "containerGroup" : "entity",
                 position: { x: entity.canvasData.x, y: entity.canvasData.y },
                 data: { ...merged[idx].data, content: newContent, type: entity.type },
-                parentId: entity.parentId ?? undefined,
-                extent: entity.parentId ? "parent" : undefined,
-                expandParent: entity.parentId ? true : undefined,
+                parentId: derivedParentId ?? undefined,
+                extent: derivedParentId ? "parent" : undefined,
+                expandParent: derivedParentId ? true : undefined,
                 style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container", (merged[idx].style as Record<string, unknown>)?.width as number | undefined) },
               }
             }
@@ -195,12 +199,12 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
               style: nodeStyle(entity.canvasData, isContainer),
             }
 
-            if (entity.parentId) {
-              newNode.parentId = entity.parentId
+            if (derivedParentId) {
+              newNode.parentId = derivedParentId
               newNode.extent = "parent"
               newNode.expandParent = true
               // Insert after the parent node for correct ordering
-              const parentIdx = merged.findIndex((n) => n.id === entity.parentId)
+              const parentIdx = merged.findIndex((n) => n.id === derivedParentId)
               if (parentIdx !== -1) {
                 merged.splice(parentIdx + 1, 0, newNode)
               } else {
@@ -690,12 +694,21 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             node.id !== container.id
           ) {
             const entity = s.entities.find((e) => e.id === node.id)
+            const currentParentId = getParentId({ relations: s.relations }, node.id)
             // Only assign if not already a child of this container
-            if (entity && entity.parentId !== container.id) {
+            if (entity && currentParentId !== container.id) {
+              // Remove old contains edge if moving from another parent
+              const oldParentRel = s.relations.find(
+                (r) => r.target === node.id && r.type === "contains",
+              )
+              if (oldParentRel) s.removeRelation(oldParentRel.id)
+
               const relativeX = node.position.x - container.position.x
               const relativeY = node.position.y - container.position.y
+              s.addRelation(container.id, node.id, "contains", {
+                sortOrder: generateKeyBetween(null, null),
+              })
               s.updateEntity(node.id, {
-                parentId: container.id,
                 canvasData: {
                   x: relativeX,
                   y: relativeY,
@@ -885,11 +898,14 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
               if (contextMenu.nodeId) {
                 const s = useGraphStore.getState()
                 const entity = s.entities.find((e) => e.id === contextMenu.nodeId)
-                const parentNode = entity?.parentId ? nodes.find((n) => n.id === entity.parentId) : undefined
+                const parentRel = s.relations.find(
+                  (r) => r.target === contextMenu.nodeId && r.type === "contains",
+                )
+                const parentNode = parentRel ? nodes.find((n) => n.id === parentRel.source) : undefined
                 const absoluteX = (entity?.canvasData.x ?? 0) + (parentNode?.position.x ?? 0)
                 const absoluteY = (entity?.canvasData.y ?? 0) + (parentNode?.position.y ?? 0)
+                if (parentRel) s.removeRelation(parentRel.id)
                 s.updateEntity(contextMenu.nodeId, {
-                  parentId: undefined,
                   canvasData: {
                     x: absoluteX,
                     y: absoluteY,

@@ -52,7 +52,7 @@ export function getContainerChildren(
 
   const flattened: Entity[] = [];
   for (const child of children) {
-    if (child.type === "container" && depth > 0) {
+    if (hasChildren(state, child.id) && depth > 0) {
       flattened.push(child);
       flattened.push(
         ...getContainerChildren(state, child.id, depth - 1),
@@ -90,29 +90,51 @@ export function getRelationTypes(state: GraphState): string[] {
   return [...new Set(state.relations.map((r) => r.type))].sort()
 }
 
-export function getNestingDepth(entities: Entity[], entityId: string): number {
+export function getNestingDepth(state: { relations: Relation[] }, entityId: string): number {
   let depth = 0
   let current = entityId
   for (let i = 0; i < 20; i++) {
-    const entity = entities.find((e) => e.id === current)
-    if (!entity?.parentId) break
+    const parentRel = state.relations.find(
+      (r) => r.target === current && r.type === "contains",
+    )
+    if (!parentRel) break
     depth++
-    current = entity.parentId
+    current = parentRel.source
   }
   return depth
 }
 
-export function wouldCreateCycle(entities: Entity[], childId: string, newParentId: string): boolean {
+export function wouldCreateCycle(state: { relations: Relation[] }, childId: string, newParentId: string): boolean {
   if (childId === newParentId) return true
   let current: string | undefined = newParentId
   const visited = new Set<string>()
   while (current) {
     if (current === childId) return true
+    if (visited.has(current)) return true
     visited.add(current)
-    const entity = entities.find((e) => e.id === current)
-    current = entity?.parentId
+    const parentRel = state.relations.find(
+      (r) => r.target === current && r.type === "contains",
+    )
+    current = parentRel?.source
   }
   return false
+}
+
+export function getParentId(state: { relations: Relation[] }, entityId: string): string | undefined {
+  return state.relations.find(
+    (r) => r.target === entityId && r.type === "contains",
+  )?.source
+}
+
+export function getChildIds(state: { relations: Relation[] }, parentId: string): string[] {
+  return state.relations
+    .filter((r) => r.source === parentId && r.type === "contains")
+    .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+    .map((r) => r.target)
+}
+
+export function hasChildren(state: { relations: Relation[] }, entityId: string): boolean {
+  return state.relations.some((r) => r.source === entityId && r.type === "contains")
 }
 
 export function getContainerBreadcrumb(

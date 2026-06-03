@@ -37,14 +37,19 @@ export function estimateNodeHeight(content: string, width: number): number {
 
 function computeParentGroupWidth(
   entities: Entity[],
+  relations: Relation[],
   nodeWidth: number,
 ): Map<string, number> {
   const groups = new Map<string, Entity[]>()
+  const containsRels = relations.filter((r) => r.type === "contains")
   for (const entity of entities) {
-    if (entity.type === "segment" && entity.parentId) {
-      const g = groups.get(entity.parentId) ?? []
-      g.push(entity)
-      groups.set(entity.parentId, g)
+    if (entity.type === "segment") {
+      const parentRel = containsRels.find((r) => r.target === entity.id)
+      if (parentRel) {
+        const g = groups.get(parentRel.source) ?? []
+        g.push(entity)
+        groups.set(parentRel.source, g)
+      }
     }
   }
 
@@ -58,11 +63,16 @@ function computeParentGroupWidth(
 function computeNodeWidth(
   entity: Entity,
   parentGroupWidth: Map<string, number>,
+  relations: Relation[],
   nodeWidth: number,
 ): number {
   if (entity.type === "container") return Math.max(nodeWidth * 2, 400)
-  if (entity.type === "segment" && entity.parentId) {
-    return parentGroupWidth.get(entity.parentId) ?? nodeWidth
+  if (entity.type === "segment") {
+    const containsRel = relations.find(
+      (r) => r.target === entity.id && r.type === "contains",
+    )
+    const parentId = containsRel?.source
+    return parentId ? (parentGroupWidth.get(parentId) ?? nodeWidth) : nodeWidth
   }
   return nodeWidth
 }
@@ -71,10 +81,11 @@ function computeNodeDims(
   entity: Entity,
   options: LayoutOptions,
   parentGroupWidth: Map<string, number>,
+  relations: Relation[],
   ignoreSavedPositions: boolean,
 ): { w: number; h: number } {
   if (ignoreSavedPositions) {
-    const w = computeNodeWidth(entity, parentGroupWidth, options.nodeWidth)
+    const w = computeNodeWidth(entity, parentGroupWidth, relations, options.nodeWidth)
     const h = estimateNodeHeight(entity.content, w)
     return { w, h }
   }
@@ -96,11 +107,11 @@ export function getLayoutedElements({
   g.setGraph({ rankdir: options.rankdir, nodesep: options.nodesep, ranksep: options.ranksep })
   g.setDefaultEdgeLabel(() => ({}))
 
-  const parentGroupWidth = computeParentGroupWidth(entities, options.nodeWidth)
+  const parentGroupWidth = computeParentGroupWidth(entities, relations, options.nodeWidth)
 
   const nodes: Node[] = entities.map((entity) => {
     const content = entity.content || entity.type || entity.id
-    const { w, h } = computeNodeDims(entity, options, parentGroupWidth, ignoreSavedPositions)
+    const { w, h } = computeNodeDims(entity, options, parentGroupWidth, relations, ignoreSavedPositions)
     const isContainer = entity.type === "container"
 
     g.setNode(entity.id, { width: w, height: h })
@@ -117,8 +128,11 @@ export function getLayoutedElements({
       },
     }
 
-    if (entity.parentId) {
-      node.parentId = entity.parentId
+    const containsParentRel = relations.find(
+      (r) => r.target === entity.id && r.type === "contains",
+    )
+    if (containsParentRel) {
+      node.parentId = containsParentRel.source
       node.extent = "parent"
       node.expandParent = true
     }
@@ -144,7 +158,7 @@ export function getLayoutedElements({
   const positionedNodes = nodes.map((node) => {
     const pos = g.node(node.id)
     const entity = entities.find((e) => e.id === node.id)!
-    const { w, h } = computeNodeDims(entity, options, parentGroupWidth, ignoreSavedPositions)
+    const { w, h } = computeNodeDims(entity, options, parentGroupWidth, relations, ignoreSavedPositions)
 
     const position = {
       x: pos.x - w / 2,
