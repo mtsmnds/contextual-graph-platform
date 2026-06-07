@@ -7,6 +7,26 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-03
 
+### prd end — m5-prd0063-segment-auto-height
+- **Source:** user request — "prd end"
+- **Branch at time:** m5-prd0063-segment-auto-height (clean)
+- **Classification:** Feature change
+- **ADR type:** no-changes (implementation matched plan)
+- **Commit:** 2fe6421
+- **Pre-commit guard:** no changes
+
+### prd start — m5-prd0063-segment-auto-height
+- **Source:** user request — "prd start prd0063"
+- **Branch at time:** main (clean)
+- **Branch decision:** created from main → m5-prd0063-segment-auto-height
+- **Scope:** full (single phase)
+- **Changes:**
+  - `src/components/SegmentCard.tsx`: New — fixed-width, auto-expanding content block wrapper
+  - `src/store/useGraphStore.ts`: Added `autoHeight: false` to DEFAULT_FEATURE_FLAGS
+  - `src/canvas/nodes/EntityNode.tsx`: Integrated SegmentCard; gates top/bottom resize handles on autoHeight flag; useEffect measures offsetHeight → canvasData.height with >1px guard; textarea auto-expands in autoHeight mode
+  - `src/engine/layout.ts`: Prefers `canvasData.height` over `estimateNodeHeight()`; marked estimateNodeHeight `@deprecated`
+- **Pre-commit guard:** committed PRD plan update before branching
+
 ### prd start — m5-prd0062-hide-contains-edges
 - **Source:** user request — "prd start prd0062"
 - **Branch at time:** main (clean)

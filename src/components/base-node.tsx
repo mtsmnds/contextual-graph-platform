@@ -2,9 +2,10 @@ import type { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
 
-export function BaseNode({ className, ...props }: ComponentProps<"div">) {
+export function BaseNode({ className, ref, ...props }: ComponentProps<"div">) {
   return (
     <div
+      ref={ref}
       className={cn(
         "bg-card text-card-foreground relative rounded-md border",
         "hover:ring-1",
