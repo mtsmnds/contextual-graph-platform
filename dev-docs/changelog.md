@@ -12,7 +12,28 @@ Use this to recover context after breaks.
 
 ---
 
-## 2026-06-03
+## 2026-06-07
+
+### m5 — prd0065 — close/quit workspace
+- **What:** Added `closeWorkspace()` store action that resets all state to blank (entities, relations, canvas, undo/redo, folderName, contentCache, module-level `_adapter`/`_hydrated`). "Close Workspace" button in sidebar footer, visible only when a folder is open, with `SignOut` icon. Also fixed `sortOrder` comparison across 7 call sites — replaced `localeCompare` (locale-aware, sorts "Zz" after "a0") with raw Unicode code-point comparison (sorts "Zz" before "a0", matching fractional-indexing-jittered conventions).
+- **Why:** No way to close a workspace and reload fresh data from `graph.json` without clearing IndexedDB manually. The `localeCompare` bug caused all sortOrder-dependent features (including PRD 0064's Stack Children) to sort mixed-case fractional-indexing keys incorrectly.
+- **Files changed:**
+  - `src/store/useGraphStore.ts`: Added `closeWorkspace()` action
+  - `src/canvas/panels/AppSidebar.tsx`: Added "Close Workspace" button gated by `folderName`
+  - `src/engine/queries.ts`: Added `compareSortOrder()` utility using `<`/`>` comparison
+  - `src/engine/layout.ts`: `stackChildren` sort uses `compareSortOrder`
+  - `src/canvas/GraphCanvas.tsx`: Context menu handler sort uses `compareSortOrder`
+  - `src/store/useGraphStore.ts`: Two sort calls use `compareSortOrder`
+  - `src/engine/queries.ts`: Two sort calls use `compareSortOrder`
+  - `src/components/entity-form/EntityForm.tsx`: Sort uses `compareSortOrder`
+  - `src/store/workspace.test.ts`: New — 5 tests for `closeWorkspace`
+- **Impact:** User can close workspace and re-open to get fresh data. All sortOrder-based sorting is now consistent across the codebase.
+- **Archive:** `dev-docs/archive/m5/m5-prd0065-close-quit-workspace.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-07-m5-prd0065-close-workspace-adr.md`, `dev-docs/archive/m5/2026-06-07-compare-sortorder-adr.md`
+
+---
+
+
 
 ### m5 — prd0063 — segment node auto-height
 - **What:** SegmentCard component (fixed-width, auto-expanding content block), `autoHeight` feature flag (default off), EntityNode autoHeight mode (hides top/bottom resize handles, content-determined height via block layout, DOM height measurement to `canvasData.height` with >1px guard, textarea auto-expand), and `layout.ts` now prefers `canvasData.height` over deprecated `estimateNodeHeight()`. Fixed `container-type: size` CSS containment in `index.css` by adding `[data-auto-height]` override with `inline-size`.

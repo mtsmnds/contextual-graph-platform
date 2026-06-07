@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-07
 
+### prd end — m5-prd0065-close-quit-workspace
+- **Source:** user request — "prd end"
+- **Branch at time:** m5-prd0065-close-quit-workspace (clean)
+- **Classification:** Feature change
+- **ADR type:** 2 full ADRs (close-workspace, compare-sortorder)
+- **Commit:** 16eb0a2 (already committed by user)
+- **Pre-commit guard:** no changes
+
 ### prd start — m5-prd0065-close-quit-workspace
 - **Source:** user request — "prd start"
 - **Branch at time:** m5-prd0064-stack-container-children (clean)
