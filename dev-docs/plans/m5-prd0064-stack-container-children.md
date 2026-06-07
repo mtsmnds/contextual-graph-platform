@@ -99,7 +99,7 @@ The handler:
 
 - AC7: Undo restores all child positions and container dimensions.
 
-- AC8: Children missing `canvasData.height` are skipped with a console warning — this indicates PRD 0063 hasn’t run for that node and is a bug, not a fallback case.
+- AC8: `CanvasData.height` is required (`number`, not `number | undefined`). The type change is part of this PRD — all entities on the canvas have a height. `stackChildren` trusts the type. A defensive console.warn skip remains in `stackChildren` in case corrupted data reaches it at runtime.
 
 ## Files Changed ￼
 
@@ -108,11 +108,11 @@ The handler:
 
 |----------------------------|----------------------------------------------------------------------------------|
 
-|`src/engine/layout.ts`      |Add `stackChildren()` — pure function, no store coupling                          |
-
-|`src/canvas/GraphCanvas.tsx`|Add “Stack Children” context menu item for `containerGroup`, gated by `autoLayout`|
-
-|`src/engine/layout.test.ts` |New — unit tests for `stackChildren`                                              |
+ |`src/types/graph.ts`        |Make `CanvasData.height` required (`number`, not `number \| undefined`)            |
+ |`src/store/useGraphStore.ts`|Update `addEntity` fallback, `snapCanvasDim`, `applyMeasuredDimensions` for required `height`|
+ |`src/engine/layout.ts`      |Add `stackChildren()` — pure function, no store coupling                          |
+ |`src/canvas/GraphCanvas.tsx`|Add “Stack Children” context menu item for `containerGroup`, gated by `autoLayout`|
+ |`src/engine/layout.test.ts` |New — unit tests for `stackChildren`                                              |
 
 ## Tests ￼
 
@@ -134,19 +134,19 @@ The handler:
 
 |`single child at origin`                         |One child → positioned at `(padding.left, padding.top)`                                          |
 
-|`skips children without height`                  |Child missing `canvasData.height` → excluded from output, does not break stacking                |
+|`skips child without height (defensive)`          |Child with `undefined` height → excluded with console.warn, other children unaffected            |
 
 |`sorts by fractional index correctly`            |“a0”, “a2”, “a1” → sorted to “a0”, “a1”, “a2”                                                    |
 
 ## Dependencies ￼
 
-- PRD 0063 (Segment Auto-Height) — must be merged first. All children must have measured `canvasData.height`.
+- `CanvasData.height` is now required (`number`). All creation sites already set it. The `addEntity` fallback and `snapCanvasDim`/`applyMeasuredDimensions` are updated to match.
 
 ## Notes ￼
 
 - `stackChildren` is designed for composability. It will be called by future layout functions: first on segment containers (chapters, scenes, acts), then on higher-level containers. The pure signature means the pipeline can call it per-container without side effects.
 
-- `estimateNodeHeight` is not used. If a child lacks measured height, that’s a bug surfaced via console warning, not a fallback case.
+- `estimateNodeHeight` is not used. The type system guarantees `height` is always present; the defensive console.warn inside `stackChildren` is only for corrupted data.
 
 - The 32px header padding is an estimate. If container headers become multi-line, this should be measured — but that’s a future concern.
 
