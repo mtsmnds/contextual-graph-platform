@@ -1,114 +1,155 @@
-# PRD 0064: Container Layout Children
+# PRD 0064: Stack Container Children
 
-## Overview
+## Overview ￼
 
-One-shot dagre layout for a single container's direct children, triggered via right-click context menu. Container auto-sizes to fit its children after layout. TB only, no global pipeline integration.
+A pure stacking function that positions a container’s direct children in a vertical column, ordered by `sortOrder` with a fixed gap. Triggered via right-click context menu on a container. Container auto-sizes to fit its children after stacking.
 
-This is the first dagre feature that works *inside* a container. It depends on PRD 0063 (Segment Auto-Height) for accurate child heights — without DOM-measured heights, the bounding box computation would produce wrong container sizes.
+This is the innermost layout function in a bottom-up pipeline. Future layout steps will call `stackChildren` first on each container, then position containers relative to each other (Level 2), then resolve cross-container alignment constraints (Level 3).
 
-## Feature Flag
+## Feature Flag ￼
 
-The "Layout Children" context menu item is gated by the existing `autoLayout` feature flag in the sidebar:
+The “Stack Children” context menu item is gated by the existing `autoLayout` feature flag:
 
-- `autoLayout: true` → menu item is enabled and clickable
-- `autoLayout: false` → menu item is present but **disabled** (greyed out, not clickable)
+- `autoLayout: true` → enabled
 
-This lets users toggle the feature without losing discoverability of the option.
+- `autoLayout: false` → present but disabled (greyed out)
 
-## Solution
+## Solution ￼
 
-### `layoutContainerChildren(containerId: string): void`
+### `stackChildren` ￼
 
-A standalone function exported from `src/engine/layout.ts`. Reads the store directly (same pattern as `runFullLayout`). Steps:
+A pure function exported from `src/engine/layout.ts`. No store reads, no side effects.
 
-1. Read the container entity from the store.
-2. Find its direct children via `contains` relations (filter by `r.source === containerId && r.type === "contains"`).
-3. If no children, return early (no-op).
-4. Build a dagre graph:
-   - `rankdir: "TB"`
-   - `nodesep`, `ranksep`, `nodeWidth` from existing `LayoutOptions` defaults (or store state)
-   - Each child node sized by its `canvasData.width` / `canvasData.height` (from PRD 0063 measurement, falls back to `estimateNodeHeight`)
-5. Run `dagre.layout(g)`.
-6. Read positions from the output:
-   - Positions are dagre-center (need `x - w/2`, `y - h/2` conversion).
-7. Compute container bounding box:
-   ```
-   minX = min(child.position.x for child in children)
-   minY = min(child.position.y for child in children)
-   maxX = max(child.position.x + child.canvasData.width for child in children)
-   maxY = max(child.position.y + child.canvasData.height for child in children)
-   containerW = maxX - minX + 32   // 16px padding left + right
-   containerH = maxY - minY + 48   // 16px bottom padding + 32px header
-   ```
-   Note: header height is estimated at 32px for now, not measured. If headers grow taller in the future (multi-line), this can be refined.
-8. Write to store via `useGraphStore.getState()`:
-   - `beginBatch("Layout Children")`
-   - For each child: `updateEntity(child.id, { canvasData: { x, y, width, height } })` — positions are relative to container (same as drag/drop).
-   - For container: `updateEntity(containerId, { canvasData: { width: containerW, height: containerH } })`
-   - `endBatch()`
+```ts
+type StackInput = {
+  id: string
+  width: number
+  height: number
+  sortOrder: string
+}
 
-### Context menu item
+type StackOutput = {
+  children: { id: string; x: number; y: number }[]
+  containerWidth: number
+  containerHeight: number
+}
 
-In `src/canvas/GraphCanvas.tsx`, add to the `contextMenuItems` for `containerGroup` nodes:
+function stackChildren(
+  children: StackInput[],
+  gap: number,
+  padding: { top: number; right: number; bottom: number; left: number }
+): StackOutput
 
 ```
-label: "Layout Children"
+
+Steps:
+
+1. Sort children by `sortOrder` (lexicographic, fractional indexing).
+
+2. `containerWidth` = widest child + `padding.left` + `padding.right`.
+
+3. For each child, assign:
+
+ ▫ `x = padding.left`
+
+ ▫ `y = padding.top + (sum of preceding children heights + gaps)`
+
+1. `containerHeight = padding.top + sum of all child heights + (n-1) * gap + padding.bottom`.
+
+2. Return child positions + container dimensions.
+
+No children → return `{ children: [], containerWidth: padding.left + padding.right, containerHeight: padding.top + padding.bottom }`.
+
+### Context menu wiring ￼
+
+In `GraphCanvas.tsx`, add to context menu for `containerGroup` nodes:
+
+```
+label: "Stack Children"
 disabled: !featureFlags.autoLayout
-action: layoutContainerChildren(contextMenu.nodeId)
+action: calls stackChildren with the container's children, writes positions + container dims to store via batch
+
 ```
 
-Placed after "Add Child Container" and before "Detach from Group".
+The handler:
 
-### Visual behavior
+1. Reads the container’s direct children via `contains` relations.
 
-- User right-clicks a container with segments.
-- Clicks "Layout Children".
-- Segments snap into a TB column inside the container (16px from left edge).
-- Container resizes to fit (header + children + padding).
-- Undo (Cmd+Z) restores original positions and container size (single batch entry).
+2. Maps each child to `{ id, width: canvasData.width, height: canvasData.height, sortOrder }`.
 
-## Acceptance Criteria
+3. Calls `stackChildren(children, 16, { top: 32, right: 16, bottom: 16, left: 16 })`.
 
-- **AC1:** Right-clicking a container shows "Layout Children" in the context menu when the node is a `containerGroup`.
-- **AC2:** The item is **enabled** when `autoLayout` is `true`, **disabled** (greyed, non-interactive) when `autoLayout` is `false`.
-- **AC3:** Clicking "Layout Children" positions the container's direct children in a vertical column (TB) with `nodesep` spacing.
-- **AC4:** The container resizes to fit its children: width = widest child + 32px, height = sum of child heights + gaps + 32px header + 16px bottom padding.
-- **AC5:** Children with no measured height (PRD 0063 not yet run) use `estimateNodeHeight()` as fallback.
-- **AC6:** Empty container shows no-op (no position changes, no console error).
-- **AC7:** Single child centers inside container (dagre generates one node at origin).
-- **AC8:** Undo restores all child positions and container dimensions to pre-layout state.
-- **AC9:** Cross-container edges (edges from a child to an entity outside this container) are preserved — their positions reference the child's new location correctly.
-- **AC10:** Non-`contains` edges between children within the container are preserved and their routing updates to new positions.
+4. Writes results to store inside `beginBatch("Stack Children")` / `endBatch()`.
 
-## Files Changed
+`padding.top: 32` accounts for the container header. The other three sides are 16px.
 
-| File | Change |
-|------|--------|
-| `src/engine/layout.ts` | Add `layoutContainerChildren(containerId)` — standalone function, reads store, runs dagre TB, writes positions + container size |
-| `src/canvas/GraphCanvas.tsx` | Add "Layout Children" item in context menu for `containerGroup`, gated by `autoLayout` flag for enabled/disabled |
-| `src/engine/layout.test.ts` | New — unit tests for `layoutContainerChildren` |
+## Acceptance Criteria ￼
 
-## Tests
+- AC1: Right-clicking a container shows “Stack Children” when the node is a `containerGroup`.
 
-### `src/engine/layout.test.ts`
+- AC2: The item is enabled when `autoLayout` is `true`, disabled when `false`.
 
-| Test | What it verifies |
-|------|------------------|
-| `positions children in TB column` | Given a container with 3 segments, verify their x/y positions form a vertical stack with correct spacing |
-| `computes container width from widest child` | Widest child determines container width + 32px padding |
-| `computes container height from stacked children` | Sum of child heights + gaps + header + padding |
-| `empty container no-op` | No children → returns without writing to store |
-| `single child` | Single child positioned at origin inside container |
-| `uses measured height when available` | `canvasData.height` is preferred over `estimateNodeHeight` |
-| `falls back to estimated height` | When `canvasData.height` is missing, uses `estimateNodeHeight` |
-| `writes positions relative to container` | Child positions are relative (not absolute canvas coordinates) |
+- AC3: Clicking “Stack Children” positions children in a vertical column ordered by `sortOrder`, left-aligned at `padding.left`, with `16px` gap between each.
 
-## Dependencies
+- AC4: Container resizes: width = widest child + 32px (16 left + 16 right), height = 32px header + sum of child heights + gaps + 16px bottom.
 
-- **PRD 0063** (Segment Auto-Height) — must be complete and merged to `main` first. Without measured heights, container sizing will be based on estimates and produce wrong dimensions.
+- AC5: Empty container is a no-op (no position changes, no error).
 
-## Notes
+- AC6: Single child positions at `(padding.left, padding.top)`.
 
-- This is intentionally a **standalone function**, not integrated into `getLayoutedElements` or the global layout pipeline. That integration (bottom-up all-containers pass) is deferred to PRD 0065.
-- Header height is hardcoded at 32px for now. Current container headers are single-line. If multi-line titles become common, measure dynamically via `ResizeObserver` on the header element.
-- `nodesep`, `ranksep`, and `nodeWidth` use `DEFAULT_LAYOUT_OPTIONS` for now. They are not user-configurable per container — that's a PRD 0065 concern.
+- AC7: Undo restores all child positions and container dimensions.
+
+- AC8: Children missing `canvasData.height` are skipped with a console warning — this indicates PRD 0063 hasn’t run for that node and is a bug, not a fallback case.
+
+## Files Changed ￼
+
+
+|File                        |Change                                                                            |
+
+|----------------------------|----------------------------------------------------------------------------------|
+
+|`src/engine/layout.ts`      |Add `stackChildren()` — pure function, no store coupling                          |
+
+|`src/canvas/GraphCanvas.tsx`|Add “Stack Children” context menu item for `containerGroup`, gated by `autoLayout`|
+
+|`src/engine/layout.test.ts` |New — unit tests for `stackChildren`                                              |
+
+## Tests ￼
+
+`src/engine/layout.test.ts` ￼
+
+
+
+|Test                                             |What it verifies                                                                                 |
+
+|-------------------------------------------------|-------------------------------------------------------------------------------------------------|
+
+|`stacks children in sortOrder`                   |3 children with sortOrders “a0”, “a1”, “a2” → y positions form a descending column with 16px gaps|
+
+|`computes container width from widest child`     |Widest child drives container width + left/right padding                                         |
+
+|`computes container height from stacked children`|Sum of heights + gaps + top + bottom padding                                                     |
+
+|`empty children returns empty positions`         |No children → returns padding-only container dims                                                |
+
+|`single child at origin`                         |One child → positioned at `(padding.left, padding.top)`                                          |
+
+|`skips children without height`                  |Child missing `canvasData.height` → excluded from output, does not break stacking                |
+
+|`sorts by fractional index correctly`            |“a0”, “a2”, “a1” → sorted to “a0”, “a1”, “a2”                                                    |
+
+## Dependencies ￼
+
+- PRD 0063 (Segment Auto-Height) — must be merged first. All children must have measured `canvasData.height`.
+
+## Notes ￼
+
+- `stackChildren` is designed for composability. It will be called by future layout functions: first on segment containers (chapters, scenes, acts), then on higher-level containers. The pure signature means the pipeline can call it per-container without side effects.
+
+- `estimateNodeHeight` is not used. If a child lacks measured height, that’s a bug surfaced via console warning, not a fallback case.
+
+- The 32px header padding is an estimate. If container headers become multi-line, this should be measured — but that’s a future concern.
+
+- Dagre is not used at this level. It enters the picture at Level 3 (cross-container note alignment with collision resolution) in PRD 0065.
+
+ 
