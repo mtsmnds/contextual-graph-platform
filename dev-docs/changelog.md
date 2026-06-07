@@ -14,6 +14,25 @@ Use this to recover context after breaks.
 
 ## 2026-06-03
 
+### m5 — prd0063 — segment node auto-height
+- **What:** SegmentCard component (fixed-width, auto-expanding content block), `autoHeight` feature flag (default off), EntityNode autoHeight mode (hides top/bottom resize handles, content-determined height via block layout, DOM height measurement to `canvasData.height` with >1px guard, textarea auto-expand), and `layout.ts` now prefers `canvasData.height` over deprecated `estimateNodeHeight()`. Fixed `container-type: size` CSS containment in `index.css` by adding `[data-auto-height]` override with `inline-size`.
+- **Why:** Segments need natural height based on content rather than fixed manual resize. Auto-height and manual resize coexist under a feature flag. Measured heights feed dagre layout (PRD 0064 depends on this).
+- **Files changed:**
+  - `src/components/SegmentCard.tsx`: New — fixed-width, auto-expanding content wrapper
+  - `src/components/SegmentCard.test.tsx`: New — rendering tests (width, children, className/style)
+  - `src/canvas/nodes/EntityNode.tsx`: SegmentCard integration, gated resize handles, DOM measurement effect, textarea auto-expand, conditional flex/block layout
+  - `src/canvas/nodes/EntityNode.test.ts`: New — measurement guard logic and store integration tests
+  - `src/store/useGraphStore.ts`: Added `autoHeight: false` to feature flags
+  - `src/engine/layout.ts`: Prefers `canvasData.height`, marked `estimateNodeHeight` @deprecated
+  - `src/components/base-node.tsx`: Added `ref` forwarding
+  - `src/index.css`: Added `.entity-card[data-auto-height] { container-type: inline-size }` override
+  - `src/stories/SegmentCard.stories.tsx`: New — 4 stories (ShortContent, LongContent, EmptyContent, CustomWidth)
+  - `src/stories/EntityNode.stories.tsx`: Added `AutoHeightEnabled` story with store beforeEach
+  - `package.json`: Added `@testing-library/react` dev dependency
+- **Impact:** Auto-height is opt-in per feature flag. Existing resize behavior unchanged. Container sizing (PRD 0064 sub-dagre) can now read accurate child heights from `canvasData`.
+- **ADR:** `dev-docs/archive/m5/2026-06-03-prd0063-segment-auto-height-adr.md`
+- **Archive:** `dev-docs/archive/m5/m5-prd0063-segment-auto-height.md`
+
 ### m5 — prd0062 — hide `contains` edges on canvas
 - **What:** `contains`-type relations now drive `parentId` on React Flow nodes for nesting but no longer render as visible edge lines. Filter added in three edge-building sites: non-dagre initial builder (`GraphCanvas.tsx`), non-dagre sync `useEffect` (`GraphCanvas.tsx`), and `getLayoutedElements` (`layout.ts`). Store data unchanged — query functions (`getContainerChildren`, `getParentId`) unaffected.
 - **Why:** `contains` relations express structural nesting, not visible connections. Drawing them as edges creates visual clutter and misrepresents the containment hierarchy.

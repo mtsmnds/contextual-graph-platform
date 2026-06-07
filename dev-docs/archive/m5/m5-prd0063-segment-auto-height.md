@@ -1,5 +1,11 @@
 # PRD 0063: Segment Node Auto-Height
 
+> **Completion note (2026-06-03):**
+> - **What was built:** SegmentCard component (fixed-width, auto-expanding), autoHeight feature flag in store, EntityNode autoHeight mode (gates resize handles, measures DOM height to canvasData with >1px guard, textarea auto-expand), layout.ts reads canvasData.height and deprecates estimateNodeHeight. Stories for SegmentCard (4) and EntityNode AutoHeightEnabled (1). Unit tests for SegmentCard rendering and measurement guard logic.
+> - **Key decisions:** Used `container-type: inline-size` override (via `data-auto-height` attribute) to fix CSS containment preventing content-driven height. Block layout (no flex-col) in autoHeight mode for natural content flow.
+> - **Deviations from plan:** None — implementation matches the plan.
+> - **Postponed:** Grid snapping for segments (deferred — segments are always inside containers).
+
 ## Context & Previous Attempt
 
 PRD 0045 (2026-05-25) tried auto-height via textarea auto-expand. It failed because the textarea continuously grew to content, making user resize handles useless and causing layout instability. Height was made user-controlled via `NodeResizeControl` as a workaround.
