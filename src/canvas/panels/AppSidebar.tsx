@@ -6,7 +6,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { FolderOpen } from "@phosphor-icons/react"
+import { FolderOpen, SignOut } from "@phosphor-icons/react"
 import type { LayoutOptions } from "@/engine/layout"
 import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContainer"
 import CanvasLayoutSectionContainer from "./sections/CanvasLayoutSectionContainer"
@@ -28,6 +28,7 @@ export default function AppSidebar({
 }) {
   const folderName = useGraphStore((s) => s.folderName)
   const autoLayout = useGraphStore((s) => s.featureFlags.autoLayout)
+  const closeWorkspace = useGraphStore((s) => s.closeWorkspace)
 
   return (
     <Sidebar side="right" collapsible="offcanvas" variant="floating" className="py-4">
@@ -41,7 +42,18 @@ export default function AppSidebar({
         <FeatureFlagsSectionContainer />
         {autoLayout && <CanvasLayoutSectionContainer onRunLayout={onRunLayout} />}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="flex flex-col gap-1">
+        {folderName && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2"
+            onClick={closeWorkspace}
+          >
+            <SignOut />
+            Close Workspace
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"

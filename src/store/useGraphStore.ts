@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing-jittered";
 import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
+import { compareSortOrder } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
@@ -188,6 +189,8 @@ interface GraphStore {
 
   selectedNodeId: string | null;
   setSelectedNode: (id: string | null) => void;
+
+  closeWorkspace: () => void;
 
   featureFlags: Record<string, boolean>;
   setFeatureFlag: (key: string, value: boolean) => void;
@@ -559,7 +562,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const state = get() as GraphStore;
     const siblings = state.relations
       .filter((r) => r.source === containerId && r.type === "contains")
-      .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder));
+      .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
     const lastKey = siblings.length > 0 ? siblings[siblings.length - 1].sortOrder : null;
     get().addRelation(containerId, childId, "contains", {}, generateKeyBetween(lastKey, null));
   },
@@ -604,7 +607,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const state = get() as GraphStore;
     return state.relations
       .filter((r) => r.target === filter.target && r.type === filter.relationType)
-      .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+      .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder))
       .map((r) => state.entities.find((e) => e.id === r.source))
       .filter((e): e is Entity => e !== undefined);
   },
@@ -749,6 +752,29 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   setSelectedNode: (id: string | null) => {
     set({ selectedNodeId: id });
+  },
+
+  closeWorkspace: () => {
+    const keys = Object.keys(contentCache)
+    for (const key of keys) delete contentCache[key]
+    _adapter = null
+    _hydrated = false
+    set({
+      entities: [],
+      relations: [],
+      canvas: {},
+      view: { focusedEntityId: null, anchorEntityId: null, visibleEntityIds: [], expandedPanels: [] },
+      contentLoaded: {},
+      adapterId: null,
+      folderName: null,
+      hydrated: false,
+      selectedNodeId: null,
+      undoStack: [],
+      redoStack: [],
+      batchDepth: 0,
+      _pendingSnapshot: null,
+      lastMutationTime: 0,
+    })
   },
 
   featureFlags: loadFeatureFlags(),

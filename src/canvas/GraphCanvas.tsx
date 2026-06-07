@@ -23,7 +23,7 @@ import "@xyflow/react/dist/style.css"
 import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
-import { getParentId } from "../engine/queries"
+import { getParentId, compareSortOrder } from "../engine/queries"
 import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS, DEFAULT_NODE_WIDTH, stackChildren } from "../engine/layout"
 import type { LayoutOptions, StackInput } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
@@ -900,7 +900,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 const s = useGraphStore.getState()
                 const childRelations = s.relations
                   .filter((r) => r.source === contextMenu.nodeId && r.type === "contains")
-                  .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+                  .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder))
                 if (childRelations.length === 0) return
 
                 const children: StackInput[] = []

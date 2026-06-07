@@ -2,6 +2,7 @@ import dagre from "@dagrejs/dagre"
 import type { Entity, Relation } from "../types/graph"
 import type { Node, Edge } from "@xyflow/react"
 import { useGraphStore } from "../store/useGraphStore"
+import { compareSortOrder } from "./queries"
 
 export interface LayoutOptions {
   rankdir: "TB" | "BT" | "LR" | "RL"
@@ -59,7 +60,7 @@ export function stackChildren(
     valid.push(child)
   }
 
-  const sorted = [...valid].sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+  const sorted = [...valid].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder))
 
   const maxChildWidth = sorted.reduce((max, c) => Math.max(max, c.width), 0)
   const containerWidth = maxChildWidth + padding.left + padding.right

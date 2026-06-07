@@ -8,6 +8,7 @@ import { ContentField } from "./ContentField"
 import { MetadataFields } from "./MetadataFields"
 import type { RelationRow } from "./RelationEditor"
 import type { EntityType, Entity, Relation } from "@/types/graph"
+import { compareSortOrder } from "@/engine/queries"
 
 function getSortedContainsEdges(
   state: { entities: Entity[]; relations: Relation[] },
@@ -15,7 +16,7 @@ function getSortedContainsEdges(
 ) {
   return state.relations
     .filter((r) => r.source === containerId && r.type === "contains")
-    .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+    .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder))
 }
 
 function resolvePosition(
