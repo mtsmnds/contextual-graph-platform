@@ -14,9 +14,51 @@ The “Stack Children” context menu item is gated by the existing `autoLayout`
 
 - `autoLayout: false` → present but disabled (greyed out)
 
-## Solution ￼
+## Prerequisite: Required CanvasData dimensions ￼
 
-### `stackChildren` ￼
+`CanvasData.width` and `CanvasData.height` are now required (`number`, not `number | undefined`). Every entity on the canvas has both dimensions.
+
+### Default widths
+
+A shared constant in `src/engine/layout.ts` defines initial widths per entity type:
+
+```ts
+export const DEFAULT_NODE_WIDTH: Record<string, number> = {
+  segment: 368,
+  concept: 368,
+  annotation: 368,
+  summary: 368,
+  container: 400,
+}
+```
+
+All non-container types default to `368`. This is used at creation sites and as the `addEntity` fallback. The dagre-specific `computeNodeWidth` (`nodeWidth = 208`) is unchanged — it controls dagre rank spacing, not canvas dimensions.
+
+### Impacted creation sites
+
+| Site | Current | New |
+|------|---------|-----|
+| `createNode` (concept) | `{ x, y, height: 64 }` | adds `width: 368` |
+| `createChildNode` (segment) | `{ x, y, height: 64 }` | adds `width: 368` |
+| Context menu "Add Child Node" | `{ x, y, height: 64 }` | adds `width: 368` |
+| `addEntity` fallback | `{ x: 0, y: 0 }` | becomes `{ x: 0, y: 0, width: 368, height: 64 }` |
+
+### `nodeStyle()` simplification
+
+With `canvasData.width` always present, the fallback chain shortens:
+
+```
+// was: fallbackWidth ?? cd.width ?? (isContainer ? 400 : 208)
+// now: fallbackWidth ?? cd.width
+```
+
+The `isContainer` parameter is no longer needed for width fallback (kept only for height's `minHeight` guard).
+
+### `computeNodeDims` (dagre)
+
+`entity.canvasData.width` is always a number, so the fallback `?? (isContainer ? 400 : options.nodeWidth)` is dead code. It's removed — the dagre layout reads the actual canvas width directly.
+
+## `stackChildren` ￼
 
 A pure function exported from `src/engine/layout.ts`. No store reads, no side effects.
 
@@ -46,7 +88,7 @@ Steps:
 
 1. Sort children by `sortOrder` (lexicographic, fractional indexing).
 
-2. `containerWidth` = widest child + `padding.left` + `padding.right`.
+2. `containerWidth` = widest child + `padding.left` + `padding.right`. Child widths are snapped to the 16px grid (via `DEFAULT_NODE_WIDTH` at creation, `snapCanvasDim` on measure), and padding values are multiples of 16, so `containerWidth` lands on the grid naturally.
 
 3. For each child, assign:
 
@@ -54,9 +96,11 @@ Steps:
 
  ▫ `y = padding.top + (sum of preceding children heights + gaps)`
 
-1. `containerHeight = padding.top + sum of all child heights + (n-1) * gap + padding.bottom`.
+   Child heights are NOT snapped to the grid — they reflect the actual measured content height (PRD 0063). The y positions follow naturally without grid alignment.
 
-2. Return child positions + container dimensions.
+4. `containerHeight = padding.top + sum of all child heights + (n-1) * gap + padding.bottom`. Snap the result up to the next multiple of 16: `Math.ceil(containerHeight / 16) * 16`. This ensures the container outer dimension stays on the grid even when individual child heights are not.
+
+5. Return child positions + container dimensions.
 
 No children → defensive return of `{ children: [], containerWidth: padding.left + padding.right, containerHeight: padding.top + padding.bottom }`. However, the handler bails before calling `stackChildren` when the container is empty (no-op per AC5).
 
@@ -99,7 +143,7 @@ The handler:
 
 - AC7: Undo restores all child positions and container dimensions.
 
-- AC8: `CanvasData.height` is required (`number`, not `number | undefined`). The type change is part of this PRD — all entities on the canvas have a height. `stackChildren` trusts the type. A defensive console.warn skip remains in `stackChildren` in case corrupted data reaches it at runtime.
+- AC8: `CanvasData.width` and `height` are both required (`number`). The type change is part of this PRD — all entities on the canvas have both dimensions from creation. `stackChildren` trusts the type. A defensive console.warn skip remains for missing height in case corrupted data reaches it at runtime.
 
 ## Files Changed ￼
 
@@ -108,10 +152,10 @@ The handler:
 
 |----------------------------|----------------------------------------------------------------------------------|
 
- |`src/types/graph.ts`        |Make `CanvasData.height` required (`number`, not `number \| undefined`)            |
- |`src/store/useGraphStore.ts`|Update `addEntity` fallback, `snapCanvasDim`, `applyMeasuredDimensions` for required `height`|
- |`src/engine/layout.ts`      |Add `stackChildren()` — pure function, no store coupling                          |
- |`src/canvas/GraphCanvas.tsx`|Add “Stack Children” context menu item for `containerGroup`, gated by `autoLayout`|
+ |`src/types/graph.ts`        |Make `CanvasData.width` and `height` required (`number`, not `number \| undefined`)|
+ |`src/engine/layout.ts`      |Add `DEFAULT_NODE_WIDTH` constant; add `stackChildren()` — pure function; update `computeNodeDims` to use `canvasData.width` directly|
+ |`src/store/useGraphStore.ts`|Update `addEntity` fallback, `snapCanvasDim`, `applyMeasuredDimensions` for required `width` and `height`|
+ |`src/canvas/GraphCanvas.tsx`|Add `width` to `createNode`/`createChildNode`/context menu "Add Child Node"; simplify `nodeStyle()` fallback chain; add “Stack Children” context menu item gated by `autoLayout`|
  |`src/engine/layout.test.ts` |New — unit tests for `stackChildren`                                              |
 
 ## Tests ￼
@@ -140,13 +184,13 @@ The handler:
 
 ## Dependencies ￼
 
-- `CanvasData.height` is now required (`number`). All creation sites already set it. The `addEntity` fallback and `snapCanvasDim`/`applyMeasuredDimensions` are updated to match.
+- `CanvasData.width` and `height` are now both required (`number`). This PRD adds the type change, the `DEFAULT_NODE_WIDTH` constant, and updates all creation sites, `snapCanvasDim`, and `applyMeasuredDimensions` to match. Dagre-specific layout constants (`nodeWidth = 208`, `computeNodeWidth`) are unchanged.
 
 ## Notes ￼
 
 - `stackChildren` is designed for composability. It will be called by future layout functions: first on segment containers (chapters, scenes, acts), then on higher-level containers. The pure signature means the pipeline can call it per-container without side effects.
 
-- `estimateNodeHeight` is not used. The type system guarantees `height` is always present; the defensive console.warn inside `stackChildren` is only for corrupted data.
+- `estimateNodeHeight` is not used. The type system guarantees both `width` and `height` are always present; the defensive console.warn inside `stackChildren` is only for corrupted data.
 
 - The 32px header padding is an estimate. If container headers become multi-line, this should be measured — but that’s a future concern.
 
