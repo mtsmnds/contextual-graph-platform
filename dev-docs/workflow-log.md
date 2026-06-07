@@ -7,6 +7,13 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-07
 
+### prd start — m5-prd0066-forced-dimension-render
+- **Source:** user request — "prd start"
+- **Branch at time:** m5-prd0065-close-quit-workspace (clean — committed wip)
+- **Branch decision:** stacked from m5-prd0065-close-quit-workspace → m5-prd0066-forced-dimension-render
+- **Scope:** full (single phase)
+- **Pre-commit guard:** committed wip
+
 ### prd end — m5-prd0065-close-quit-workspace
 - **Source:** user request — "prd end"
 - **Branch at time:** m5-prd0065-close-quit-workspace (clean)

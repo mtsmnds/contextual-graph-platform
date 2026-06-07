@@ -174,6 +174,10 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             const parentChanged = (existing.parentId ?? undefined) !== (derivedParentId ?? undefined)
             const typeChanged = existing.type !== (entity.type === "container" ? "containerGroup" : "entity")
             const w = entity.canvasData.width
+            const oldStyle = merged[idx].style as Record<string, unknown> | undefined
+            const dimChanged =
+              oldStyle?.width !== entity.canvasData.width ||
+              oldStyle?.height !== entity.canvasData.height
 
             if (posChanged || contentChanged || parentChanged || typeChanged || w != null) {
               merged[idx] = {
@@ -185,6 +189,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 extent: derivedParentId ? "parent" : undefined,
                 expandParent: derivedParentId ? true : undefined,
                 style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container") },
+                ...(dimChanged ? { width: entity.canvasData.width, height: entity.canvasData.height } : {}),
               }
             }
           } else {
