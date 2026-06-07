@@ -59,6 +59,12 @@ function nodeStyle(
 // React Flow v12's NodeWrapper memo prevents re-renders when node.width/style
 // change via setNodes. Direct DOM manipulation triggers the native ResizeObserver
 // → updateNodeInternals pipeline, the same mechanism NodeResizeControl uses.
+//
+// INVARIANT: Any code that programmatically changes a node's width or height
+// MUST call this after the store update. The store handles persistence; this
+// handles visual rendering. Do NOT try to set dimensions via setNodes alone
+// (node.width, node.height, node.style) — those paths are blocked by the
+// NodeWrapper memo and will not reach the DOM.
 function syncNodeDimensions(nodeId: string, width: number, height: number) {
   requestAnimationFrame(() => {
     const el = document.querySelector(`[data-id="${nodeId}"]`) as HTMLElement | null
@@ -187,11 +193,12 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             const contentChanged = existing.data.content !== newContent || existing.data.type !== entity.type
             const parentChanged = (existing.parentId ?? undefined) !== (derivedParentId ?? undefined)
             const typeChanged = existing.type !== (entity.type === "container" ? "containerGroup" : "entity")
+            // `w != null` is always true (width is required on canvasData) —
+            // the merge block always runs for existing entities to keep style
+            // in sync. Visual rendering of dimension changes does NOT come
+            // through this path; it relies on syncNodeDimensions() (above)
+            // which triggers RF's ResizeObserver→updateNodeInternals pipeline.
             const w = entity.canvasData.width
-            const oldStyle = merged[idx].style as Record<string, unknown> | undefined
-            const dimChanged =
-              oldStyle?.width !== entity.canvasData.width ||
-              oldStyle?.height !== entity.canvasData.height
 
             if (posChanged || contentChanged || parentChanged || typeChanged || w != null) {
               merged[idx] = {
@@ -203,7 +210,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 extent: derivedParentId ? "parent" : undefined,
                 expandParent: derivedParentId ? true : undefined,
                 style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container") },
-                ...(dimChanged ? { width: entity.canvasData.width, height: entity.canvasData.height } : {}),
               }
             }
           } else {
