@@ -47,10 +47,9 @@ const edgeTypes = { edgelabel: EdgeLabel }
 function nodeStyle(
   cd: { width?: number; height?: number },
   isContainer: boolean,
-  fallbackWidth?: number,
 ) {
   return {
-    width: fallbackWidth ?? cd.width ?? (isContainer ? 400 : DEFAULT_NODE_WIDTH.segment),
+    width: cd.width ?? (isContainer ? 400 : DEFAULT_NODE_WIDTH.segment),
     ...(cd.height != null ? { height: cd.height } : {}),
     ...(!isContainer && cd.height == null ? { minHeight: 32 } : {}),
   }
@@ -185,7 +184,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 parentId: derivedParentId ?? undefined,
                 extent: derivedParentId ? "parent" : undefined,
                 expandParent: derivedParentId ? true : undefined,
-                style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container", (merged[idx].style as Record<string, unknown>)?.width as number | undefined) },
+                style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container") },
               }
             }
           } else {
