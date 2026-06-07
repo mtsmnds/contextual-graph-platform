@@ -28,7 +28,7 @@ describe("snap16", () => {
 });
 
 describe("snapCanvasDim", () => {
-  it("snaps width and height when both present", () => {
+  it("snaps width and height", () => {
     const result = snapCanvasDim({ x: 0, y: 0, width: 15, height: 31 });
     expect(result.width).toBe(16);
     expect(result.height).toBe(32);
@@ -38,23 +38,5 @@ describe("snapCanvasDim", () => {
     const result = snapCanvasDim({ x: 5, y: 10, width: 16, height: 16 });
     expect(result.x).toBe(5);
     expect(result.y).toBe(10);
-  });
-
-  it("handles undefined width", () => {
-    const result = snapCanvasDim({ x: 0, y: 0, height: 15 });
-    expect(result.width).toBeUndefined();
-    expect(result.height).toBe(16);
-  });
-
-  it("handles undefined height", () => {
-    const result = snapCanvasDim({ x: 0, y: 0, width: 31 });
-    expect(result.width).toBe(32);
-    expect(result.height).toBeUndefined();
-  });
-
-  it("handles both undefined", () => {
-    const result = snapCanvasDim({ x: 0, y: 0 });
-    expect(result.width).toBeUndefined();
-    expect(result.height).toBeUndefined();
   });
 });

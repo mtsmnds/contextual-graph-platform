@@ -24,8 +24,8 @@ import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
 import { getFSAccessInstance, setAdapter } from "@/store/persistence"
 import { getParentId } from "../engine/queries"
-import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS } from "../engine/layout"
-import type { LayoutOptions } from "../engine/layout"
+import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS, DEFAULT_NODE_WIDTH, stackChildren } from "../engine/layout"
+import type { LayoutOptions, StackInput } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { IconButton } from "@/components/ui/icon-button"
@@ -50,7 +50,7 @@ function nodeStyle(
   fallbackWidth?: number,
 ) {
   return {
-    width: fallbackWidth ?? cd.width ?? (isContainer ? 400 : 208),
+    width: fallbackWidth ?? cd.width ?? (isContainer ? 400 : DEFAULT_NODE_WIDTH.segment),
     ...(cd.height != null ? { height: cd.height } : {}),
     ...(!isContainer && cd.height == null ? { minHeight: 32 } : {}),
   }
@@ -518,11 +518,11 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
               canvasData: {
                 x: node.position.x,
                 y: node.position.y,
-                width: node.measured?.width ?? node.width ?? undefined,
-                height: node.measured?.height ?? node.height ?? undefined,
-              },
-            })
-          }
+                width: node.measured?.width ?? node.width ?? 368,
+                height: node.measured?.height ?? node.height ?? 64,
+            },
+          })
+        }
           s.endBatch()
         }
       }, 300)
@@ -550,7 +550,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             type: n.data.type as EntityType,
             content: n.data.content as string,
             metadata: (n.data.metadata as Record<string, unknown>) ?? {},
-            canvasData: entity?.canvasData ?? { x: n.position.x, y: n.position.y },
+            canvasData: entity?.canvasData ?? { x: n.position.x, y: n.position.y, width: 368, height: 64 },
             originalPosition: { ...n.position },
           }
         })
@@ -564,7 +564,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
           type: "entity" as const,
           position: o.originalPosition,
           data: { content: o.content, type: o.type, id: `__ghost_${o.id}` },
-          style: { width: o.canvasData.width ?? 200 },
+          style: { width: o.canvasData.width },
           className: "ghost-node",
           selectable: false,
         })),
@@ -575,7 +575,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 
   const createNode = useCallback((position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("concept", {
-      canvasData: { x: position.x, y: position.y, height: 64 },
+      canvasData: { x: position.x, y: position.y, width: DEFAULT_NODE_WIDTH.concept, height: 64 },
     })
     pendingNodeRef.current = id
     useGraphStore.getState().setSelectedNode(id)
@@ -591,7 +591,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 
   const createChildNode = useCallback((parentId: string, position: { x: number; y: number }) => {
     const id = useGraphStore.getState().addEntity("segment", {
-      canvasData: { x: position.x, y: position.y, height: 64 },
+      canvasData: { x: position.x, y: position.y, width: DEFAULT_NODE_WIDTH.segment, height: 64 },
     }, parentId)
     pendingNodeRef.current = id
     useGraphStore.getState().setSelectedNode(id)
@@ -635,6 +635,8 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             canvasData: {
               x: orig.originalPosition.x,
               y: orig.originalPosition.y,
+              width: orig.canvasData.width,
+              height: orig.canvasData.height,
             },
           })
         }
@@ -671,8 +673,8 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             canvasData: {
               x: node.position.x,
               y: node.position.y,
-              width: node.measured?.width ?? node.width ?? undefined,
-              height: node.measured?.height ?? node.height ?? undefined,
+              width: node.measured?.width ?? node.width ?? 368,
+              height: node.measured?.height ?? node.height ?? 64,
             },
           })
         }
@@ -863,7 +865,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                   y: Math.round((flowPos.y - parentNode.position.y) / grid) * grid,
                 }
                 const id = useGraphStore.getState().addEntity("segment", {
-                  canvasData: { x: relativePos.x, y: relativePos.y, height: 64 },
+                  canvasData: { x: relativePos.x, y: relativePos.y, width: DEFAULT_NODE_WIDTH.segment, height: 64 },
                 }, contextMenu.nodeId)
                 pendingNodeRef.current = id
                 useGraphStore.getState().setSelectedNode(id)
@@ -890,6 +892,51 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
               }
             },
           })
+          items.push({
+            label: "Stack Children",
+            disabled: !featureFlags.autoLayout,
+            action: () => {
+              if (contextMenu.nodeId) {
+                const s = useGraphStore.getState()
+                const childRelations = s.relations
+                  .filter((r) => r.source === contextMenu.nodeId && r.type === "contains")
+                  .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+                if (childRelations.length === 0) return
+
+                const children: StackInput[] = []
+                const childMap = new Map<string, { width: number; height: number }>()
+                for (const rel of childRelations) {
+                  const entity = s.entities.find((e) => e.id === rel.target)
+                  if (!entity) continue
+                  childMap.set(rel.target, { width: entity.canvasData.width, height: entity.canvasData.height })
+                  children.push({
+                    id: rel.target,
+                    width: entity.canvasData.width,
+                    height: entity.canvasData.height,
+                    sortOrder: rel.sortOrder,
+                  })
+                }
+
+                const containerEntity = s.entities.find((e) => e.id === contextMenu.nodeId)
+                if (!containerEntity) return
+
+                const result = stackChildren(children, 16, { top: 32, right: 16, bottom: 16, left: 16 })
+
+                s.beginBatch("Stack Children")
+                for (const child of result.children) {
+                  const dims = childMap.get(child.id)
+                  if (!dims) continue
+                  s.updateEntity(child.id, {
+                    canvasData: { x: child.x, y: child.y, width: dims.width, height: dims.height },
+                  })
+                }
+                s.updateEntity(contextMenu.nodeId, {
+                  canvasData: { x: containerEntity.canvasData.x, y: containerEntity.canvasData.y, width: result.containerWidth, height: result.containerHeight },
+                })
+                s.endBatch()
+              }
+            },
+          })
         }
 
         if (isChild) {
@@ -910,8 +957,8 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                   canvasData: {
                     x: absoluteX,
                     y: absoluteY,
-                    width: entity?.canvasData.width,
-                    height: entity?.canvasData.height,
+                    width: entity!.canvasData.width,
+                    height: entity!.canvasData.height,
                   },
                 })
               }

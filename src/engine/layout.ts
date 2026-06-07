@@ -24,6 +24,61 @@ export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   nodeWidth: 208,
 }
 
+export const DEFAULT_NODE_WIDTH: Record<string, number> = {
+  segment: 368,
+  concept: 368,
+  annotation: 368,
+  summary: 368,
+  container: 400,
+}
+
+export type StackInput = {
+  id: string
+  width: number
+  height: number
+  sortOrder: string
+}
+
+export type StackOutput = {
+  children: { id: string; x: number; y: number }[]
+  containerWidth: number
+  containerHeight: number
+}
+
+export function stackChildren(
+  children: StackInput[],
+  gap: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+): StackOutput {
+  const valid: StackInput[] = []
+  for (const child of children) {
+    if (child.height == null) {
+      console.warn(`stackChildren: child "${child.id}" has no height — skipping`)
+      continue
+    }
+    valid.push(child)
+  }
+
+  const sorted = [...valid].sort((a, b) => a.sortOrder.localeCompare(b.sortOrder))
+
+  const maxChildWidth = sorted.reduce((max, c) => Math.max(max, c.width), 0)
+  const containerWidth = maxChildWidth + padding.left + padding.right
+
+  const childPositions: { id: string; x: number; y: number }[] = []
+  let y = padding.top
+  for (const child of sorted) {
+    childPositions.push({ id: child.id, x: padding.left, y })
+    y += child.height + gap
+  }
+
+  const totalChildHeight = sorted.reduce((sum, c) => sum + c.height, 0)
+  const gapCount = sorted.length > 0 ? sorted.length - 1 : 0
+  const rawHeight = padding.top + totalChildHeight + gapCount * gap + padding.bottom
+  const containerHeight = Math.ceil(rawHeight / 16) * 16
+
+  return { children: childPositions, containerWidth, containerHeight }
+}
+
 /** @deprecated Use `entity.canvasData.height` (DOM-measured) instead. */
 export function estimateNodeHeight(content: string, width: number): number {
   if (!content) return 64
@@ -90,10 +145,9 @@ function computeNodeDims(
     return { w, h }
   }
 
-  const isContainer = entity.type === "container"
   return {
-    w: entity.canvasData?.width ?? (isContainer ? 400 : options.nodeWidth),
-    h: entity.canvasData?.height ?? (isContainer ? 304 : 80),
+    w: entity.canvasData.width,
+    h: entity.canvasData.height,
   }
 }
 
@@ -185,7 +239,7 @@ export function runFullLayout(options: LayoutOptions, fitView: () => void): void
 
   state.beginBatch("Run Layout")
   for (const node of nodes) {
-    const sd: { width?: number; height?: number } = {}
+    const sd: { width: number; height: number } = { width: 368, height: 64 }
     const s = node.style as Record<string, unknown> | undefined
     if (s?.width != null) sd.width = Number(s.width)
     if (s?.height != null) sd.height = Number(s.height)
@@ -194,7 +248,8 @@ export function runFullLayout(options: LayoutOptions, fitView: () => void): void
       canvasData: {
         x: Math.round(node.position.x),
         y: Math.round(node.position.y),
-        ...sd,
+        width: sd.width,
+        height: sd.height,
       },
     })
   }
