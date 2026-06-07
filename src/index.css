@@ -267,6 +267,10 @@ body {
   container-type: size;
 }
 
+.entity-card[data-auto-height] {
+  container-type: inline-size;
+}
+
 .entity-card-content {
   padding-block: 4.75px;
 }

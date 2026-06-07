@@ -3,6 +3,7 @@ import { ReactFlow, ReactFlowProvider } from '@xyflow/react'
 import { expect, userEvent, within } from 'storybook/test'
 import '@xyflow/react/dist/style.css'
 import EntityNode from '@/canvas/nodes/EntityNode'
+import { useGraphStore } from '@/store/useGraphStore'
 
 const nodeTypes = { entity: EntityNode }
 
@@ -84,5 +85,33 @@ export const DoubleClickEdit: Story = {
     await userEvent.clear(textarea)
     await userEvent.type(textarea, 'Edited via Storybook')
     textarea.blur()
+  },
+}
+
+export const AutoHeightEnabled: Story = {
+  beforeEach: async () => {
+    const prevFlags = { ...useGraphStore.getState().featureFlags }
+    useGraphStore.setState({
+      featureFlags: { ...prevFlags, autoHeight: true },
+    })
+    return () => {
+      useGraphStore.setState({ featureFlags: prevFlags })
+    }
+  },
+  args: {
+    nodes: [
+      {
+        id: 'entity-1',
+        type: 'entity',
+        position: { x: 0, y: 0 },
+        data: {
+          content:
+            'A much longer piece of content that should cause the card to expand naturally rather than being clipped. When auto-height is enabled, the node grows to fit this text without needing manual resize handles.',
+          type: 'concept',
+          id: 'entity-1',
+        },
+        style: { width: 208 },
+      },
+    ],
   },
 }

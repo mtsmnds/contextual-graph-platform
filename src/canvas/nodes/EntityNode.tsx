@@ -103,41 +103,52 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
         </>
       )}
       <BaseNode
+        ref={measureRef}
         className={cn(
-          "entity-card w-full flex flex-col",
-          autoHeight ? "h-auto" : "h-full overflow-hidden",
+          "entity-card w-full",
+          autoHeight ? "" : "flex flex-col h-full overflow-hidden",
         )}
+        data-auto-height={autoHeight ? "" : undefined}
         onDoubleClick={(e) => {
           e.stopPropagation()
           enterEdit()
         }}
       >
-        <div ref={measureRef} className="w-full">
-          <SegmentCard width="100%">
-            <BaseNodeContent className="entity-card-content flex-1 px-3">
-              <BaseHandle type="source" position={Position.Top} id="top" />
-              <BaseHandle type="source" position={Position.Right} id="right" />
-              <BaseHandle type="source" position={Position.Bottom} id="bottom" />
-              <BaseHandle type="source" position={Position.Left} id="left" />
-              {isEditing ? (
-                <textarea
-                  ref={editRef as React.Ref<HTMLTextAreaElement>}
-                  className="nodrag nowheel nopan flex-1 resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none"
-                  value={editValue}
-                  onChange={handleTextareaChange}
-                  onKeyDown={handleKeyDown}
-                  onBlur={handleBlur}
-                  placeholder="Type here..."
-                  rows={1}
-                />
-              ) : (
-                <p className="flex-1 m-0 cursor-default text-sm text-foreground">
-                  {data.content || <span className="text-muted-foreground">Type here...</span>}
-                </p>
-              )}
-            </BaseNodeContent>
-          </SegmentCard>
-        </div>
+        <SegmentCard width="100%">
+          <BaseNodeContent
+            className={cn(
+              "entity-card-content px-3",
+              autoHeight ? "" : "flex flex-col flex-1",
+            )}
+          >
+            <BaseHandle type="source" position={Position.Top} id="top" />
+            <BaseHandle type="source" position={Position.Right} id="right" />
+            <BaseHandle type="source" position={Position.Bottom} id="bottom" />
+            <BaseHandle type="source" position={Position.Left} id="left" />
+            {isEditing ? (
+              <textarea
+                ref={editRef as React.Ref<HTMLTextAreaElement>}
+                className={cn(
+                  "nodrag nowheel nopan resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none",
+                  autoHeight ? "block w-full" : "flex-1",
+                )}
+                value={editValue}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                placeholder="Type here..."
+                rows={1}
+              />
+            ) : (
+              <p className={cn(
+                "m-0 cursor-default text-sm text-foreground",
+                autoHeight ? "" : "flex-1 overflow-hidden",
+              )}>
+                {data.content || <span className="text-muted-foreground">Type here...</span>}
+              </p>
+            )}
+          </BaseNodeContent>
+        </SegmentCard>
       </BaseNode>
     </>
   )
