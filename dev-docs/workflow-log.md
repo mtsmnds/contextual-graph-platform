@@ -7,6 +7,13 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-07
 
+### prd start — m5-prd0065-close-quit-workspace
+- **Source:** user request — "prd start"
+- **Branch at time:** m5-prd0064-stack-container-children (clean)
+- **Branch decision:** stacked from m5-prd0064-stack-container-children → m5-prd0065-close-quit-workspace
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
+
 ### prd start — m5-prd0064-stack-container-children
 - **Source:** user request — "lets start building"
 - **Branch at time:** main (clean)
