@@ -119,6 +119,7 @@ const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
   viewLogger: true,
   minimap: true,
   autoLayout: false,
+  autoHeight: false,
 }
 
 function loadFeatureFlags(): Record<string, boolean> {

@@ -24,7 +24,7 @@ export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   nodeWidth: 208,
 }
 
-// Stopgap — replace with DOM-measured height when node auto-sizing is implemented.
+/** @deprecated Use `entity.canvasData.height` (DOM-measured) instead. */
 export function estimateNodeHeight(content: string, width: number): number {
   if (!content) return 64
   const avgCharWidth = 8
@@ -86,7 +86,7 @@ function computeNodeDims(
 ): { w: number; h: number } {
   if (ignoreSavedPositions) {
     const w = computeNodeWidth(entity, parentGroupWidth, relations, options.nodeWidth)
-    const h = estimateNodeHeight(entity.content, w)
+    const h = entity.canvasData?.height ?? estimateNodeHeight(entity.content, w)
     return { w, h }
   }
 
