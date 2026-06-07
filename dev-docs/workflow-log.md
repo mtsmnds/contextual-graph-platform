@@ -7,6 +7,13 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-03
 
+### prd merge — m5-prd0063-segment-auto-height
+- **Merged:** m5-prd0063-segment-auto-height → main (--no-ff)
+- **Order:** single branch
+- **Conflicts:** none
+- **Branches kept locally:** yes
+- **Pre-commit guard:** no changes
+
 ### prd end — m5-prd0063-segment-auto-height
 - **Source:** user request — "prd end"
 - **Branch at time:** m5-prd0063-segment-auto-height (clean)
