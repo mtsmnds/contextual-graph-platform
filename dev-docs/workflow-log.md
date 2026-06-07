@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-03
 
+### prd end — m5-prd0063-segment-auto-height
+- **Source:** user request — "prd end"
+- **Branch at time:** m5-prd0063-segment-auto-height (clean)
+- **Classification:** Feature change
+- **ADR type:** no-changes (implementation matched plan)
+- **Commit:** 2fe6421
+- **Pre-commit guard:** no changes
+
 ### prd start — m5-prd0063-segment-auto-height
 - **Source:** user request — "prd start prd0063"
 - **Branch at time:** main (clean)
