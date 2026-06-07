@@ -50,40 +50,27 @@ internalNode = {
 ```
 Setting `measured` on the user node does propagate, but `getNodeInlineStyleDimensions` does NOT check `measured` — it checks `node.width` first, then `initialWidth`, then `style`. So even if `measured` is set, the rendered dimensions are read from `node.width` (undefined → falls through to `style` which has the correct value but the memo prevents the re-render).
 
-### 4. `width`/`height` on node (✅ correct fix)
+### 4. `width`/`height` on node (❌ attempted, did not work)
 
 **What:** Set `width` and `height` as top-level properties on the React Flow node object.
-**Why it works:**
+**Why it was expected to work:**
 - `adoptUserNodes` spreads `...userNode` into `internalNode`, so `internalNode.width` and `internalNode.height` come from the user node
-- `getNodeInlineStyleDimensions` reads `node.width` FIRST, so setting it overrides both `initialWidth` and `style`
-- React Flow's memo comparison does check `width`/`height` — when they change, `NodeWrapper` re-renders with the correct inline dimensions
+- `getNodeInlineStyleDimensions` reads `node.width` FIRST, so setting it should override both `initialWidth` and `style`
+- React Flow's `NodeWrapper` should detect the change and re-render
 
-## Solution
+**Result:** Setting `width`/`height` on the node object also did not force a visual re-render. The container still stayed at the old size after Stack Children. The root cause remains unidentified — React Flow v12 may have additional internal caching or memoization layers that prevent user-set `width`/`height` from taking effect after initial render.
 
-In the sync effect's merge block, detect when dimensions actually changed and set `width`/`height` directly on the node:
+## Status: UNRESOLVED
 
-```ts
-const oldStyle = merged[idx].style as Record<string, unknown> | undefined
-const dimChanged =
-  oldStyle?.width !== entity.canvasData.width ||
-  oldStyle?.height !== entity.canvasData.height
+This fix was attempted multiple times but none of the approaches worked. It is a cross-cutting React Flow rendering issue: programmatic dimension changes to container nodes do not visually update the canvas without a page reload. This affects all features that dynamically resize containers (Stack Children, dagre auto-layout, etc.). Further investigation is deferred.
 
-// ... inside the existing condition:
-if (posChanged || contentChanged || parentChanged || typeChanged || w != null) {
-  merged[idx] = {
-    ...merged[idx],
-    // ... existing properties ...
-    style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, isContainer) },
-    ...(dimChanged ? { width: entity.canvasData.width, height: entity.canvasData.height } : {}),
-  }
-}
-```
+## Status: UNRESOLVED
 
-### Why this is permanent
+None of the four attempted approaches produced a visual re-render. The container node properties update correctly (confirmed in React DevTools) but the DOM element stays at the old size. The root cause is a React Flow v12 internal caching or memoization behavior that prevents programmatic dimension changes on container nodes from taking effect after initial render. Further investigation is deferred.
 
-1. **Lives in the sync effect** — every code path that writes dimensions flows through here: Stack Children, resize, drag, keyboard move, dagre auto-layout, future layout actions.
-2. **`width`/`height` are first-class Node properties** — checked by `NodeWrapper`'s memo, read by `getNodeInlineStyleDimensions` with highest priority, propagated through `adoptUserNodes` via the user node spread.
-3. **`dimChanged` guard** — skips unchanged nodes, so no unnecessary renders.
+## Attempted Solution (implemented)
+
+The `dimChanged` detection and `width`/`height` spread is still in the sync effect code (doesn't break anything — it's a no-op when `dimChanged` is false), but it does not solve the rendering problem. The code should be left in place as it captures the correct intent (dimension change tracking) even though the render pipeline ignores it.
 
 ## Acceptance Criteria
 
