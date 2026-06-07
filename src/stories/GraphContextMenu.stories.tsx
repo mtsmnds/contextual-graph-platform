@@ -94,6 +94,25 @@ export const EdgeMenu: Story = {
   ),
 }
 
+export const WithDisabledItem: Story = {
+  render: () => (
+    <div style={{ position: 'relative', width: '100%', height: 300 }}>
+      <GraphContextMenu
+        open
+        x={200}
+        y={100}
+        items={[
+          { label: 'Add Child Node', action: () => {} },
+          { label: 'Stack Children', action: () => {}, disabled: true },
+          { label: 'Edit', action: () => {} },
+          { label: 'Delete', action: () => {} },
+        ]}
+        onClose={() => {}}
+      />
+    </div>
+  ),
+}
+
 export const RightClickInteraction: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

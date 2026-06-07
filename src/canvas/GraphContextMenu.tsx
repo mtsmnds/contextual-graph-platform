@@ -4,6 +4,7 @@ interface MenuItem {
   label: string
   action: () => void
   separator?: boolean
+  disabled?: boolean
 }
 
 interface GraphContextMenuProps {
@@ -51,8 +52,13 @@ function GraphContextMenu({ open, x, y, items, onClose }: GraphContextMenuProps)
         <div key={i}>
           {item.separator && <div className="border-t my-1" />}
           <button
-            className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-            onClick={() => { item.action(); onClose() }}
+            disabled={item.disabled}
+            className={`w-full text-left px-3 py-1.5 text-sm ${
+              item.disabled
+                ? "text-muted-foreground cursor-not-allowed"
+                : "hover:bg-accent hover:text-accent-foreground"
+            }`}
+            onClick={() => { if (!item.disabled) { item.action(); onClose() } }}
           >
             {item.label}
           </button>

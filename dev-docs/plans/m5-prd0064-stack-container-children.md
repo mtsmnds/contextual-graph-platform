@@ -58,7 +58,7 @@ Steps:
 
 2. Return child positions + container dimensions.
 
-No children → return `{ children: [], containerWidth: padding.left + padding.right, containerHeight: padding.top + padding.bottom }`.
+No children → defensive return of `{ children: [], containerWidth: padding.left + padding.right, containerHeight: padding.top + padding.bottom }`. However, the handler bails before calling `stackChildren` when the container is empty (no-op per AC5).
 
 ### Context menu wiring ￼
 
@@ -73,7 +73,7 @@ action: calls stackChildren with the container's children, writes positions + co
 
 The handler:
 
-1. Reads the container’s direct children via `contains` relations.
+1. Reads the container's direct children via `contains` relations. If the list is empty, bail — this is a no-op.
 
 2. Maps each child to `{ id, width: canvasData.width, height: canvasData.height, sortOrder }`.
 
@@ -93,7 +93,7 @@ The handler:
 
 - AC4: Container resizes: width = widest child + 32px (16 left + 16 right), height = 32px header + sum of child heights + gaps + 16px bottom.
 
-- AC5: Empty container is a no-op (no position changes, no error).
+- AC5: Empty container is a no-op — the handler bails early without calling `stackChildren` or updating the store.
 
 - AC6: Single child positions at `(padding.left, padding.top)`.
 
