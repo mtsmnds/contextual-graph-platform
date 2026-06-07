@@ -55,6 +55,20 @@ function nodeStyle(
   }
 }
 
+// Direct DOM dimension sync for programmatic node resizes.
+// React Flow v12's NodeWrapper memo prevents re-renders when node.width/style
+// change via setNodes. Direct DOM manipulation triggers the native ResizeObserver
+// → updateNodeInternals pipeline, the same mechanism NodeResizeControl uses.
+function syncNodeDimensions(nodeId: string, width: number, height: number) {
+  requestAnimationFrame(() => {
+    const el = document.querySelector(`[data-id="${nodeId}"]`) as HTMLElement | null
+    if (el) {
+      el.style.width = `${width}px`
+      el.style.height = `${height}px`
+    }
+  })
+}
+
 function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: React.MutableRefObject<() => void> }) {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
@@ -132,7 +146,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 
   const keyboardMoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const keyboardMoveIdsRef = useRef<Set<string>>(new Set())
-  const needsRerenderRef = useRef(false)
 
   const reactFlowInstance = useReactFlow()
   const storeApi = useStoreApi()
@@ -158,7 +171,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
       const pendingId = pendingNodeRef.current
       pendingNodeRef.current = null
       setNodes((prev) => {
-        let anyDimChanged = false
         const prevById = new Map(prev.map((n) => [n.id, n]))
         const merged = [...prev]
         const entityIdSet = new Set(entities.map((e) => e.id))
@@ -180,8 +192,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             const dimChanged =
               oldStyle?.width !== entity.canvasData.width ||
               oldStyle?.height !== entity.canvasData.height
-
-            if (dimChanged) anyDimChanged = true
 
             if (posChanged || contentChanged || parentChanged || typeChanged || w != null) {
               merged[idx] = {
@@ -295,8 +305,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         }
         merged.sort((a, b) => getNodeDepth(a.id) - getNodeDepth(b.id))
 
-        if (anyDimChanged) needsRerenderRef.current = true
-
         return merged
       })
 
@@ -368,7 +376,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 
     const dagrePendingId = pendingNodeRef.current
     setNodes((prev) => {
-      let anyDimChanged = false
       const prevById = new Map(prev.map((n) => [n.id, n]))
       const merged: Node[] = []
 
@@ -382,18 +389,11 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
           pendingNodeRef.current = null
           merged.push({ ...dagreNode, position, data: { ...dagreNode.data, editTrigger: 1 } })
         } else if (existing) {
-          const oldStyle = existing.style as Record<string, unknown> | undefined
-          const newW = dagreNode.style?.width ?? (saved?.width as number | undefined)
-          const newH = dagreNode.style?.height ?? (saved?.height as number | undefined)
-          const dimChanged = oldStyle?.width !== newW || oldStyle?.height !== newH
-          if (dimChanged) anyDimChanged = true
           merged.push({ ...existing, position, data: { ...existing.data, ...dagreNode.data } })
         } else {
           merged.push({ ...dagreNode, position, data: dagreNode.data })
         }
       }
-
-      if (anyDimChanged) needsRerenderRef.current = true
 
       return merged
     })
@@ -436,17 +436,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
       currentStore.applyMeasuredDimensions(dims)
     }
   }, [nodes])
-
-  // Force React Flow store notification after programmatic dimension changes.
-  // React Flow v12's NodeWrapper memo does not detect node.width/node.height or
-  // style changes alone — the store notification triggers subscriber re-evaluation
-  // which picks up the new internal node dimensions.
-  useEffect(() => {
-    if (needsRerenderRef.current) {
-      needsRerenderRef.current = false
-      storeApi.setState({})
-    }
-  })
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -963,6 +952,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                   canvasData: { x: containerEntity.canvasData.x, y: containerEntity.canvasData.y, width: result.containerWidth, height: result.containerHeight },
                 })
                 s.endBatch()
+                syncNodeDimensions(contextMenu.nodeId, result.containerWidth, result.containerHeight)
               }
             },
           })
@@ -1218,6 +1208,14 @@ function GraphCanvas() {
 
   const onRunLayout = useCallback((options: LayoutOptions) => {
     runFullLayout(options, () => fitViewRef.current?.())
+    requestAnimationFrame(() => {
+      const s = useGraphStore.getState()
+      for (const entity of s.entities) {
+        if (entity.type === "container") {
+          syncNodeDimensions(entity.id, entity.canvasData.width, entity.canvasData.height)
+        }
+      }
+    })
   }, [])
 
   return (
