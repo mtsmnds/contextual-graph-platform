@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-07
 
+### prd end — m5-prd0068-undo-redo-dimension-sync
+- **Source:** user request — "prd end for prd 0068"
+- **Branch at time:** m5-prd0066-forced-dimension-render (dirty — auto-proceeded)
+- **Classification:** Bug fix / small tweak
+- **ADR type:** short-form (no architectural changes)
+- **Commit:** cfd1aa8
+- **Pre-commit guard:** auto-proceeded
+
 ### prd start — m5-prd0066-forced-dimension-render
 - **Source:** user request — "prd start"
 - **Branch at time:** m5-prd0065-close-quit-workspace (clean — committed wip)
