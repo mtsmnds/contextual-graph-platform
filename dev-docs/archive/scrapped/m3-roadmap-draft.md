@@ -1,3 +1,4 @@
+> **STATUS: SCRAPPED — Not implemented. Retained for reference only.**
 
 ## Architectural Direction
 

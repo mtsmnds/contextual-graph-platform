@@ -1,3 +1,5 @@
+> **STATUS: SCRAPPED — Not implemented. Retained for reference only.**
+
 # PRD 0053: Container Padding — Child Safe Zone
 
 ## Overview

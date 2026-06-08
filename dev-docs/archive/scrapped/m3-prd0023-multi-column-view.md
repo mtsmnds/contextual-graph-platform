@@ -1,3 +1,5 @@
+> **STATUS: SCRAPPED — Not implemented. Retained for reference only.**
+
 # PRD0023: Multi-Column View (Phase 3)
 
 **Status:** Draft

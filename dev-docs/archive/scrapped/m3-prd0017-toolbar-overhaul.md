@@ -1,3 +1,5 @@
+> **STATUS: SCRAPPED — Not implemented. Retained for reference only.**
+
 # PRD0017: Toolbar Overhaul — Notion-like Commands + Floating Menubar
 
 **Status:** Draft
