@@ -55,6 +55,26 @@ function nodeStyle(
   }
 }
 
+// Direct DOM dimension sync for programmatic node resizes.
+// React Flow v12's NodeWrapper memo prevents re-renders when node.width/style
+// change via setNodes. Direct DOM manipulation triggers the native ResizeObserver
+// → updateNodeInternals pipeline, the same mechanism NodeResizeControl uses.
+//
+// INVARIANT: Any code that programmatically changes a node's width or height
+// MUST call this after the store update. The store handles persistence; this
+// handles visual rendering. Do NOT try to set dimensions via setNodes alone
+// (node.width, node.height, node.style) — those paths are blocked by the
+// NodeWrapper memo and will not reach the DOM.
+function syncNodeDimensions(nodeId: string, width: number, height: number) {
+  requestAnimationFrame(() => {
+    const el = document.querySelector(`[data-id="${nodeId}"]`) as HTMLElement | null
+    if (el) {
+      el.style.width = `${width}px`
+      el.style.height = `${height}px`
+    }
+  })
+}
+
 function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: React.MutableRefObject<() => void> }) {
   const entities = useGraphStore((s) => s.entities)
   const relations = useGraphStore((s) => s.relations)
@@ -153,9 +173,26 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
   const [visibleMetadataNodeIds, setVisibleMetadataNodeIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    // Capture current container dims from RF node state BEFORE any setNodes
+    // calls. RF's NodeWrapper memo blocks dimension changes through setNodes
+    // (style/width/height don't reach the DOM). We compare these stale dims
+    // against the entity canvasData after both branches below, and force a
+    // DOM sync via syncNodeDimensions when they differ.
+    // This covers undo/redo in both autoLayout and non-autoLayout modes.
+    const prevDims = new Map<string, { w: number; h: number | undefined }>()
+    for (const n of nodes) {
+      if (n.type === "containerGroup") {
+        prevDims.set(n.id, {
+          w: Number(n.style?.width ?? 400),
+          h: n.style?.height != null ? Number(n.style.height) : undefined,
+        })
+      }
+    }
+
     if (!autoLayout) {
       const pendingId = pendingNodeRef.current
       pendingNodeRef.current = null
+
       setNodes((prev) => {
         const prevById = new Map(prev.map((n) => [n.id, n]))
         const merged = [...prev]
@@ -202,7 +239,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
               newNode.parentId = derivedParentId
               newNode.extent = "parent"
               newNode.expandParent = true
-              // Insert after the parent node for correct ordering
               const parentIdx = merged.findIndex((n) => n.id === derivedParentId)
               if (parentIdx !== -1) {
                 merged.splice(parentIdx + 1, 0, newNode)
@@ -273,7 +309,6 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
           }
         }
 
-        // Depth-first ordering: parents before children (handles multi-level nesting)
         const nodeDepthCache = new Map<string, number>()
         function getNodeDepth(id: string): number {
           const cached = nodeDepthCache.get(id)
@@ -349,54 +384,66 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
       if (pendingId) {
         setTimeout(() => storeApi.getState().addSelectedNodes([pendingId]), 0)
       }
+    } else {
+      const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
 
-      return
+      const dagrePendingId = pendingNodeRef.current
+      setNodes((prev) => {
+        const prevById = new Map(prev.map((n) => [n.id, n]))
+        const merged: Node[] = []
+
+        for (const dagreNode of dagreNodes) {
+          const existing = prevById.get(dagreNode.id)
+          const saved = entities.find((e) => e.id === dagreNode.id)?.canvasData
+          const position = (saved && saved.x !== undefined) ? { x: saved.x, y: saved.y } : dagreNode.position
+
+          const pending = pendingNodeRef.current
+          if (pending && pending === dagreNode.id) {
+            pendingNodeRef.current = null
+            merged.push({ ...dagreNode, position, data: { ...dagreNode.data, editTrigger: 1 } })
+          } else if (existing) {
+            merged.push({ ...existing, position, data: { ...existing.data, ...dagreNode.data } })
+          } else {
+            merged.push({ ...dagreNode, position, data: dagreNode.data })
+          }
+        }
+
+        return merged
+      })
+
+      setEdges((prev) => {
+        const prevById = new Map(prev.map((e) => [e.id, e]))
+        const merged: Edge[] = []
+
+        for (const dagreEdge of dagreEdges) {
+          const existing = prevById.get(dagreEdge.id)
+          if (existing) {
+            merged.push({ ...existing, label: dagreEdge.label, data: dagreEdge.data })
+          } else {
+            merged.push(dagreEdge)
+          }
+        }
+
+        return merged
+      })
+
+      if (dagrePendingId) {
+        storeApi.getState().addSelectedNodes([dagrePendingId])
+      }
     }
 
-    const { nodes: dagreNodes, edges: dagreEdges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
-
-    const dagrePendingId = pendingNodeRef.current
-    setNodes((prev) => {
-      const prevById = new Map(prev.map((n) => [n.id, n]))
-      const merged: Node[] = []
-
-      for (const dagreNode of dagreNodes) {
-        const existing = prevById.get(dagreNode.id)
-        const saved = entities.find((e) => e.id === dagreNode.id)?.canvasData
-        const position = (saved && saved.x !== undefined) ? { x: saved.x, y: saved.y } : dagreNode.position
-
-        const pending = pendingNodeRef.current
-        if (pending && pending === dagreNode.id) {
-          pendingNodeRef.current = null
-          merged.push({ ...dagreNode, position, data: { ...dagreNode.data, editTrigger: 1 } })
-        } else if (existing) {
-          merged.push({ ...existing, position, data: { ...existing.data, ...dagreNode.data } })
-        } else {
-          merged.push({ ...dagreNode, position, data: dagreNode.data })
-        }
+    // Post-loop: sync DOM dimensions for containers whose entity dimensions
+    // differ from the RF node state captured above. This covers undo, redo,
+    // and any other entity restore in both autoLayout and non-autoLayout modes.
+    for (const entity of entities) {
+      if (entity.type !== "container") continue
+      const prev = prevDims.get(entity.id)
+      if (!prev) continue
+      if (prev.w !== entity.canvasData.width || prev.h !== entity.canvasData.height) {
+        const w = entity.canvasData.width
+        const h = entity.canvasData.height
+        requestAnimationFrame(() => syncNodeDimensions(entity.id, w, h))
       }
-
-      return merged
-    })
-
-    setEdges((prev) => {
-      const prevById = new Map(prev.map((e) => [e.id, e]))
-      const merged: Edge[] = []
-
-      for (const dagreEdge of dagreEdges) {
-        const existing = prevById.get(dagreEdge.id)
-        if (existing) {
-          merged.push({ ...existing, label: dagreEdge.label, data: dagreEdge.data })
-        } else {
-          merged.push(dagreEdge)
-        }
-      }
-
-      return merged
-    })
-
-    if (dagrePendingId) {
-      storeApi.getState().addSelectedNodes([dagrePendingId])
     }
   }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds, autoLayout])
 
@@ -933,6 +980,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                   canvasData: { x: containerEntity.canvasData.x, y: containerEntity.canvasData.y, width: result.containerWidth, height: result.containerHeight },
                 })
                 s.endBatch()
+                syncNodeDimensions(contextMenu.nodeId, result.containerWidth, result.containerHeight)
               }
             },
           })
@@ -1188,6 +1236,14 @@ function GraphCanvas() {
 
   const onRunLayout = useCallback((options: LayoutOptions) => {
     runFullLayout(options, () => fitViewRef.current?.())
+    requestAnimationFrame(() => {
+      const s = useGraphStore.getState()
+      for (const entity of s.entities) {
+        if (entity.type === "container") {
+          syncNodeDimensions(entity.id, entity.canvasData.width, entity.canvasData.height)
+        }
+      }
+    })
   }, [])
 
   return (

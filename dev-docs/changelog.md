@@ -14,6 +14,28 @@ Use this to recover context after breaks.
 
 ## 2026-06-07
 
+### m5 — prd0066 — forced dimension render (programmatic node resize)
+- **What:** Added `syncNodeDimensions()` — direct DOM manipulation on the node wrapper div inside `requestAnimationFrame` to trigger React Flow's native ResizeObserver → `updateNodeInternals` pipeline. Called after Stack Children and Run Layout operations. Four prior approaches all failed (setting `node.style`, `node.width`/`node.height`, `node.measured`, calling `updateNodeInternals` without DOM change — all blocked by NodeWrapper memoization in RF v12). The `dimChanged` tracking and `width`/`height` spread on the node object were removed as dead code. CanvasData `width`/`height` changed from optional to required. `snapCanvasDim` now always snaps (no conditional undefined passthrough). Seed data and all tests updated to include explicit `width`/`height`.
+- **Why:** Programmatic dimension changes (Stack Children, dagre auto-layout) wrote correct data to the store and internal node but the DOM never updated without a page reload. React Flow v12's NodeWrapper memo ignores `node.width`/`height`/`style` changes from `setNodes`. The only reliable path is direct DOM manipulation → ResizeObserver → updateNodeInternals — the same pipeline NodeResizeControl uses.
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: Added `syncNodeDimensions()`, calls from Stack Children and Run Layout handlers; removed dead `dimChanged` code
+  - `src/types/graph.ts`: CanvasData `width`/`height` now required (not optional)
+  - `src/store/useGraphStore.ts`: `snapCanvasDim` always snaps; `addEntity` default includes explicit width/height; migration defaults to 368×64
+  - `src/data/seed.ts`: Container seed data includes explicit width/height
+  - `src/store/migrate.test.ts`, `snap.test.ts`, `nesting.test.ts`, `workspace.test.ts`, `EntityNode.test.ts`: Updated for required width/height
+- **Impact:** Stack Children and dagre auto-layout now visually resize containers without a page reload. Any future programmatic resize must follow the invariant: store update for persistence + `syncNodeDimensions(id, w, h)` for visual rendering.
+- **Archive:** `dev-docs/archive/m5/m5-prd0066-forced-dimension-render.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-07-m5-prd0066-forced-dimension-render-adr.md`
+
+### m5 — prd0068 — undo/redo dimension sync (post-hoc)
+- **What:** Restructured the sync effect from `if (!autoLayout) { ... return }` to an `if/else` with shared `prevDims` capture before both branches and post-loop `syncNodeDimensions` after both branches. The dimension-sync code was only in the `!autoLayout` branch, but Stack Children requires `autoLayout=true` so undo/redo always took the `else` branch which had no sync — entity data restored correctly but the DOM never updated.
+- **Why:** Undo/redo stopped working visually after PRD 0066 introduced `syncNodeDimensions`. Positions restored correctly (they go through React Flow's position pipeline which isn't memo-blocked), but container dimensions were stuck at the post-action size because the NodeWrapper memo ignored the `setNodes` style/width/height updates.
+- **Files changed:**
+  - `src/canvas/GraphCanvas.tsx`: `prevDims` capture moved before `if/else`, `if/return` converted to `if/else`, post-loop dimension sync placed after both branches
+- **Impact:** Undo/redo after Stack Children (and any autoLayout operation) now restores container dimensions visually. The `if/else` structure is clearer about mutual exclusivity and any future shared post-entity-sync logic can go after it.
+- **Archive:** `dev-docs/archive/m5/m5-prd0068-undo-redo-dimension-sync.md`
+- **ADR:** `dev-docs/archive/m5/2026-06-07-m5-prd0068-undo-redo-dimension-sync-adr.md`
+
 ### m5 — prd0065 — close/quit workspace
 - **What:** Added `closeWorkspace()` store action that resets all state to blank (entities, relations, canvas, undo/redo, folderName, contentCache, module-level `_adapter`/`_hydrated`). "Close Workspace" button in sidebar footer, visible only when a folder is open, with `SignOut` icon. Also fixed `sortOrder` comparison across 7 call sites — replaced `localeCompare` (locale-aware, sorts "Zz" after "a0") with raw Unicode code-point comparison (sorts "Zz" before "a0", matching fractional-indexing-jittered conventions).
 - **Why:** No way to close a workspace and reload fresh data from `graph.json` without clearing IndexedDB manually. The `localeCompare` bug caused all sortOrder-dependent features (including PRD 0064's Stack Children) to sort mixed-case fractional-indexing keys incorrectly.
