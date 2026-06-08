@@ -109,24 +109,24 @@ describe("migrateSnapshot", () => {
       expect(result.entities[0].canvasData).toEqual({ x: 100, y: 200, width: 300, height: 80 });
     });
 
-    it("defaults position to 0,0 when missing", () => {
+    it("defaults position to 0,0 and dimensions when missing", () => {
       const result = migrateSnapshot({
         version: 4,
         entities: [{ ...MINIMAL_ENTITY, id: "e1" }],
         relations: [],
         canvas: {},
       });
-      expect(result.entities[0].canvasData).toEqual({ x: 0, y: 0 });
+      expect(result.entities[0].canvasData).toEqual({ x: 0, y: 0, width: 368, height: 64 });
     });
 
-    it("omits width/height when dimensions are missing", () => {
+    it("defaults width/height when dimensions are missing", () => {
       const result = migrateSnapshot({
         version: 4,
         entities: [{ ...MINIMAL_ENTITY, id: "e1" }],
         relations: [],
         canvas: { positions: { e1: { x: 10, y: 20 } } },
       });
-      expect(result.entities[0].canvasData).toEqual({ x: 10, y: 20 });
+      expect(result.entities[0].canvasData).toEqual({ x: 10, y: 20, width: 368, height: 64 });
     });
   });
 

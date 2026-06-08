@@ -229,7 +229,7 @@ export const SEED_DATA: GraphSnapshot = {
       createdAt: SEED_TS,
       updatedAt: SEED_TS,
       metadata: {},
-      canvasData: { x: 0, y: 0 },
+      canvasData: { x: 0, y: 0, width: 400, height: 304 },
     },
     {
       id: "editor-playground",
@@ -238,7 +238,7 @@ export const SEED_DATA: GraphSnapshot = {
       createdAt: SEED_TS,
       updatedAt: SEED_TS,
       metadata: {},
-      canvasData: { x: 0, y: 0 },
+      canvasData: { x: 0, y: 0, width: 400, height: 304 },
     },
   ],
   relations: [],

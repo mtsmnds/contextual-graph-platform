@@ -8,8 +8,8 @@ type EntityType =
 type CanvasData = {
   x: number
   y: number
-  width?: number
-  height?: number
+  width: number
+  height: number
 }
 
 type Entity = {

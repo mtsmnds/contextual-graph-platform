@@ -5,6 +5,15 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-06-07
+
+### prd start — m5-prd0064-stack-container-children
+- **Source:** user request — "lets start building"
+- **Branch at time:** main (clean)
+- **Branch decision:** created from main → m5-prd0064-stack-container-children
+- **Scope:** full (single phase)
+- **Pre-commit guard:** no changes
+
 ## 2026-06-03
 
 ### prd merge — m5-prd0063-segment-auto-height

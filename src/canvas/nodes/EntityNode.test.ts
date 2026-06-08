@@ -49,7 +49,7 @@ describe("shouldWriteHeight (measurement guard)", () => {
 describe("EntityNode measurement → store", () => {
   beforeEach(() => {
     useGraphStore.setState({
-      entities: [{ id: "entity-1", type: "concept" as const, content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0 } }],
+      entities: [{ id: "entity-1", type: "concept" as const, content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0, width: 368, height: 64 } }],
       relations: [],
       featureFlags: { autoHeight: true },
     })
@@ -72,7 +72,7 @@ describe("EntityNode measurement → store", () => {
 
   it("does not write height to store when delta ≤ 1px", () => {
     useGraphStore.setState({
-      entities: [{ id: "entity-1", type: "concept" as const, content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0, height: 191 } }],
+      entities: [{ id: "entity-1", type: "concept" as const, content: "", metadata: {}, createdAt: 1, updatedAt: 1, canvasData: { x: 0, y: 0, width: 368, height: 191 } }],
     })
     const current = useGraphStore.getState().entities[0]
 

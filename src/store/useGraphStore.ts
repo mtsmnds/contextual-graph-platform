@@ -18,8 +18,8 @@ export const snap16 = (n: number) => Math.ceil(n / GRID) * GRID
 export function snapCanvasDim(cd: CanvasData): CanvasData {
   return {
     ...cd,
-    width: cd.width != null ? snap16(cd.width) : cd.width,
-    height: cd.height != null ? snap16(cd.height) : cd.height,
+    width: snap16(cd.width),
+    height: snap16(cd.height),
   }
 }
 
@@ -86,11 +86,12 @@ export function migrateSnapshot(snapshot: {
       const dim = dimensions[id]
       return {
         ...e,
-        canvasData: {
-          x: pos?.x ?? 0,
-          y: pos?.y ?? 0,
-          ...(dim ? { width: dim.width, height: dim.height } : {}),
-        },
+      canvasData: {
+        x: pos?.x ?? 0,
+        y: pos?.y ?? 0,
+        width: dim?.width ?? 368,
+        height: dim?.height ?? 64,
+      },
       }
     })
     canvas = { viewport: canvas.viewport }
@@ -444,7 +445,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       metadata: data?.metadata ?? {},
       createdAt: now,
       updatedAt: now,
-      canvasData: data?.canvasData ?? { x: 0, y: 0 },
+      canvasData: data?.canvasData ?? { x: 0, y: 0, width: 368, height: 64 },
     };
     set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
     // parentId param creates a contains edge instead of storing on the entity
@@ -706,7 +707,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
             metadata: { sourceContainer: id, label },
             createdAt: now,
             updatedAt: now,
-            canvasData: { x: 0, y: 0 },
+            canvasData: { x: 0, y: 0, width: 368, height: 64 },
           });
         }
       }

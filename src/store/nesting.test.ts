@@ -93,8 +93,8 @@ describe("store nesting operations", () => {
   describe("nesting via addRelation", () => {
     it("creates parent-child relationship via contains edge", () => {
       const store = useGraphStore.getState();
-      const a = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const b = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const a = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
+      const b = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
       store.addRelation(a, b, "contains", {}, "a0");
       const containsRel = useGraphStore.getState().relations.find(
         (r) => r.source === a && r.target === b && r.type === "contains",
@@ -104,7 +104,7 @@ describe("store nesting operations", () => {
 
     it("prevents self-nesting via wouldCreateCycle", () => {
       const store = useGraphStore.getState();
-      const a = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const a = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
       // Direct self-nesting should be caught
       expect(wouldCreateCycle({ relations: useGraphStore.getState().relations }, a, a)).toBe(true);
     });
@@ -113,7 +113,7 @@ describe("store nesting operations", () => {
       const store = useGraphStore.getState();
       const ids: string[] = [];
       for (let i = 0; i < 5; i++) {
-        store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+        store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
         ids.push(useGraphStore.getState().entities[useGraphStore.getState().entities.length - 1].id);
       }
       // Nest via addRelation (contains edge)
@@ -128,8 +128,8 @@ describe("store nesting operations", () => {
   describe("deleteEntity cascade", () => {
     it("reparents direct children of deleted container", () => {
       const store = useGraphStore.getState();
-      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      const childId = store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
+      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100, width: 400, height: 304 } });
+      const childId = store.addEntity("container", { canvasData: { x: 10, y: 10, width: 400, height: 304 } }, parentId);
       store.deleteEntity(parentId);
       const child = useGraphStore.getState().entities.find((e) => e.id === childId);
       expect(child).toBeDefined();
@@ -145,9 +145,9 @@ describe("store nesting operations", () => {
 
     it("handles deeply nested container deletion", () => {
       const store = useGraphStore.getState();
-      const grandparentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      const parentId = store.addEntity("container", { canvasData: { x: 10, y: 10 } }, grandparentId);
-      const childId = store.addEntity("segment", { canvasData: { x: 5, y: 5, height: 64 } }, parentId);
+      const grandparentId = store.addEntity("container", { canvasData: { x: 100, y: 100, width: 400, height: 304 } });
+      const parentId = store.addEntity("container", { canvasData: { x: 10, y: 10, width: 400, height: 304 } }, grandparentId);
+      const childId = store.addEntity("segment", { canvasData: { x: 5, y: 5, width: 368, height: 64 } }, parentId);
 
       const stateBefore = useGraphStore.getState();
       expect(stateBefore.relations).toHaveLength(2);
@@ -176,8 +176,8 @@ describe("store nesting operations", () => {
 
     it("deleteEntity on container deletes associated relations", () => {
       const store = useGraphStore.getState();
-      const a = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const b = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const a = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
+      const b = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
       store.addRelation(a, b, "references");
       store.deleteEntity(a);
       const relations = useGraphStore.getState().relations;
@@ -186,8 +186,8 @@ describe("store nesting operations", () => {
 
     it("empty container deletion has no side effects", () => {
       const store = useGraphStore.getState();
-      store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      store.addEntity("concept", { canvasData: { x: 0, y: 0 } });
+      store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
+      store.addEntity("concept", { canvasData: { x: 0, y: 0, width: 368, height: 64 } });
       const id = useGraphStore.getState().entities[0].id;
       const entityCount = useGraphStore.getState().entities.length;
       store.deleteEntity(id);
@@ -198,8 +198,8 @@ describe("store nesting operations", () => {
   describe("undo/redo nesting operations", () => {
     it("undoes drag-to-nest (contains edge creation)", () => {
       const store = useGraphStore.getState();
-      const parentId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const childId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const parentId = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
+      const childId = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
       store.addRelation(parentId, childId, "contains", {}, "a0");
       const containsBefore = useGraphStore.getState().relations.find(
         (r) => r.target === childId && r.type === "contains",
@@ -214,8 +214,8 @@ describe("store nesting operations", () => {
 
     it("undoes detach (contains edge removal)", () => {
       const store = useGraphStore.getState();
-      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
+      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100, width: 400, height: 304 } });
+      store.addEntity("container", { canvasData: { x: 10, y: 10, width: 400, height: 304 } }, parentId);
       const entities = useGraphStore.getState().entities;
       const childId = entities[1].id;
       // Detach: batch edge removal + position adjustment
@@ -225,7 +225,7 @@ describe("store nesting operations", () => {
       );
       expect(rel).toBeDefined();
       store.removeRelation(rel!.id);
-      store.updateEntity(childId, { canvasData: { x: 110, y: 110 } });
+      store.updateEntity(childId, { canvasData: { x: 110, y: 110, width: 400, height: 304 } });
       store.endBatch();
       const containsAfter = useGraphStore.getState().relations.find(
         (r) => r.target === childId && r.type === "contains",
@@ -244,8 +244,8 @@ describe("store nesting operations", () => {
 
     it("undoes parent deletion cascade", () => {
       const store = useGraphStore.getState();
-      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100 } });
-      const childId = store.addEntity("container", { canvasData: { x: 10, y: 10 } }, parentId);
+      const parentId = store.addEntity("container", { canvasData: { x: 100, y: 100, width: 400, height: 304 } });
+      const childId = store.addEntity("container", { canvasData: { x: 10, y: 10, width: 400, height: 304 } }, parentId);
       store.deleteEntity(parentId);
       expect(useGraphStore.getState().entities.find((e) => e.id === parentId)).toBeUndefined();
       store.undo();
@@ -261,8 +261,8 @@ describe("store nesting operations", () => {
 
     it("undoes contains edge removal", () => {
       const store = useGraphStore.getState();
-      const parentId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
-      const childId = store.addEntity("container", { canvasData: { x: 0, y: 0 } });
+      const parentId = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
+      const childId = store.addEntity("container", { canvasData: { x: 0, y: 0, width: 400, height: 304 } });
       const relId = store.addRelation(parentId, childId, "contains", {}, "a0");
       store.removeRelation(relId);
       expect(useGraphStore.getState().relations.find((r) => r.id === relId)).toBeUndefined();
