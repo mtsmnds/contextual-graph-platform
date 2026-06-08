@@ -1,3 +1,9 @@
+> **Completion note (2026-06-07):**
+> - **What was built:** `closeWorkspace()` store action, "Close Workspace" sidebar button, `compareSortOrder()` utility, `localeCompare` → raw comparison fix across 7 sites
+> - **Key decisions:** No confirmation dialog; no dirty detection; `compareSortOrder` in `queries.ts` as shared utility
+> - **Deviations from plan:** `compareSortOrder` fix was discovered during implementation and included (cross-cutting bug affecting PRD 0064)
+> - **Postponed:** Remembering last folder handle for quick re-open
+
 # PRD 0065: Close/Quit Workspace
 
 ## Overview

@@ -1,5 +1,11 @@
 import type { Entity, Relation } from "../types/graph";
 
+export function compareSortOrder(a: string, b: string): number {
+  if (a < b) return -1
+  if (a > b) return 1
+  return 0
+}
+
 interface GraphState {
   entities: Entity[];
   relations: Relation[];
@@ -42,7 +48,7 @@ export function getContainerChildren(
 ): Entity[] {
   const containsRels = state.relations
     .filter((r) => r.source === containerId && r.type === "contains")
-    .sort((a, b) => a.sortOrder.localeCompare(b.sortOrder));
+    .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
 
   const children = containsRels
     .map((r) => getEntity(state, r.target))

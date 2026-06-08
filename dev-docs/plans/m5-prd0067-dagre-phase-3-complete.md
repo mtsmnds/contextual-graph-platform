@@ -1,4 +1,4 @@
-# PRD 0065: Dagre Phase 3 — Full Container Pipeline (Deferred from PRD 0064)
+# PRD 0067: Dagre Phase 3 — Full Container Pipeline (Deferred from PRD 0064)
 
 ## Overview
 
