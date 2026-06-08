@@ -21,4 +21,4 @@ Completed work goes in `changelog.md`.
 
 ## Later
 
-- **ID system rework** — `slugify` strips hyphens (spaces→hyphens then immediately removed), producing continuous slugs (`"Hello World"` → `"helloworld"`). `SEG_PREFIX_RE` strip on parent IDs runs after child slug is appended, so `_seg-N` suffixes on parents are never actually removed. Rework to use fractional-indexing or UUIDs for reliable, collision-resistant IDs.
+- _See `dev-docs/plans/backlog.md` for all deferred items._
