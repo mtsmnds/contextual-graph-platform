@@ -23,7 +23,7 @@ IndexedDB is the runtime store. The FS adapter is invoked only by explicit user 
 
 ## Dependencies
 
-- `browser-fs-access` npm package (normalizes the Directory Picker API across browsers)
+- Raw File System Access API (`showDirectoryPicker`, `getFileHandle`, `createWritable`)
 - No dependency on React, React Flow, or UI components from the adapter module
 
 ## FSError Class
@@ -84,13 +84,13 @@ Added to `useGraphStore`:
 | Action | Signature | Behaviour |
 |--------|-----------|-----------|
 | `openFromDisk` | `(snapshot: GraphSnapshot, folderName: string) => void` | Replaces entities/relations/canvas with snapshot data. Resets undo/redo. Sets folder name. Sets `_lastDiskSaveAt = Date.now()`. |
-| `saveToDisk` | `() => Promise<void>` | Builds current snapshot, returns it. Caller (UI) writes it via FSAdapter. Sets `_lastDiskSaveAt = Date.now()`. |
-| `closeDisk` | `() => void` | Clears folder name. Leaves entities/relations in place (IndexedDB still has them). |
+| `saveToDisk` | `() => Promise<void>` | Calls `FSAdapter.save()` with current snapshot. On success, sets `_lastDiskSaveAt = Date.now()`. On failure, throws FSError — caller catches and shows dialog. |
+| `closeDisk` | `() => void` | Calls `FSAdapter.close()`. Clears folder name. Leaves entities/relations in place (IndexedDB still has them). |
 | `isDirty` | `() => boolean` | `_lastMutationTime > _lastDiskSaveAt` |
 | `_lastMutationTime` | timestamp | Already exists (`lastMutationTime`). |
 | `_lastDiskSaveAt` | timestamp | New field. Set by `openFromDisk` and `saveToDisk`. |
 
-The store does NOT import FSAdapter. The adapter is called from the UI (Open/Save buttons), which reads the returned snapshot and calls the store action.
+The store holds a module-level `_fsAdapter` reference, set during `openFromDisk`, used by `saveToDisk`, cleared by `closeDisk`.
 
 ## Validation
 
@@ -140,7 +140,7 @@ The log is cleared on `close()`. Maximum 100 entries (ring buffer).
 
 | File | Change |
 |------|--------|
-| `src/store/persistence/FSAdapter.ts` | **New.** Standalone adapter: `FSAdapter` class + `FSError` + `validateSnapshot`. Uses `browser-fs-access` for directory picker normalization. MDN-linked comments on every public method. |
+| `src/store/persistence/FSAdapter.ts` | **New.** Standalone adapter: `FSAdapter` class + `FSError` + `validateSnapshot`. Uses raw File System Access API (`showDirectoryPicker`, `getFileHandle`, `createWritable`). MDN-linked comments on every public method. |
 | `src/store/persistence/index.ts` | Re-export new `FSAdapter`, `FSError`, `FSErrorCode`. Keep existing re-exports untouched (old adapter stays). |
 | `src/store/persistence/resolver.ts` | Simplify to always return `IndexedDBAdapter`. Keep `?adapter=` URL override for testing but remove "auto" mode. |
 | `src/store/useGraphStore.ts` | Add `_lastDiskSaveAt` field, `openFromDisk`, `saveToDisk`, `closeDisk`, `isDirty` actions. Wire `_lastMutationTime` already exists. |
