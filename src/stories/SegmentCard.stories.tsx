@@ -53,6 +53,24 @@ export const CustomWidth: Story = {
   ),
 }
 
+export const PaddingDefault: Story = {
+  name: "PaddingDefault",
+  render: () => (
+    <SegmentCard width={300} className="border border-red-500">
+      <span>Default padding (p-3 = 12px all sides)</span>
+    </SegmentCard>
+  ),
+}
+
+export const PaddingEntityCard: Story = {
+  name: "PaddingEntityCard",
+  render: () => (
+    <SegmentCard width={300} className="entity-card-content px-3 border border-red-500">
+      <span>Entity card padding (px-3 + entity-card-content)</span>
+    </SegmentCard>
+  ),
+}
+
 export const EditableContent: Story = {
   render: () => (
     <SegmentCard width={208}>
