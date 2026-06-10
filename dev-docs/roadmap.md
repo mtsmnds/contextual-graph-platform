@@ -13,11 +13,14 @@ Completed work goes in `changelog.md`.
 
 ## Now
 
-- _Empty — no active PRDs._
+- **Shared Chrome** — `dev-docs/plans/m6-shared-chrome.md`
+- **Card & Content UI** — `dev-docs/plans/m7-card-content-ui.md`
+
+_Work on either independently. Both are prerequisites for the semi-structured editing interface._
 
 ## Next
 
-- _Empty — no queued PRDs._
+- _Empty — see `dev-docs/plans/backlog.md` for deferred items._
 
 ## Later
 
