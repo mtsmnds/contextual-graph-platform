@@ -1,3 +1,9 @@
+> **Completion note (2026-06-10):**
+> - **What was built:** Standalone FSAdapter with open/save/close, FSError typed errors, validateSnapshot, operation log. Store actions openFromDisk/saveToDisk/closeDisk/isDirty. Stale folder session detection via localStorage flag. closeWorkspace resets to seed data. Dirty tracking with beforeunload. UI Save button + status indicator.
+> - **Key decisions:** FSAdapter does NOT implement PersistenceAdapter — it's a standalone class with its own interface. IndexedDB is always the runtime store. Resolver always returns IndexedDBAdapter (removed tryReconnect/auto mode).
+> - **Deviations from plan:** `open()` returns null for empty folder (NOT_FOUND) instead of throwing — the caller checks `isOpen()` to distinguish cancelled from empty folder. `NOT_FOUND` removed from thrown codes. Added stale folder session detection via localStorage (not in original plan — discovered during UAT). `closeWorkspace` changed to reset to seed data instead of empty arrays (discovered during UAT).
+> - **Postponed:** Save As, document subdirectory pattern, UI dirty indicator.
+
 # PRD: FS Access Adapter Overhaul — Explicit Save/Load Model
 
 ## Overview
@@ -83,14 +89,30 @@ Added to `useGraphStore`:
 
 | Action | Signature | Behaviour |
 |--------|-----------|-----------|
-| `openFromDisk` | `(snapshot: GraphSnapshot, folderName: string) => void` | Replaces entities/relations/canvas with snapshot data. Resets undo/redo. Sets folder name. Sets `_lastDiskSaveAt = Date.now()`. |
+| `openFromDisk` | `(snapshot: GraphSnapshot, folderName: string) => void` | Replaces entities/relations/canvas with snapshot data. Resets undo/redo. Sets folder name. Sets `_lastDiskSaveAt = Date.now()`. Sets `localStorage` flag `react-roadmap:folder-open` to detect stale folder sessions on reload. |
 | `saveToDisk` | `() => Promise<void>` | Calls `FSAdapter.save()` with current snapshot. On success, sets `_lastDiskSaveAt = Date.now()`. On failure, throws FSError — caller catches and shows dialog. |
-| `closeDisk` | `() => void` | Calls `FSAdapter.close()`. Clears folder name. Leaves entities/relations in place (IndexedDB still has them). |
+| `closeDisk` | `() => void` | Calls `FSAdapter.close()`. Clears folder name. Clears `localStorage` flag `react-roadmap:folder-open`. Leaves entities/relations in place. |
+| `closeWorkspace` | `() => void` | Already existed. Updated to reset to seed data via `generateSeedData()` instead of clearing to empty arrays. Also clears `react-roadmap:folder-open` flag. |
 | `isDirty` | `() => boolean` | `_lastMutationTime > _lastDiskSaveAt` |
 | `_lastMutationTime` | timestamp | Already exists (`lastMutationTime`). |
 | `_lastDiskSaveAt` | timestamp | New field. Set by `openFromDisk` and `saveToDisk`. |
 
 The store holds a module-level `_fsAdapter` reference, set during `openFromDisk`, used by `saveToDisk`, cleared by `closeDisk`.
+
+### Stale Folder Session Detection
+
+On cold start (`init`), the store checks `localStorage` flag `react-roadmap:folder-open`:
+
+- **Flag set** → user reloaded after a folder session but the FS handle is lost. Force seed data instead of restoring stale IndexedDB data that can't be saved to disk.
+- **No flag** → normal cold start. Restore IndexedDB data (IDB-only session).
+
+`openFromDisk` sets the flag. `closeDisk` and `closeWorkspace` clear it.
+
+### Seed Data Reset
+
+`generateSeedData()` is a module-level helper that produces fresh seed entities/relations/container content from `SEED_DATA`. Called by:
+- `init`'s seed branch (cold start or stale folder session)
+- `closeWorkspace` (ensures Close Workspace and reload produce the same state — seed data, not empty canvas)
 
 ## Validation
 
@@ -194,6 +216,10 @@ The log is cleared on `close()`. Maximum 100 entries (ring buffer).
 - **AC19:** App starts with IndexedDB data. No folder handle is restored. UI shows "No folder open — working from local storage only."
 - **AC20:** The old `tryReconnect` path is confirmed dead (no caller).
 - **AC21:** The old `FSAccessAdapter` is preserved as-is but not imported by any production code path.
+- **AC22:** Reload after a folder session (no explicit close) resets to seed data, not the stale folder data. Folder is not reconnected. The stale IndexedDB data from the folder session is not restored.
+- **AC23:** Close Workspace resets to seed data (container nodes with "About This Workspace" and "Editor Playground"), not an empty canvas.
+- **AC24:** Close Workspace followed by reload also shows seed data (not stale folder data).
+- **AC25:** Normal IDB-only session (no folder opened) survives reload — seed data is restored from IndexedDB.
 
 ## Out of Scope
 

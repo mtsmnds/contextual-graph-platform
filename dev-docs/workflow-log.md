@@ -5,6 +5,16 @@ Append-only, newest on top within same-day groupings.
 
 ---
 
+## 2026-06-10
+
+### prd end — m6-prd0069-fs-adapter-overhaul
+- **Source:** user request — "prd end"
+- **Branch at time:** prd0069-fs-adapter (dirty — auto-proceeded)
+- **Classification:** Architecture change + Feature change
+- **ADR type:** full (persistence architecture changed — FSAdapter standalone, IndexedDB always runtime, local storage stale session detection)
+- **Commit:** 8ff5263
+- **Pre-commit guard:** auto-proceeded
+
 ## 2026-06-07
 
 ### prd end — m5-prd0068-undo-redo-dimension-sync
