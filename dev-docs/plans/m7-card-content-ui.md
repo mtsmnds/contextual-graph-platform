@@ -8,7 +8,7 @@ The card is the universal atomic unit for displaying and editing graph entities 
 
 | # | What | Effort | Depends on |
 |---|------|--------|------------|
-| 1 | **Reusable ContentEditor** — the textarea + auto-expand + inline-edit state machine currently lives in `EntityNode.tsx` (lines 40-90). Extract into `src/components/ContentEditor.tsx`. EntityNode imports it. Always-editable textarea — pure extraction, no behavior change. | Small | SegmentCard already clean |
+| 1 | **Reusable ContentEditor** — `dev-docs/plans/m7-prd0071-content-editor.md`. Extract textarea + auto-expand + inline-edit state machine from `EntityNode.tsx` into standalone component. | Small | SegmentCard already clean |
 | 2 | **Dialog for long-form editing** — portal component that opens a segment's content in a larger textarea. Cancel → discard, click-outside → save. Uses ContentEditor + SegmentCard internally. | Small | #1 |
 | 3 | **Collapse/accordion for containers** — container component that reads children via `contains` edges + `sortOrder`, renders each as a collapsible section. Works inside or outside ReactFlow. Connects to store directly (container/presenter split). | Medium | #1 |
 | 4a | **Syntax-aware rendering (always-editable)** — markdown tokens render inline in the textarea (VS Code / iA Writer style). `**bold**` renders bold, `_italic_` renders italic, markers stay visible and editable. No view/edit mode switch — same textarea, richer display. | Medium | #1 |
