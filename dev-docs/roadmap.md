@@ -14,7 +14,7 @@ Completed work goes in `changelog.md`.
 ## Now
 
 - **Shared Chrome** — `dev-docs/plans/m6-shared-chrome.md`
-- **Card & Content UI** — `dev-docs/plans/m7-card-content-ui.md`
+- **Card & Content UI** — `dev-docs/plans/m7-card-content-ui.md` (active: SegmentCard variants `m7-prd0072`)
 
 _Work on either independently. Both are prerequisites for the semi-structured editing interface._
 
