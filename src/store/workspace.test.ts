@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGraphStore } from "./useGraphStore";
+import { SEED_DATA } from "../data/seed";
 
 describe("closeWorkspace", () => {
   beforeEach(() => {
@@ -25,16 +26,24 @@ describe("closeWorkspace", () => {
     });
   });
 
-  it("clears entities and relations", () => {
+  it("replaces entities with seed data", () => {
     const store = useGraphStore.getState();
     expect(store.entities).toHaveLength(1);
+
+    store.closeWorkspace();
+
+    const after = useGraphStore.getState();
+    expect(after.entities).toHaveLength(SEED_DATA.entities.length);
+  });
+
+  it("replaces relations with seed data", () => {
+    const store = useGraphStore.getState();
     expect(store.relations).toHaveLength(1);
 
     store.closeWorkspace();
 
     const after = useGraphStore.getState();
-    expect(after.entities).toEqual([]);
-    expect(after.relations).toEqual([]);
+    expect(after.relations).toEqual(SEED_DATA.relations);
   });
 
   it("resets folderName and adapterId", () => {

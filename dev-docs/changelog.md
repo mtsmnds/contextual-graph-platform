@@ -12,6 +12,26 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-10
+
+### m6 — prd0069 — FS Access Adapter Overhaul
+- **What:** Replaced the old `FSAccessAdapter` (drop-in PersistenceAdapter with auto-save and silent reconnect) with a new standalone `FSAdapter` that treats file-on-disk as an explicit checkpoint. IndexedDB is always the runtime store. FS operations are invoked only by explicit user action. Added `FSError` typed error class, `validateSnapshot()`, and a ring-buffer operation log. Added store actions `openFromDisk`, `saveToDisk`, `closeDisk`, `isDirty`. Added `beforeunload` dirty tracking. Added stale folder session detection via `localStorage` flag (reload without FS handle resets to seed data). `closeWorkspace` now resets to seed data instead of empty canvas.
+- **Why:** The old adapter had systemic silent-failure problems — permission revocation went undetected, errors were swallowed, users had no visibility into whether data reached disk. Replaced with a simpler, correct model: IndexedDB for runtime, explicit open/save/close for FS.
+- **Files changed:**
+  - `src/store/persistence/FSAdapter.ts`: **New** — standalone FS adapter with FSError, validateSnapshot, FSAdapter class
+  - `src/store/persistence/FSAdapter.test.ts`: **New** — 48 unit tests covering all FSErrorCode paths, validation, lifecycle
+  - `src/store/persistence/index.ts`: Added re-exports for FSAdapter, FSError, validateSnapshot
+  - `src/store/persistence/resolver.ts`: Simplified to always return IndexedDBAdapter; removed auto mode and tryReconnect path
+  - `src/store/useGraphStore.ts`: Added `_fsAdapter`, `lastDiskSaveAt`, `openFromDisk`, `saveToDisk`, `closeDisk`, `isDirty`, `setFsAdapter`; extracted `generateSeedData()`; added stale folder session detection; updated `closeWorkspace` to reset to seed data
+  - `src/store/workspace.test.ts`: Updated for seed data reset behavior
+  - `src/canvas/GraphCanvas.tsx`: Replaced old `onOpenFolder` with new FSAdapter pipeline (pick → read/validate → load)
+  - `src/canvas/panels/AppSidebar.tsx`: Added Save button (disabled without folder), status message when no folder open
+  - `src/routes/WorkspaceRoot.tsx`: Removed FS reconnect, direct IndexedDBAdapter init; added `beforeunload` listener
+  - `dev-docs/plans/m6-prd0069-fs-adapter-overhaul.md`: Documented stale folder session detection and seed data reset behaviors
+- **Impact:** No more silent FS failures. Explicit save/load model gives users clear feedback. Reload after folder session safely resets to seed data. Close Workspace always produces a consistent starting state.
+- **Archive:** `dev-docs/archive/m6/m6-prd0069-fs-adapter-overhaul.md`
+- **ADR:** `dev-docs/archive/m6/2026-06-10-prd0069-fs-adapter-overhaul-adr.md`
+
 ## 2026-06-07
 
 ### m5 — prd0066 — forced dimension render (programmatic node resize)

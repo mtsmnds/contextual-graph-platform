@@ -205,6 +205,45 @@ interface GraphStore {
   setFeatureFlag: (key: string, value: boolean) => void;
 }
 
+const FOLDER_SESSION_KEY = "react-roadmap:folder-open"
+
+function generateSeedData() {
+  const existingIds = new Set<string>()
+  const idMap = new Map<string, string>()
+  const now = Date.now()
+
+  const seedEntities = SEED_DATA.entities.map((e) => {
+    const suffix = e.content ? slugify(e.content) : e.type
+    let id = `${now}-${suffix}`
+    let counter = 1
+    while (existingIds.has(id)) {
+      id = `${now}-${suffix}-${counter++}`
+    }
+    existingIds.add(id)
+    idMap.set(e.id, id)
+    return { ...e, id, createdAt: now, updatedAt: now }
+  })
+
+  const containerEntities = seedEntities.filter((e) => e.type === "container")
+
+  for (const entity of SEED_DATA.entities.filter((e) => e.type === "container")) {
+    const newId = idMap.get(entity.id)
+    if (!newId) continue
+    const doc = SEED_CONTAINER_CONTENT[entity.id]
+    if (doc) {
+      contentCache[newId] = doc
+    }
+  }
+
+  return {
+    entities: seedEntities,
+    relations: SEED_DATA.relations,
+    canvas: {} as CanvasState,
+    contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
+    idMap,
+  }
+}
+
 const storeInitializer = (set: any, get: any): GraphStore => ({
   entities: [],
   relations: [],
@@ -232,7 +271,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   init: async (adapter: PersistenceAdapter) => {
     _adapter = adapter;
 
-    const workspace = await adapter.loadWorkspace();
+    // GUARD: If the previous session had a folder open but we can't reconnect
+    // (reload without FS handle), force seed data instead of showing stale
+    // IndexedDB data that the user can't save back to the folder.
+    let hadFolderSession = false
+    try { hadFolderSession = localStorage.getItem(FOLDER_SESSION_KEY) === "true" } catch {}
+    try { localStorage.removeItem(FOLDER_SESSION_KEY) } catch {}
+
+    const workspace = hadFolderSession ? null : await adapter.loadWorkspace();
 
     if (workspace) {
       const migrated = migrateSnapshot(workspace);
@@ -293,47 +339,28 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         adapter.saveGraph({ version: 5, entities: remappedEntities, relations, canvas: migrated.canvas }).catch(() => {});
       }
     } else {
-      const existingIds = new Set<string>()
-      const idMap = new Map<string, string>()
-      const now = Date.now()
-
-      const seedEntities = SEED_DATA.entities.map((e) => {
-        const suffix = e.content ? slugify(e.content) : e.type
-        let id = `${now}-${suffix}`
-        let counter = 1
-        while (existingIds.has(id)) {
-          id = `${now}-${suffix}-${counter++}`
-        }
-        existingIds.add(id)
-        idMap.set(e.id, id)
-        return { ...e, id, createdAt: now, updatedAt: now }
-      })
-
-      const containerEntities = seedEntities.filter((e) => e.type === "container")
+      const seed = generateSeedData()
 
       for (const entity of SEED_DATA.entities.filter((e) => e.type === "container")) {
-        const newId = idMap.get(entity.id)
+        const newId = seed.idMap.get(entity.id)
         if (!newId) continue
         const doc = SEED_CONTAINER_CONTENT[entity.id]
-        if (doc) {
-          contentCache[newId] = doc
-          adapter.saveDocument(newId, doc).catch(() => {})
-        }
+        if (doc) adapter.saveDocument(newId, doc).catch(() => {})
       }
 
       const seedSnapshot: GraphSnapshot = {
         version: 5,
-        entities: seedEntities,
-        relations: SEED_DATA.relations,
-        canvas: {},
+        entities: seed.entities,
+        relations: seed.relations,
+        canvas: seed.canvas,
       };
       adapter.saveGraph(seedSnapshot).catch(() => {});
 
       set({
-        entities: seedEntities,
-        relations: SEED_DATA.relations,
-        canvas: {},
-        contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
+        entities: seed.entities,
+        relations: seed.relations,
+        canvas: seed.canvas,
+        contentLoaded: seed.contentLoaded,
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
         undoStack: [],
@@ -455,6 +482,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   openFromDisk: (snapshot: GraphSnapshot, folderName: string) => {
+    try { localStorage.setItem(FOLDER_SESSION_KEY, "true") } catch {}
     set({
       entities: snapshot.entities,
       relations: snapshot.relations,
@@ -482,6 +510,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   closeDisk: () => {
+    try { localStorage.removeItem(FOLDER_SESSION_KEY) } catch {}
     _fsAdapter?.close();
     _fsAdapter = null;
     set({ folderName: null, lastDiskSaveAt: 0 });
@@ -810,18 +839,22 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   closeWorkspace: () => {
+    try { localStorage.removeItem(FOLDER_SESSION_KEY) } catch {}
     const keys = Object.keys(contentCache)
     for (const key of keys) delete contentCache[key]
     _fsAdapter?.close()
     _fsAdapter = null
     _adapter = null
     _hydrated = false
+
+    const seed = generateSeedData()
+
     set({
-      entities: [],
-      relations: [],
-      canvas: {},
+      entities: seed.entities,
+      relations: seed.relations,
+      canvas: seed.canvas,
+      contentLoaded: seed.contentLoaded,
       view: { focusedEntityId: null, anchorEntityId: null, visibleEntityIds: [], expandedPanels: [] },
-      contentLoaded: {},
       adapterId: null,
       folderName: null,
       hydrated: false,
@@ -830,7 +863,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       redoStack: [],
       batchDepth: 0,
       _pendingSnapshot: null,
-      lastMutationTime: 0,
+      lastMutationTime: Date.now(),
       lastDiskSaveAt: 0,
     })
   },
