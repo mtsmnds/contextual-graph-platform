@@ -2,7 +2,6 @@ import { memo, useCallback } from "react"
 import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId } from "@xyflow/react"
 import {
   BaseNode,
-  BaseNodeContent,
   BaseNodeHeader,
 } from "@/components/base-node"
 import { BaseHandle } from "@/components/base-handle"
@@ -87,12 +86,12 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
             </span>
           )}
         </BaseNodeHeader>
-        <BaseNodeContent className="container-child-area min-h-[60px]">
+        <div className="container-child-area min-h-[60px]">
           <BaseHandle type="source" position={Position.Top} id="top" />
           <BaseHandle type="source" position={Position.Right} id="right" />
           <BaseHandle type="source" position={Position.Bottom} id="bottom" />
           <BaseHandle type="source" position={Position.Left} id="left" />
-        </BaseNodeContent>
+        </div>
       </BaseNode>
     </>
   )

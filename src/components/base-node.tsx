@@ -57,19 +57,6 @@ export function BaseNodeHeaderTitle({
   );
 }
 
-export function BaseNodeContent({
-  className,
-  ...props
-}: ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="base-node-content"
-      className={cn("flex flex-col gap-y-2 p-3", className)}
-      {...props}
-    />
-  );
-}
-
 export function BaseNodeFooter({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
