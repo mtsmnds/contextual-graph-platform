@@ -1,5 +1,6 @@
 import type { AdapterType, PersistenceAdapter } from "./types"
 import { IndexedDBAdapter } from "./indexeddb-adapter"
+/** @deprecated Only kept for legacy TiptapSidebar. */
 import { FSAccessAdapter } from "./fs-access-adapter"
 
 const VALID_ADAPTERS: AdapterType[] = ["indexeddb", "fs-access"]
@@ -10,7 +11,7 @@ function isValidAdapter(value: string): value is AdapterType {
   return (VALID_ADAPTERS as string[]).includes(value)
 }
 
-// GUARD: preserved for legacy TiptapSidebar at /tiptap-editor-test
+/** @deprecated Only kept for legacy TiptapSidebar at /tiptap-editor-test. */
 export function getFSAccessInstance(): FSAccessAdapter {
   if (!_fsAccess) {
     _fsAccess = new FSAccessAdapter()

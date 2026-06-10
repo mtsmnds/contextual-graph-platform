@@ -1,3 +1,9 @@
+/**
+ * @deprecated Replaced by standalone FSAdapter (see FSAdapter.ts).
+ * Preserved for legacy TiptapSidebar at /tiptap-editor-test.
+ * Production code at / uses FSAdapter for explicit open/save/close
+ * with IndexedDBAdapter for runtime persistence.
+ */
 import type { PersistenceAdapter, WorkspaceSnapshot, AdapterType } from "./types"
 
 const HANDLE_KEY = "react-roadmap:fs-handle"
@@ -39,6 +45,7 @@ async function loadHandle(): Promise<FileSystemDirectoryHandle | null> {
   })
 }
 
+/** @deprecated Use FSAdapter instead. */
 export class FSAccessAdapter implements PersistenceAdapter {
   readonly id: AdapterType = "fs-access"
   private dir: FileSystemDirectoryHandle | null = null

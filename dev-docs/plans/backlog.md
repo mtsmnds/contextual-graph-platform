@@ -10,7 +10,10 @@ Items with dedicated docs are linked — those docs stay in place until picked u
 ## Data & Infrastructure
 
 - **Multi-file graph architecture** (`../new-graph-plan.md`) — manifest-based sub-file loading, derived relations (`metadata.derived`), language-first ID convention (`--EN-c1` instead of `--c1`). Splits monolithic `graph.json` into per-book sub-files with lazy loading. Depends on FS Access overhaul.
-- **FS Access overhaul** (`dev-docs/plans/improve-fs-file-system.md`) — swap current adapter for `browser-fs-access`, verbose status component (mini console), status indicator. Unlocks all data operations across views.
+- **FS Access overhaul** (✅ done — `m6/prd0069`) — replaced old FSAccessAdapter with FSAdapter standalone. Mark old files as deprecated.
+- **Deprecate/delete old fs-access-adapter** — remove `FSAccessAdapter`, `getFSAccessInstance`, and legacy `TiptapSidebar` import once the legacy `/tiptap-editor-test` route is migrated or removed.
+- **Auto snapshots: decide fate** — `persistAutoSnapshots()` in the store subscriber writes undo history to `backups/auto/` on disk. Currently dead (no FS handle in subscriber). Either incorporate into the new FSAdapter's save/load lifecycle or delete the feature entirely.
+- **Manual backups: decide fate** — `backups/manual/` read/write via the BackupsSection UI. Currently works when folder is open (FSAdapter provides the handle). Either keep as-is for folder sessions, incorporate into FSAdapter's save/load, or delete if the explicit Save button supersedes checkpoint backups.
 - **ID system rework** — `slugify` strips hyphens (spaces→hyphens then removed), producing continuous slugs. `SEG_PREFIX_RE` runs after child slug append so `_seg-N` suffixes on parents are never stripped. Rework to use fractional-indexing or UUIDs for reliable, collision-resistant IDs.
 - **`public-data/` snapshot** — create `react-roadmap/public-data/graph.json` with stable data from `hello2/graph.json` per data-tier plan.
 - **Entity form edit mode** — existing create-only form extended to update existing entities (pre-populate fields, save to store).
