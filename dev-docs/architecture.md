@@ -7,9 +7,15 @@ How the system is designed and where core responsibilities live.
 
 ```
 Entity Graph → Projection Layer → Renderer
+
+Persistence:
+  IndexedDB ←↔ Store (always — runtime persistence via IndexedDBAdapter)
+  Disk        ← UI open/save/close (explicit checkpoints via FSAdapter)
 ```
 
 The core is a **Relation-Native Content Engine**. Entities carry content directly. Relations carry typed links. Projections interpret the graph for a specific use case. Renderers display projections.
+
+IndexedDB is always the runtime store. FS disk operations are invoked only by explicit user action (Open Folder, Save). No auto-save to disk, no background sync, no silent reconnect.
 
 React Flow will be reintroduced as one renderer among many (graph visualization) in Phase 4. It is NOT the core runtime.
 
@@ -149,39 +155,95 @@ type ViewState = {
 - `relations: Relation[]` — typed edges.
 - `view: ViewState` — UI-only state, separate from domain.
 - `contentLoaded: Record<string, boolean>` — tracks which container contents have been loaded from storage.
-- `adapterId: string | null` — which persistence adapter is active (`"indexeddb"` or `"fs-access"`).
-- `folderName: string | null` — folder name when FS Access adapter is active.
-- Initialization: `init(adapter)` — injects a `PersistenceAdapter` at startup, calls `loadWorkspace()`, applies version 1→2 migration (pads `createdAt`/`updatedAt` on entities, `sortOrder` on relations), loads container content docs. Falls back to seed data if the adapter returns no workspace.
+- `adapterId: string` — always `"indexeddb"` at runtime (resolver no longer supports FS as persistence backend).
+- `folderName: string | null` — folder name when FSAdapter is active (set by `openFromDisk`, cleared by `closeDisk`/`closeWorkspace`).
+- `lastDiskSaveAt: number` — timestamp of the last successful save to disk (set by `openFromDisk` and `saveToDisk`).
+- `isDirty(): boolean` — `lastMutationTime > lastDiskSaveAt`. Returns true when unsaved changes exist.
+- Initialization: `init(adapter)` — injects the `IndexedDBAdapter` at startup. Checks `localStorage` flag `react-roadmap:folder-open` before restoring IndexedDB data. If the flag is set (stale folder session from a reload without FS handle), forces seed data instead. Otherwise calls `loadWorkspace()`, applies version migration, loads container content docs. Falls back to seed data if the adapter returns no workspace.
 - Mutations: `addEntity`, `updateEntity`, `deleteEntity`, `addRelation`, `updateRelation`, `removeRelation`.
 - View actions: `focusEntity(id, anchorId?)`, `expandPanel`, `closePanel`.
-- Content actions: `getContent(id)` — reads from in-memory content cache; `saveContent(id, data)` — writes to cache + adapter's `saveDocument()`; `clearContent(id)` — removes from cache + adapter's `deleteDocument()`. Container document bodies are NOT stored on the entity. `refreshFolderName()` — syncs `folderName` from the active adapter.
+- Content actions: `getContent(id)` — reads from in-memory content cache; `saveContent(id, data)` — writes to cache + adapter's `saveDocument()`; `clearContent(id)` — removes from cache + adapter's `deleteDocument()`. Container document bodies are NOT stored on the entity.
+- FS actions: `openFromDisk(snapshot, folderName)` — replaces entities/relations/canvas, resets undo/redo, sets `folderName` + `lastDiskSaveAt`, sets localStorage flag. `saveToDisk()` — calls `_fsAdapter.save()` with current snapshot, sets `lastDiskSaveAt`. `closeDisk()` — calls `_fsAdapter.close()`, clears `folderName` + localStorage flag. `closeWorkspace()` — resets to seed data via `generateSeedData()`, clears adapter + FS handles + localStorage flag.
 - ID scheme: New containers use `generateDocId()` (timestamp-based `doc_{timestamp}`); segments use `{parent}_seg-{counter}`; root entities use slugified title.
-- Persistence: Auto-save is debounced (300ms) — writes `GraphSnapshot` (entities + relations) to the active adapter's `saveGraph()` on every entity/relation change. Content docs go through `saveDocument()`.
+- Persistence: Auto-save is debounced (300ms) — writes `GraphSnapshot` (entities + relations) to IndexedDB's `saveGraph()` on every entity/relation change. Content docs go through `saveDocument()`. No auto-save to disk.
+- `generateSeedData()` — module-level helper that produces fresh seed entities/relations/container content from `SEED_DATA`. Used by `init`'s seed branch and `closeWorkspace`.
 - URL sync: On view state change, `focusedEntityId` and `anchorEntityId` are synced to URL search params (debounced 200ms, `history.replaceState`). On app load, URL params are read to restore the view.
 
-### Persistence Adapter Layer (`src/store/persistence/`)
-Pluggable persistence backends behind a uniform interface. The store never touches persistence directly.
+### Persistence Layer (`src/store/persistence/`)
+
+IndexedDB is always the runtime store. The FS adapter is a standalone module invoked by explicit user action only.
+
+#### IndexedDBAdapter (runtime backend)
+
+Implements `PersistenceAdapter` for runtime persistence:
 
 ```ts
 interface PersistenceAdapter {
-  readonly id: AdapterType  // "indexeddb" | "fs-access"
+  readonly id: AdapterType  // "indexeddb"
   loadWorkspace(): Promise<WorkspaceSnapshot | null>
   saveGraph(snapshot: WorkspaceSnapshot): Promise<void>
   loadDocument(id: string): Promise<Record<string, unknown> | null>
   saveDocument(id: string, data: Record<string, unknown>): Promise<void>
   deleteDocument(id: string): Promise<void>
-  getFolderName(): string | null
+  getFolderName(): string | null   // always returns null
+  getRootHandle?(): FileSystemDirectoryHandle | null  // always returns null
 }
 ```
 
-Implementations:
-- **IndexedDBAdapter** — default adapter. Uses Dexie.js for IndexedDB access (async, unlimited quota for current scale). Table `graph` stores the workspace snapshot; table `documents` stores per-container content docs. No user interaction needed.
-- **FSAccessAdapter** — optional, Chromium-only. Reads/writes `graph.json` in a user-picked folder. Per-container content stored as `documents/{id}.json`. Handle persisted in IndexedDB (`react-roadmap-fs` database) so the folder reconnects silently on reload without re-prompting. Shows a "Reconnect" button if permission was revoked — never calls `requestPermission()` without a user gesture.
+- Uses Dexie.js for IndexedDB access (async, unlimited quota for current scale). Table `graph` stores the workspace snapshot; table `documents` stores per-container content docs. No user interaction needed.
 
-Resolver (`src/store/persistence/resolver.ts`):
-- Auto-detection: tries FS Access reconnection first, falls back to IndexedDB.
-- Overridable via `VITE_PERSISTENCE_ADAPTER` env var or `?adapter=` URL param for testing.
-- `App.tsx` calls `resolveAdapter().then(init)` once on mount.
+#### FSAdapter (explicit disk checkpoint)
+
+Standalone class (NOT a `PersistenceAdapter`). Invoked by the UI layer only:
+
+```ts
+class FSAdapter {
+  open(): Promise<GraphSnapshot | null>       // picker → read → validate
+  save(snapshot: GraphSnapshot): Promise<void> // write graph.json
+  close(): void                                // clear handle + log
+  isOpen(): boolean
+  getFolderName(): string | null
+  getRootHandle(): FileSystemDirectoryHandle | null
+  getStatus(): FSAdapterStatus
+  getLog(): FSLogEntry[]
+}
+```
+
+- Uses raw File System Access API (`showDirectoryPicker`, `getFileHandle`, `createWritable`).
+- Reads/writes `graph.json` only — does NOT handle per-document files (out of scope).
+- `open()` returns `null` if user cancels the picker. Also returns `null` if the folder has no `graph.json` (caller checks `isOpen()` to distinguish from cancel). Throws `FSError` on permission/parse/validation/version errors.
+- Includes `validateSnapshot()` for schema validation and a 100-entry ring-buffer operation log.
+
+#### FSError
+
+Typed error with machine-readable code:
+
+```ts
+type FSErrorCode =
+  | "PERMISSION_DENIED"      // handle expired or permission revoked
+  | "NOT_FOUND"              // graph.json does not exist (open() returns null instead of throwing)
+  | "PARSE_FAILED"           // file exists but is not valid JSON
+  | "VALIDATION_FAILED"      // JSON is valid but shape is wrong
+  | "VERSION_TOO_NEW"        // file version > app supported version
+  | "WRITE_FAILED"           // file write failed (disk full, permission, etc.)
+  | "NO_FOLDER_OPEN"         // operation attempted without an open folder
+  | "USER_CANCELLED"         // user dismissed the directory picker
+```
+
+#### Resolver (`src/store/persistence/resolver.ts`)
+
+Always returns `IndexedDBAdapter`. The old auto-detection and `tryReconnect` paths are removed. URL override (`?adapter=`) kept for testing but both options return IndexedDBAdapter.
+
+#### Stale Folder Session Detection
+
+On cold start, `init()` checks `localStorage` flag `react-roadmap:folder-open`:
+- **Flag set** → user reloaded after a folder session without closing. Force seed data — the FS handle is lost and the IndexedDB data from the folder session can't be saved back to disk.
+- **No flag** → normal cold start. Restore IndexedDB data.
+- Flag is set by `openFromDisk`, cleared by `closeDisk` and `closeWorkspace`.
+
+#### Deprecated: FSAccessAdapter
+
+`src/store/persistence/fs-access-adapter.ts` implements the old `PersistenceAdapter` interface with auto-save and silent reconnect. Preserved as-is for the legacy `/tiptap-editor-test` route (`TiptapSidebar.tsx`). No production code imports it.
 
 ### Query Engine (`src/engine/queries.ts`)
 Pure functions over store state — no hooks, no components:
@@ -228,7 +290,7 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 
 - Renders a full-height React Flow canvas with `Background` (dots), `Controls`, `MiniMap`.
 - Entities render as custom `"entity"` nodes (EntityNode component registered at module scope). Relations render as custom `"edgelabel"` edges (EdgeLabel component) with always-visible interactive labels — double-click the label to enter inline edit mode (text input + combobox dropdown of existing relation types).
-- **Panel buttons** (top-right): New Node, Open Folder, Re-layout. **Zoom controls** (bottom-right): Zoom In, Zoom Out, Fit View.
+- **Panel buttons** (top-right): Undo, Redo, Zoom controls, Sidebar trigger. **Sidebar footer** (right): Open Folder, Save (disabled without folder), Close Workspace.
 - **Interactions:**
   - Double-click pane → creates new node at click position (native DOM `dblclick` listener with capture phase; React Flow's synthetic `onDoubleClick` never fires)
   - Double-click node body → inline text editing (textarea with `nodrag nowheel nopan`, Enter=newline, Escape/blur=commit)
@@ -249,7 +311,7 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
 
 ### Output / State
 - `dist/` — production build.
-- Store persists through the active `PersistenceAdapter`. Default adapter is IndexedDB (`react-roadmap` database). Optional FS Access adapter writes `graph.json` + `documents/` folder to a user-picked directory. On first visit (no stored data), seed data from `src/data/seed.ts` is loaded automatically.
+- Store persists through IndexedDBAdapter (`react-roadmap` database in IndexedDB). FSAdapter is invoked only by explicit Save — it writes `graph.json` to a user-picked directory without auto-save. On first visit (no stored data), seed data from `src/data/seed.ts` is loaded automatically.
 
 ## Graph & Object Shapes
 
@@ -290,12 +352,14 @@ The `Entity.metadata` field (`Record<string, unknown>`) carries per-entity-type 
 | `src/components/AppSidebar.tsx` | Permanent shadcn sidebar — page list, home link, new page button |
 | `src/components/HomePage.tsx` | Home page — root container cards, new page CTA, save status |
 | `src/types/graph.ts` | Entity/Relation/ViewState type definitions |
-| `src/store/useGraphStore.ts` | Zustand store (domain + view state + adapter-based persistence) |
+| `src/store/useGraphStore.ts` | Zustand store (domain + view state + openFromDisk/saveToDisk/closeDisk/isDirty, seed data reset) |
 | `src/store/persistence/types.ts` | PersistenceAdapter interface, WorkspaceSnapshot, AdapterType |
-| `src/store/persistence/indexeddb-adapter.ts` | IndexedDB adapter (Dexie) — default backend |
-| `src/store/persistence/fs-access-adapter.ts` | FS Access adapter — optional, Chromium-only |
-| `src/store/persistence/resolver.ts` | Adapter auto-detection, env/URL override |
-| `src/store/persistence/index.ts` | Re-exports all persistence modules |
+| `src/store/persistence/indexeddb-adapter.ts` | IndexedDB adapter (Dexie) — always the runtime backend |
+| `src/store/persistence/FSAdapter.ts` | Standalone FS adapter for explicit open/save/close |
+| `src/store/persistence/FSAdapter.test.ts` | 48 unit tests for FSAdapter (error codes, validation, lifecycle, operation log) |
+| `src/store/persistence/fs-access-adapter.ts` | **DEPRECATED** — old FS adapter (preserved for legacy `/tiptap-editor-test` route) |
+| `src/store/persistence/resolver.ts` | Adapter resolution — always returns IndexedDBAdapter; `getFSAccessInstance()` for legacy route |
+| `src/store/persistence/index.ts` | Re-exports all persistence modules (FSAdapter, FSError, deprecated FSAccessAdapter) |
 | `src/types/fs-access.d.ts` | File System Access API type declarations |
 | `src/engine/layout.ts` | Dagre LR layout: entities/relations → React Flow nodes/edges |
 | `src/engine/queries.ts` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |

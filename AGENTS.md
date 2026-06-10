@@ -68,9 +68,9 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
 |------|------|
 | `src/main.tsx` | App entrypoint |
 | `src/App.tsx` | Root component — BrowserRouter shell, routes `/` (WorkspaceRoot) and `/tiptap-editor-test` (LegacyApp) |
-| `src/routes/WorkspaceRoot.tsx` | Graph canvas workspace — adapter init, full-height GraphCanvas |
+| `src/routes/WorkspaceRoot.tsx` | Graph canvas workspace — IndexedDBAdapter init + beforeunload dirty check |
 | `src/routes/LegacyApp.tsx` | Original Tiptap editor app (mounted at `/tiptap-editor-test`) |
-| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, edge inline editing, context menu, Panel buttons |
+| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, edge inline editing, context menu, Panel buttons, FSAdapter open pipeline |
 | `src/canvas/nodes/EntityNode.tsx` | Custom entity node — BaseNode + Badge + 4 handles + inline text editing + resize |
 | `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |
@@ -79,8 +79,9 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
 | `src/engine/layout.ts` | Dagre LR layout: entities/relations → React Flow nodes/edges |
 | `src/engine/queries.ts` | Query engine (getEntity, getRelations, getLinkedContext, getContainerChildren, etc.) |
 | `src/types/graph.ts` | TypeScript types: Entity, Relation, ViewState, GraphSnapshot |
-| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + adapter-based persistence + version 1→2 migration |
-| `src/store/persistence/` | Pluggable persistence adapters (IndexedDB default, FS Access opt-in) |
+| `src/store/useGraphStore.ts` | Zustand store: entities, relations, view state + openFromDisk/saveToDisk/closeDisk/isDirty + seed data reset + stale folder detection |
+| `src/store/persistence/` | IndexedDB runtime + FSAdapter for explicit disk save/load |
+| `src/store/persistence/FSAdapter.ts` | Standalone FS adapter with FSError, validateSnapshot, operation log |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content) |
 | `src/index.css` | Global styles (dark/light vars, React Flow edge label overrides) |
 | `dist/` | Build output (gitignored — never patch manually) |
@@ -100,6 +101,14 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
   when removing or simplifying it would reintroduce a bug. Format:
   `// GUARD: <why this exists and what breaks without it>`
 - Do NOT add comments that describe what code does. Only comment WHY.
+
+## FS Adapter lifecycle
+
+- `openFromDisk` sets `localStorage` flag `react-roadmap:folder-open` — on reload without FS handle, `init` forces seed data to avoid showing stale IndexedDB data the user can't save back to disk.
+- `closeDisk` clears the flag, closes the FS handle, keeps entities/relations in place.
+- `closeWorkspace` clears the flag, closes the FS handle, resets to seed data (not empty canvas).
+- `isDirty = lastMutationTime > lastDiskSaveAt`. `beforeunload` fires when dirty.
+- Save button is disabled when no folder is open.
 
 ## Canvas invariants
 
