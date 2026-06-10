@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useCallback } from "react"
+import { memo, useEffect, useRef } from "react"
 import {
   type Node,
   type NodeProps,
@@ -10,9 +10,9 @@ import {
 import { BaseNode, BaseNodeContent } from "@/components/base-node"
 import { BaseHandle } from "@/components/base-handle"
 import { SegmentCard } from "@/components/SegmentCard"
+import ContentEditor from "@/components/ContentEditor"
 import { useGraphStore } from "@/store/useGraphStore"
 import { useResizePersistence } from "@/canvas/hooks/useResizePersistence"
-import { useNodeEdit } from "@/canvas/hooks/useNodeEdit"
 import { cn } from "@/lib/utils"
 import type { EntityType } from "@/types/graph"
 
@@ -28,17 +28,6 @@ type EntityNodeType = Node<EntityNodeData, "entity">
 function EntityNode({ data }: NodeProps<EntityNodeType>) {
   const nodeId = useNodeId()
   const onResizeEnd = useResizePersistence(data.id)
-  const {
-    isEditing,
-    editValue,
-    setEditValue,
-    editRef,
-    enterEdit,
-    handleBlur,
-    handleKeyDown,
-  } = useNodeEdit(data, (value) => {
-    useGraphStore.getState().updateEntity(data.id, { content: value })
-  })
 
   const autoHeight = useGraphStore((s) => s.featureFlags.autoHeight)
   const measureRef = useRef<HTMLDivElement>(null)
@@ -57,18 +46,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
       })
     }
   })
-
-  const handleTextareaChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setEditValue(e.target.value)
-      if (autoHeight) {
-        const ta = e.target
-        ta.style.height = "auto"
-        ta.style.height = `${ta.scrollHeight}px`
-      }
-    },
-    [setEditValue, autoHeight],
-  )
 
   return (
     <>
@@ -111,7 +88,6 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
         data-auto-height={autoHeight ? "" : undefined}
         onDoubleClick={(e) => {
           e.stopPropagation()
-          enterEdit()
         }}
       >
         <SegmentCard width="100%">
@@ -125,28 +101,13 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
             <BaseHandle type="source" position={Position.Right} id="right" />
             <BaseHandle type="source" position={Position.Bottom} id="bottom" />
             <BaseHandle type="source" position={Position.Left} id="left" />
-            {isEditing ? (
-              <textarea
-                ref={editRef as React.Ref<HTMLTextAreaElement>}
-                className={cn(
-                  "nodrag nowheel nopan resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none",
-                  autoHeight ? "block w-full" : "flex-1",
-                )}
-                value={editValue}
-                onChange={handleTextareaChange}
-                onKeyDown={handleKeyDown}
-                onBlur={handleBlur}
-                placeholder="Type here..."
-                rows={1}
-              />
-            ) : (
-              <p className={cn(
-                "m-0 cursor-default text-sm text-foreground",
-                autoHeight ? "" : "flex-1 overflow-hidden",
-              )}>
-                {data.content || <span className="text-muted-foreground">Type here...</span>}
-              </p>
-            )}
+            <ContentEditor
+              content={data.content}
+              className={autoHeight ? "" : "flex-1"}
+              onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
+              editTrigger={data.editTrigger}
+              placeholder="Type here..."
+            />
           </BaseNodeContent>
         </SegmentCard>
       </BaseNode>

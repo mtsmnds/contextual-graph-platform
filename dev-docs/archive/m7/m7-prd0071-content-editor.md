@@ -1,5 +1,11 @@
 # PRD 0071: ContentEditor — Reusable Content Editing Component
 
+> **Completion note (2026-06-10):**
+> - **What was built:** Extracted inline content editing from EntityNode into a standalone `ContentEditor` component with `forwardRef`, auto-expanding textarea, view/edit mode state machine, programmatic edit entry, `className` prop, and `editTrigger` prop.
+> - **Key decisions:** `useNodeEdit.ts` kept as a shared hook; `autoHeight` replaced by `className` prop for consumer layout control; `block` class removed from textarea in favor of `w-full` to avoid zero-height collapse; ContentEditor handles double-click internally.
+> - **Deviations from plan:** Component interface changed from `{ content, onChange, autoHeight, placeholder }` to `{ content, onChange, editTrigger, placeholder, className }` + `forwardRef`/`ContentEditorHandle`. `useNodeEdit.ts` was kept (not removed). Auto-height measurement stayed in EntityNode as a canvas concern. EntityNode tests pass unchanged.
+> - **Postponed:** None — full scope delivered.
+
 ## Overview
 
 Extract the inline content editing experience from `EntityNode.tsx` into a standalone `ContentEditor` component. The textarea, edit state machine, auto-height measurement, and view-mode display currently live inline in a React Flow custom node — they need to be reusable across canvas, dialogs, threaded views, and any future surface.
