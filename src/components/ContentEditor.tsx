@@ -13,6 +13,7 @@ type ContentEditorProps = {
   placeholder?: string
 }
 
+/** Reusable content editor with view/edit modes, auto-expanding textarea, and programmatic edit entry. Mountable inside or outside ReactFlow. */
 function ContentEditor(
   { content, onChange, editTrigger, placeholder = "Type here..." }: ContentEditorProps,
   ref: React.Ref<ContentEditorHandle>,

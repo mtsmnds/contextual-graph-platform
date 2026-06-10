@@ -22,12 +22,14 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+/** Default read-only state showing rendered content as a paragraph. */
 export const ViewMode: Story = {
   args: {
     content: "Hello World",
   },
 }
 
+/** View mode with no content — displays the placeholder text in muted styling. */
 export const Empty: Story = {
   args: {
     content: "",
@@ -35,6 +37,7 @@ export const Empty: Story = {
   },
 }
 
+/** Double-clicking the content text opens the editor. The textarea is auto-focused and pre-filled with the current content. */
 export const DoubleClickEdit: Story = {
   args: {
     content: "Double-click to edit",
@@ -48,6 +51,7 @@ export const DoubleClickEdit: Story = {
   },
 }
 
+/** Pressing Escape while editing discards changes and returns to view mode. `onChange` is not called. */
 export const EscapeCancels: Story = {
   args: {
     content: "Original content",
@@ -63,6 +67,7 @@ export const EscapeCancels: Story = {
   },
 }
 
+/** Moving focus away from the textarea (blur) commits the current value via `onChange`. */
 export const BlurCommits: Story = {
   args: {
     content: "Blur to commit",
@@ -77,6 +82,7 @@ export const BlurCommits: Story = {
   },
 }
 
+/** Components holding a ref to `ContentEditorHandle` can call `enterEdit()` imperatively, for example from a toolbar button. */
 export const ProgrammaticEdit: Story = {
   render: () => {
     const ref = createRef<ContentEditorHandle>()
@@ -96,6 +102,7 @@ export const ProgrammaticEdit: Story = {
   },
 }
 
+/** Incrementing the `editTrigger` prop opens the editor. Useful after creating a new node or segment. */
 export const AutoOpen: Story = {
   render: () => {
     const [trigger, setTrigger] = useState(0)
