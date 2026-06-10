@@ -271,15 +271,6 @@ body {
   container-type: inline-size;
 }
 
-.entity-card-content {
-  padding-block: 4.75px;
-}
-
-@container (min-height: 56px) {
-  .entity-card-content {
-    padding-block: 0.375rem;
-  }
-}
 .react-flow__node.dragging {
   cursor: grabbing;
 }

@@ -92,10 +92,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
       >
         <SegmentCard
           width="100%"
-          className={cn(
-            "entity-card-content px-3",
-            autoHeight ? "" : "flex flex-col flex-1",
-          )}
+          className={autoHeight ? undefined : "flex-1"}
         >
           <BaseHandle type="source" position={Position.Top} id="top" />
           <BaseHandle type="source" position={Position.Right} id="right" />
