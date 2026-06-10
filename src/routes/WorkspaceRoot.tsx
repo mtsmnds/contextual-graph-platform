@@ -16,6 +16,16 @@ function WorkspaceRoot() {
     init(adapter)
   }, [init])
 
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (useGraphStore.getState().isDirty()) {
+        event.preventDefault()
+      }
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [])
+
   return (
     <div className="w-full h-full">
       <GraphCanvas />

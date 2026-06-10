@@ -287,10 +287,12 @@ describe("FSAdapter", () => {
       expect(adapter.isOpen()).toBe(false)
     })
 
-    it("throws NOT_FOUND when folder has no graph.json", async () => {
+    it("returns null when folder has no graph.json (isOpen remains true)", async () => {
       setupMocks({ graphJSON: null })
-      await expect(adapter.open()).rejects.toThrow(FSError)
-      await expect(adapter.open()).rejects.toMatchObject({ code: "NOT_FOUND" })
+      const result = await adapter.open()
+      expect(result).toBeNull()
+      expect(adapter.isOpen()).toBe(true)
+      expect(adapter.getFolderName()).toBe("test-workspace")
     })
 
     it("throws PARSE_FAILED when graph.json is malformed JSON", async () => {
@@ -413,17 +415,25 @@ describe("FSAdapter", () => {
       expect(log).toHaveLength(0) // close clears the log
     })
 
-    it("records open failure with error details", async () => {
+    it("records open with not_found reason when graph.json missing", async () => {
       setupMocks({ graphJSON: null })
-      try {
-        await adapter.open()
-      } catch {
-        const log = adapter.getLog()
-        const openEntry = log.find((e) => e.operation === "open")
-        expect(openEntry).toBeDefined()
-        expect(openEntry!.success).toBe(false)
-        expect(openEntry!.error?.code).toBe("NOT_FOUND")
-      }
+      const result = await adapter.open()
+      expect(result).toBeNull()
+      const log = adapter.getLog()
+      const openEntry = log.find((e) => e.operation === "open")
+      expect(openEntry).toBeDefined()
+      expect(openEntry!.success).toBe(true)
+      expect(openEntry!.meta?.reason).toBe("not_found")
+    })
+
+    it("records open failure with error details when read fails", async () => {
+      setupMocks({ readError: "permission denied" })
+      await expect(adapter.open()).rejects.toThrow(FSError)
+      const log = adapter.getLog()
+      const openEntry = log.find((e) => e.operation === "open")
+      expect(openEntry).toBeDefined()
+      expect(openEntry!.success).toBe(false)
+      expect(openEntry!.error?.code).toBe("WRITE_FAILED")
     })
 
     it("limits log to 100 entries", async () => {

@@ -162,10 +162,10 @@ export class FSAdapter {
   /**
    * Open a folder picker, read and validate graph.json.
    *
-   * @returns The validated GraphSnapshot, or null if the user cancelled the picker.
-   * @throws {FSError} NOT_FOUND if folder has no graph.json, PARSE_FAILED if JSON is malformed,
-   *   VALIDATION_FAILED if shape is wrong, VERSION_TOO_NEW if version exceeds supported,
-   *   PERMISSION_DENIED if folder access is denied.
+   * @returns The validated GraphSnapshot, or null if the user cancelled the picker
+   *   or the folder does not contain graph.json (isOpen() will be true in the latter case).
+   * @throws {FSError} PARSE_FAILED if JSON is malformed, VALIDATION_FAILED if shape is wrong,
+   *   VERSION_TOO_NEW if version exceeds supported, PERMISSION_DENIED if folder access is denied.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker
    */
@@ -194,9 +194,8 @@ export class FSAdapter {
     try {
       fileHandle = await handle.getFileHandle("graph.json")
     } catch {
-      const detail = `graph.json not found in "${handle.name}"`
-      this._logEntry("open", false, { folderName: handle.name }, { code: "NOT_FOUND", detail })
-      throw new FSError("NOT_FOUND", detail)
+      this._logEntry("open", true, { reason: "not_found", folderName: handle.name })
+      return null
     }
 
     let text: string
