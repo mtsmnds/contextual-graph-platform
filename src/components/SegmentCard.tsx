@@ -13,7 +13,7 @@ export type SegmentCardProps = ComponentProps<"div"> & {
 export function SegmentCard({ width, className, style, children, ...props }: SegmentCardProps) {
   return (
     <div
-      className={cn("segment-card", className)}
+      className={cn("segment-card flex flex-col gap-y-2 p-3", className)}
       style={{ ...style, width }}
       {...props}
     >

@@ -7,7 +7,7 @@ import {
   ResizeControlVariant,
   useNodeId,
 } from "@xyflow/react"
-import { BaseNode, BaseNodeContent } from "@/components/base-node"
+import { BaseNode } from "@/components/base-node"
 import { BaseHandle } from "@/components/base-handle"
 import { SegmentCard } from "@/components/SegmentCard"
 import ContentEditor from "@/components/ContentEditor"
@@ -90,25 +90,24 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           e.stopPropagation()
         }}
       >
-        <SegmentCard width="100%">
-          <BaseNodeContent
-            className={cn(
-              "entity-card-content px-3",
-              autoHeight ? "" : "flex flex-col flex-1",
-            )}
-          >
-            <BaseHandle type="source" position={Position.Top} id="top" />
-            <BaseHandle type="source" position={Position.Right} id="right" />
-            <BaseHandle type="source" position={Position.Bottom} id="bottom" />
-            <BaseHandle type="source" position={Position.Left} id="left" />
-            <ContentEditor
-              content={data.content}
-              className={autoHeight ? "" : "flex-1"}
-              onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
-              editTrigger={data.editTrigger}
-              placeholder="Type here..."
-            />
-          </BaseNodeContent>
+        <SegmentCard
+          width="100%"
+          className={cn(
+            "entity-card-content px-3",
+            autoHeight ? "" : "flex flex-col flex-1",
+          )}
+        >
+          <BaseHandle type="source" position={Position.Top} id="top" />
+          <BaseHandle type="source" position={Position.Right} id="right" />
+          <BaseHandle type="source" position={Position.Bottom} id="bottom" />
+          <BaseHandle type="source" position={Position.Left} id="left" />
+          <ContentEditor
+            content={data.content}
+            className={autoHeight ? "" : "flex-1"}
+            onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
+            editTrigger={data.editTrigger}
+            placeholder="Type here..."
+          />
         </SegmentCard>
       </BaseNode>
     </>
