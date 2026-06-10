@@ -12,7 +12,7 @@ Append-only, newest on top within same-day groupings.
 - **Branch at time:** prd0071-content-editor-isolation (dirty — auto-proceeded)
 - **Classification:** Architecture change + Feature change
 - **ADR type:** full (interface deviations from plan — autoHeight→className, forwardRef pattern, useNodeEdit kept as shared hook)
-- **Commit:** pending
+- **Commit:** 4651f88
 - **Pre-commit guard:** auto-proceeded
 
 ### prd end — m6-prd0069-fs-adapter-overhaul
