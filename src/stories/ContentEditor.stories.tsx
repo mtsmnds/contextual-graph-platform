@@ -9,6 +9,7 @@ const meta = {
   parameters: { layout: "centered" },
   tags: ["autodocs"],
   args: {
+    content: "",
     onChange: fn(),
   },
   argTypes: {

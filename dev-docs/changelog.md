@@ -14,6 +14,21 @@ Use this to recover context after breaks.
 
 ## 2026-06-10
 
+### m7 — prd0071 — ContentEditor reusable component
+- **What:** Extracted inline content editing from EntityNode into a standalone reusable `ContentEditor` component (`forwardRef`, auto-expanding textarea, view/edit mode state machine, programmatic edit entry via ref imperatives). Added `className` prop for consumer layout control. Kept `useNodeEdit.ts` as a shared hook. Added 8 unit tests and 7 Storybook stories with play functions. Updated SegmentCard stories to use ContentEditor as children. Restored `flex-1` layout via `className` prop instead of a wrapper div.
+- **Why:** Inline edit logic was coupled to EntityNode (a React Flow custom node), preventing reuse in dialogs, threaded views, and other non-canvas surfaces. Extraction makes it mountable anywhere with no `@xyflow/react` dependency.
+- **Files changed:**
+  - `src/components/ContentEditor.tsx`: **New** — reusable component with `forwardRef`, auto-expanding textarea, `className` prop, `editTrigger` prop
+  - `src/components/ContentEditor.test.tsx`: **New** — 8 unit tests covering rendering (view/edit), double-click, blur commit, escape cancel, programmatic edit
+  - `src/stories/ContentEditor.stories.tsx`: **New** — 7 Storybook stories with interactive play functions
+  - `src/canvas/nodes/EntityNode.tsx`: Replaced inline textarea + `<p>` + `useNodeEdit` with `<ContentEditor>`; removed wrapper div, passes `className` directly
+  - `src/canvas/hooks/useNodeEdit.ts`: Escape now calls `setIsEditing(false)` instead of `blur()` for proper cancel without committing changed value
+  - `src/stories/SegmentCard.stories.tsx`: Rewrote all 4 stories to use `<ContentEditor>` as children; added `EditableContent` story with double-click play function
+  - `dev-docs/plans/backlog.md`: Added flaky EntityNode test entry
+- **Impact:** Content editing is now reusable outside ReactFlow. EntityNode behavior is identical. New reusable component pattern established.
+- **Archive:** `dev-docs/archive/m7/m7-prd0071-content-editor.md`
+- **ADR:** `dev-docs/archive/m7/2026-06-10-prd0071-content-editor-adr.md`
+
 ### m6 — prd0069 — FS Access Adapter Overhaul
 - **What:** Replaced the old `FSAccessAdapter` (drop-in PersistenceAdapter with auto-save and silent reconnect) with a new standalone `FSAdapter` that treats file-on-disk as an explicit checkpoint. IndexedDB is always the runtime store. FS operations are invoked only by explicit user action. Added `FSError` typed error class, `validateSnapshot()`, and a ring-buffer operation log. Added store actions `openFromDisk`, `saveToDisk`, `closeDisk`, `isDirty`. Added `beforeunload` dirty tracking. Added stale folder session detection via `localStorage` flag (reload without FS handle resets to seed data). `closeWorkspace` now resets to seed data instead of empty canvas.
 - **Why:** The old adapter had systemic silent-failure problems — permission revocation went undetected, errors were swallowed, users had no visibility into whether data reached disk. Replaced with a simpler, correct model: IndexedDB for runtime, explicit open/save/close for FS.

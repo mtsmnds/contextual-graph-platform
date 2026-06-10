@@ -7,6 +7,14 @@ Append-only, newest on top within same-day groupings.
 
 ## 2026-06-10
 
+### prd end — m7-prd0071-content-editor
+- **Source:** user request — "Continue if you have next steps"
+- **Branch at time:** prd0071-content-editor-isolation (dirty — auto-proceeded)
+- **Classification:** Architecture change + Feature change
+- **ADR type:** full (interface deviations from plan — autoHeight→className, forwardRef pattern, useNodeEdit kept as shared hook)
+- **Commit:** pending
+- **Pre-commit guard:** auto-proceeded
+
 ### prd end — m6-prd0069-fs-adapter-overhaul
 - **Source:** user request — "prd end"
 - **Branch at time:** prd0069-fs-adapter (dirty — auto-proceeded)

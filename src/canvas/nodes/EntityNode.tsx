@@ -101,14 +101,13 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
             <BaseHandle type="source" position={Position.Right} id="right" />
             <BaseHandle type="source" position={Position.Bottom} id="bottom" />
             <BaseHandle type="source" position={Position.Left} id="left" />
-            <div className={cn(autoHeight ? "" : "flex-1 overflow-hidden")}>
-              <ContentEditor
-                content={data.content}
-                onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
-                editTrigger={data.editTrigger}
-                placeholder="Type here..."
-              />
-            </div>
+            <ContentEditor
+              content={data.content}
+              className={autoHeight ? "" : "flex-1"}
+              onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
+              editTrigger={data.editTrigger}
+              placeholder="Type here..."
+            />
           </BaseNodeContent>
         </SegmentCard>
       </BaseNode>

@@ -52,6 +52,7 @@ From `dev-docs/plans/m5-prd0067-dagre-phase-3-complete.md`. PRD 0064 (Stack Chil
 - **Smart drag-out-to-detach** — dragging child out of container auto-detaches (removes `parentId`, absolute position). Currently uses context menu "Detach from Group".
 - **Easy connect** — floating handle when dragging from a node for intuitive edge creation. May compete with node dragging.
 - **Node appearance by entity kind** — different visual treatment per entity type (container vs segment vs concept).
+- **Flaky EntityNode DoubleClickEdit story test** — `expect(textarea).toBeVisible()` fails intermittently in the storybook browser test for `canvas-entitynode--double-click-edit`. Root cause: after double-click replaces the view-mode `<p>` with a `<textarea>`, ReactFlow's `fitView` re-layout hasn't completed by the time the assertion runs, so the node is positioned outside the visible viewport. Fix: add a short `waitFor` or `expect.poll` in the play function, or restructure the test to assert the textarea's existence in the DOM instead of visibility.
 
 ## Future Ideas
 

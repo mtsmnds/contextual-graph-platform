@@ -11,11 +11,12 @@ type ContentEditorProps = {
   onChange: (value: string) => void
   editTrigger?: number
   placeholder?: string
+  className?: string
 }
 
 /** Reusable content editor with view/edit modes, auto-expanding textarea, and programmatic edit entry. Mountable inside or outside ReactFlow. */
 function ContentEditor(
-  { content, onChange, editTrigger, placeholder = "Type here..." }: ContentEditorProps,
+  { content, onChange, editTrigger, placeholder = "Type here...", className }: ContentEditorProps,
   ref: React.Ref<ContentEditorHandle>,
 ) {
   const {
@@ -46,7 +47,8 @@ function ContentEditor(
         ref={editRef as React.Ref<HTMLTextAreaElement>}
         className={cn(
           "nodrag nowheel nopan resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none",
-          "block w-full",
+          "w-full",
+          className,
         )}
         value={editValue}
         onChange={handleChange}
@@ -59,7 +61,7 @@ function ContentEditor(
   }
 
   return (
-    <div onDoubleClick={enterEdit}>
+    <div className={className} onDoubleClick={enterEdit}>
       <p className="m-0 cursor-default text-sm text-foreground">
         {content || <span className="text-muted-foreground">{placeholder}</span>}
       </p>
