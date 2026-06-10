@@ -44,7 +44,7 @@ export function useNodeEdit(data: { content: string; editTrigger?: number }, onC
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
         setEditValue(data.content)
-        ;(e.currentTarget as HTMLElement).blur()
+        setIsEditing(false)
       }
     },
     [data.content],
