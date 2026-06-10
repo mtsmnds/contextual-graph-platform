@@ -6,8 +6,10 @@ import { compareSortOrder } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
+import type { FSAdapter } from "./persistence/FSAdapter";
 
 let _adapter: PersistenceAdapter | null = null;
+let _fsAdapter: FSAdapter | null = null;
 let _hydrated = false;
 
 const contentCache: Record<string, Record<string, unknown>> = {};
@@ -154,6 +156,7 @@ interface GraphStore {
   batchDescription: string;
   _pendingSnapshot: HistoryEntry | null;
   lastMutationTime: number;
+  lastDiskSaveAt: number;
 
   init: (adapter: PersistenceAdapter) => Promise<void>;
   beginBatch: (description: string) => void;
@@ -161,6 +164,12 @@ interface GraphStore {
   undo: () => void;
   redo: () => void;
   getAdapterHandle: () => FileSystemDirectoryHandle | null;
+  isDirty: () => boolean;
+  openFromDisk: (snapshot: GraphSnapshot, folderName: string) => void;
+  saveToDisk: () => Promise<void>;
+  closeDisk: () => void;
+  /** @internal */
+  setFsAdapter: (adapter: FSAdapter | null) => void;
 
   addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId?: string | null) => string;
   appendChild: (containerId: string, childId: string) => void;
@@ -218,6 +227,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   batchDescription: "",
   _pendingSnapshot: null,
   lastMutationTime: 0,
+  lastDiskSaveAt: 0,
 
   init: async (adapter: PersistenceAdapter) => {
     _adapter = adapter;
@@ -429,7 +439,52 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   getAdapterHandle: () => {
+    if (_fsAdapter) {
+      return _fsAdapter.getRootHandle();
+    }
     return _adapter?.getRootHandle?.() ?? null;
+  },
+
+  setFsAdapter: (adapter: FSAdapter | null) => {
+    _fsAdapter = adapter;
+  },
+
+  isDirty: () => {
+    const state = get();
+    return state.lastMutationTime > state.lastDiskSaveAt;
+  },
+
+  openFromDisk: (snapshot: GraphSnapshot, folderName: string) => {
+    set({
+      entities: snapshot.entities,
+      relations: snapshot.relations,
+      canvas: snapshot.canvas,
+      folderName,
+      undoStack: [],
+      redoStack: [],
+      batchDepth: 0,
+      lastDiskSaveAt: Date.now(),
+      lastMutationTime: Date.now(),
+    });
+  },
+
+  saveToDisk: async () => {
+    const state = get();
+    if (!_fsAdapter) return;
+    const snapshot: GraphSnapshot = {
+      version: 5,
+      entities: state.entities,
+      relations: state.relations,
+      canvas: state.canvas,
+    };
+    await _fsAdapter.save(snapshot);
+    set({ lastDiskSaveAt: Date.now() });
+  },
+
+  closeDisk: () => {
+    _fsAdapter?.close();
+    _fsAdapter = null;
+    set({ folderName: null, lastDiskSaveAt: 0 });
   },
 
   addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId: string | null = null) => {
@@ -739,7 +794,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   refreshFolderName: () => {
-    const name = _adapter?.getFolderName() ?? null;
+    const name = _fsAdapter?.getFolderName() ?? _adapter?.getFolderName() ?? null;
     const adapterId = _adapter?.id ?? null;
     set({ folderName: name, adapterId });
   },
@@ -757,6 +812,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   closeWorkspace: () => {
     const keys = Object.keys(contentCache)
     for (const key of keys) delete contentCache[key]
+    _fsAdapter?.close()
+    _fsAdapter = null
     _adapter = null
     _hydrated = false
     set({
@@ -774,6 +831,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       batchDepth: 0,
       _pendingSnapshot: null,
       lastMutationTime: 0,
+      lastDiskSaveAt: 0,
     })
   },
 

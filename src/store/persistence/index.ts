@@ -1,4 +1,6 @@
 export type { AdapterType, PersistenceAdapter, WorkspaceSnapshot } from "./types"
 export { IndexedDBAdapter } from "./indexeddb-adapter"
 export { FSAccessAdapter } from "./fs-access-adapter"
+export { FSAdapter, FSError, validateSnapshot } from "./FSAdapter"
+export type { FSErrorCode, FSLogEntry, FSAdapterStatus } from "./FSAdapter"
 export { resolveAdapter, setAdapter, getFSAccessInstance, getActiveAdapter } from "./resolver"

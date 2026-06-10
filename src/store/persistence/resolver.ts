@@ -10,20 +10,7 @@ function isValidAdapter(value: string): value is AdapterType {
   return (VALID_ADAPTERS as string[]).includes(value)
 }
 
-function getConfig(): { adapter: AdapterType | "auto" } {
-  const urlOverride = new URLSearchParams(location.search).get("adapter")
-  if (urlOverride && isValidAdapter(urlOverride)) {
-    return { adapter: urlOverride }
-  }
-
-  const envOverride = import.meta.env.VITE_PERSISTENCE_ADAPTER as string | undefined
-  if (envOverride && isValidAdapter(envOverride)) {
-    return { adapter: envOverride }
-  }
-
-  return { adapter: "auto" }
-}
-
+// GUARD: preserved for legacy TiptapSidebar at /tiptap-editor-test
 export function getFSAccessInstance(): FSAccessAdapter {
   if (!_fsAccess) {
     _fsAccess = new FSAccessAdapter()
@@ -34,25 +21,10 @@ export function getFSAccessInstance(): FSAccessAdapter {
 export async function resolveAdapter(): Promise<PersistenceAdapter> {
   if (_adapter) return _adapter
 
-  const config = getConfig()
-
-  if (config.adapter === "auto") {
-    if ("showDirectoryPicker" in window) {
-      const fsa = getFSAccessInstance()
-      const reconnected = await fsa.tryReconnect()
-      if (reconnected) {
-        _adapter = fsa
-        return _adapter
-      }
-    }
+  // URL override for testing only
+  const urlOverride = new URLSearchParams(location.search).get("adapter")
+  if (urlOverride && isValidAdapter(urlOverride)) {
     _adapter = new IndexedDBAdapter()
-  } else if (config.adapter === "fs-access") {
-    const fsa = getFSAccessInstance()
-    const reconnected = await fsa.tryReconnect()
-    if (!reconnected) {
-      console.warn("FS Access adapter requested but permission not granted — falling back to IndexedDB")
-    }
-    _adapter = reconnected ? fsa : new IndexedDBAdapter()
   } else {
     _adapter = new IndexedDBAdapter()
   }

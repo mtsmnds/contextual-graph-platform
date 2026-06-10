@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useGraphStore } from "../store/useGraphStore"
-import { resolveAdapter } from "@/store/persistence"
+import { IndexedDBAdapter } from "@/store/persistence"
 import GraphCanvas from "../canvas/GraphCanvas"
 
 function WorkspaceRoot() {
@@ -12,9 +12,8 @@ function WorkspaceRoot() {
     if (hasInitialized.current) return
     hasInitialized.current = true
 
-    resolveAdapter().then((adapter) => {
-      init(adapter)
-    })
+    const adapter = new IndexedDBAdapter()
+    init(adapter)
   }, [init])
 
   return (

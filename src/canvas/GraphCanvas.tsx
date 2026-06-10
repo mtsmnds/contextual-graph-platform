@@ -22,7 +22,7 @@ import {
 import "@xyflow/react/dist/style.css"
 import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
-import { getFSAccessInstance, setAdapter } from "@/store/persistence"
+import { FSAdapter, FSError } from "@/store/persistence"
 import { getParentId, compareSortOrder } from "../engine/queries"
 import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS, DEFAULT_NODE_WIDTH, stackChildren } from "../engine/layout"
 import type { LayoutOptions, StackInput } from "../engine/layout"
@@ -1206,33 +1206,46 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 }
 
 function GraphCanvas() {
-  const storeInit = useGraphStore((s) => s.init)
-  const refreshFolderName = useGraphStore((s) => s.refreshFolderName)
   const fitViewRef = useRef<() => void>(() => {})
 
   const onOpenFolder = useCallback(async () => {
-    const fsa = getFSAccessInstance()
-    const picked = await fsa.initFromPicker()
-    if (!picked) return
-
-    const existing = await fsa.loadWorkspace()
-    if (existing) {
-      setAdapter(fsa)
-      await storeInit(fsa)
-    } else {
-      const state = useGraphStore.getState()
-      const snapshot: GraphSnapshot = { version: 5, entities: state.entities, relations: state.relations, canvas: state.canvas }
-      await fsa.saveGraph(snapshot)
-      for (const entity of state.entities) {
-        if (entity.type === "container") {
-          const content = state.getContent(entity.id)
-          if (content) await fsa.saveDocument(entity.id, content).catch(() => {})
+    const fsAdapter = new FSAdapter()
+    try {
+      const snapshot = await fsAdapter.open()
+      if (snapshot) {
+        const store = useGraphStore.getState()
+        store.setFsAdapter(fsAdapter)
+        store.openFromDisk(snapshot, fsAdapter.getFolderName()!)
+      } else if (fsAdapter.isOpen()) {
+        const name = fsAdapter.getFolderName()!
+        const confirmed = window.confirm(`This folder is empty. Create a new workspace in ${name}?`)
+        if (confirmed) {
+          const store = useGraphStore.getState()
+          const emptySnapshot: GraphSnapshot = {
+            version: 5,
+            entities: store.entities,
+            relations: store.relations,
+            canvas: store.canvas,
+          }
+          await fsAdapter.save(emptySnapshot)
+          store.setFsAdapter(fsAdapter)
+          store.openFromDisk(emptySnapshot, name)
+        } else {
+          fsAdapter.close()
         }
       }
-      setAdapter(fsa)
-      refreshFolderName()
+    } catch (err) {
+      if (err instanceof FSError) {
+        if (err.code === "PERMISSION_DENIED") {
+          window.alert(`Cannot access folder — ${err.detail}`)
+        } else {
+          window.alert(`Cannot open — ${err.detail} (code: ${err.code})`)
+        }
+      } else {
+        console.error("Unexpected error opening folder:", err)
+      }
     }
-  }, [storeInit, refreshFolderName])
+  }, [])
 
   const onRunLayout = useCallback((options: LayoutOptions) => {
     runFullLayout(options, () => fitViewRef.current?.())

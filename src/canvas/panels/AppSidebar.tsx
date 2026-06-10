@@ -1,3 +1,4 @@
+import { useCallback } from "react"
 import { useGraphStore } from "@/store/useGraphStore"
 import {
   Sidebar,
@@ -6,7 +7,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { FolderOpen, SignOut } from "@phosphor-icons/react"
+import { FolderOpen, SignOut, FloppyDisk } from "@phosphor-icons/react"
 import type { LayoutOptions } from "@/engine/layout"
 import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContainer"
 import CanvasLayoutSectionContainer from "./sections/CanvasLayoutSectionContainer"
@@ -29,11 +30,26 @@ export default function AppSidebar({
   const folderName = useGraphStore((s) => s.folderName)
   const autoLayout = useGraphStore((s) => s.featureFlags.autoLayout)
   const closeWorkspace = useGraphStore((s) => s.closeWorkspace)
+  const saveToDisk = useGraphStore((s) => s.saveToDisk)
+
+  const handleSave = useCallback(async () => {
+    try {
+      await saveToDisk()
+      window.alert("Saved successfully.")
+    } catch (err) {
+      window.alert("Save failed.")
+    }
+  }, [saveToDisk])
 
   return (
     <Sidebar side="right" collapsible="offcanvas" variant="floating" className="py-4">
       <SidebarHeader className="px-3 py-2">
-        <span className="text-sm font-semibold truncate">{folderName ?? "Workspace"}</span>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-semibold truncate">{folderName ?? "Workspace"}</span>
+          {!folderName && (
+            <span className="text-xs text-muted-foreground">No folder open — working from local storage only</span>
+          )}
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SelectionMetadataSectionContainer />
@@ -43,6 +59,16 @@ export default function AppSidebar({
         {autoLayout && <CanvasLayoutSectionContainer onRunLayout={onRunLayout} />}
       </SidebarContent>
       <SidebarFooter className="flex flex-col gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+          disabled={!folderName}
+          onClick={handleSave}
+        >
+          <FloppyDisk />
+          Save
+        </Button>
         {folderName && (
           <Button
             variant="outline"
