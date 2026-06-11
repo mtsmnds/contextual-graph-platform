@@ -12,6 +12,29 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-11
+
+### Component architecture overhaul — BaseNode removal, SegmentCard/ContainerCard variants, ContentEditor improvements
+- **What:** Removed the entire `BaseNode` family (`base-node.tsx` — BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) and replaced it with portable, composable card components. SegmentCard absorbed BaseNodeContent's layout (`flex flex-col gap-y-2 p-3`) and gained a `variant` prop (`bordered`/`none`/`hover`) with Tailwind classes. New ContainerCard provides a card frame with `header` prop and consumer-controlled children. ContentEditor was migrated into ContainerGroupNode (replacing custom inline editing), got `field-sizing: content` auto-sizing, cursor-at-end on edit entry, and `whitespace-pre-wrap` view mode. The `.entity-card-content` and `.entity-card` CSS classes and `data-auto-height` attribute were fully removed. `.segment-card-*` CSS classes moved from `index.css` into Tailwind in the component. Collapsible accordion pattern demonstrated in stories.
+- **Why:** BaseNode was tightly coupled to React Flow and canvas concerns, making card components unusable outside the graph. The refactoring makes SegmentCard and ContainerCard portable — mountable in dialogs, Storybook, reading views, and accordions with zero React Flow dependencies. ContentEditor's textarea now uses native browser auto-sizing instead of a JS scrollHeight hack.
+- **Files changed:**
+  - `src/components/base-node.tsx`: **Deleted** — dead code, all consumers migrated
+  - `src/components/ContainerCard.tsx`: **New** — portable container card with header prop + variant system
+  - `src/components/ContainerCard.test.tsx`: **New** — 7 unit tests
+  - `src/stories/ContainerCard.stories.tsx`: **New** — 6 stories (Default, WithSegmentChildren, VariantNone, VariantNoneWithSegments, CollapsibleOpen, CollapsibleClosed)
+  - `src/components/SegmentCard.tsx`: Added `variant` prop with Tailwind class mapping, absorbed `flex flex-col gap-y-2 p-3` from BaseNodeContent
+  - `src/components/SegmentCard.test.tsx`: Updated assertions for variant Tailwind classes
+  - `src/stories/SegmentCard.stories.tsx`: Removed PaddingEntityCard, added VariantBordered/VariantNone/VariantHover stories
+  - `src/components/ContentEditor.tsx`: Added `field-sizing: content` and `whitespace-pre-wrap`, removed JS height hack and `rows={1}`
+  - `src/canvas/hooks/useNodeEdit.ts`: Added `selectionStart = selectionEnd = value.length` for cursor-at-end on edit
+  - `src/canvas/nodes/EntityNode.tsx`: Replaced BaseNode with plain div (canvas chrome only), handles moved to siblings of SegmentCard, removed `entity-card-content px-3` override (SegmentCard owns padding), removed `entity-card` class and `data-auto-height`
+  - `src/canvas/nodes/ContainerGroupNode.tsx`: Replaced BaseNode/BaseNodeHeader with plain div + ContainerCard + ContentEditor, handles moved to siblings
+  - `src/index.css`: Removed `.entity-card`, `.entity-card[data-auto-height]`, `.entity-card-content`, `.segment-card-bordered`, `.segment-card-none`, `.segment-card-hover`, `.container-child-area` CSS rules
+  - `src/stories/SegmentCard.stories.tsx`: Updated stories to use variant system
+- **Impact:** The card components are now fully portable. Canvas nodes are thinner wrappers. BaseNode family is gone. CSS in `index.css` reduced by ~40 lines.
+- **Archive:** `dev-docs/archive/m7/2026-06-11-component-architecture-overhaul-adr.md`
+- **ADR:** `dev-docs/archive/m7/2026-06-11-component-architecture-overhaul-adr.md`
+
 ## 2026-06-10
 
 ### m7 — prd0071 — ContentEditor reusable component

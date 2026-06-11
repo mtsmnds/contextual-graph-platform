@@ -364,9 +364,11 @@ The `Entity.metadata` field (`Record<string, unknown>`) carries per-entity-type 
 | `src/engine/layout.ts` | Dagre LR layout: entities/relations → React Flow nodes/edges |
 | `src/engine/queries.ts` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
 | `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, CRUD dialogs, context menu, Panel buttons |
-| `src/canvas/nodes/EntityNode.tsx` | Custom node component (BaseNode + Badge + 4 handles + inline text editing + NodeResizeControl) |
+| `src/canvas/nodes/EntityNode.tsx` | Custom entity node — canvas chrome div + 4 handles + SegmentCard(ContentEditor) + NodeResizeControl |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |
-| `src/components/base-node.tsx` | BaseNode layout components (BaseNode, BaseNodeHeader, BaseNodeHeaderTitle, BaseNodeContent, BaseNodeFooter) from reactflow.dev registry |
+| `src/components/SegmentCard.tsx` | Portable card component for non-container entities — variant system (bordered/none/hover), width prop, built-in padding/layout. Variant styles are Tailwind classes in the component (not index.css). |
+| `src/components/ContainerCard.tsx` | Portable card frame for container entities — variant system (bordered/none/hover), header prop, consumer-controlled children slot |
+| `src/components/ContentEditor.tsx` | Reusable view/edit content editor with auto-sizing textarea (field-sizing: content), double-click to edit, cursor-at-end on entry, no @xyflow/react dependency |
 | `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (not shadcn/Radix — avoids trigger-wrapper conflicts with React Flow) |
 | `src/canvas/panels/AppSidebar.tsx` | Right-side collapsible sidebar (workspace info, feature flags, backups, open folder) |
