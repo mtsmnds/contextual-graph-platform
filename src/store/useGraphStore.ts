@@ -110,6 +110,10 @@ export function migrateSnapshot(snapshot: {
     return e
   })
 
+  if (!("collapsedContainers" in canvas)) {
+    canvas = { ...canvas, collapsedContainers: [] }
+  }
+
   return {
     version: version as 5,
     entities: entities as unknown as Entity[],
@@ -186,6 +190,8 @@ interface GraphStore {
   focusEntity: (id: string | null, anchorId?: string | null) => void;
   expandPanel: (entityId: string) => void;
   closePanel: (entityId: string) => void;
+  toggleContainerCollapse: (id: string) => void;
+  isContainerCollapsed: (id: string) => boolean;
 
   getContent: (id: string) => Record<string, unknown> | null;
   loadContentDirect: (documents: Record<string, Record<string, unknown>>) => void;
@@ -238,7 +244,7 @@ function generateSeedData() {
   return {
     entities: seedEntities,
     relations: SEED_DATA.relations,
-    canvas: {} as CanvasState,
+    canvas: { collapsedContainers: [] } as CanvasState,
     contentLoaded: Object.fromEntries(containerEntities.map((e) => [e.id, true])),
     idMap,
   }
@@ -247,7 +253,7 @@ function generateSeedData() {
 const storeInitializer = (set: any, get: any): GraphStore => ({
   entities: [],
   relations: [],
-  canvas: {},
+  canvas: { collapsedContainers: [] },
   view: {
     focusedEntityId: null,
     anchorEntityId: null,
@@ -486,7 +492,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     set({
       entities: snapshot.entities,
       relations: snapshot.relations,
-      canvas: snapshot.canvas,
+      canvas: { ...snapshot.canvas, collapsedContainers: snapshot.canvas.collapsedContainers ?? [] },
       folderName,
       undoStack: [],
       redoStack: [],
@@ -725,6 +731,21 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         expandedPanels: state.view.expandedPanels.filter((id) => id !== entityId),
       },
     }));
+  },
+
+  toggleContainerCollapse: (id: string) => {
+    const s = get() as GraphStore;
+    s.beginBatch("Toggle container collapse");
+    const current = s.canvas.collapsedContainers;
+    const next = current.includes(id)
+      ? current.filter((cid: string) => cid !== id)
+      : [...current, id];
+    set({ canvas: { ...s.canvas, collapsedContainers: next } });
+    s.endBatch();
+  },
+
+  isContainerCollapsed: (id: string) => {
+    return get().canvas.collapsedContainers.includes(id);
   },
 
   getContent: (id: string) => {

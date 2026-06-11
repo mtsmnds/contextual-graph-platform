@@ -81,7 +81,7 @@ describe("migrateSnapshot", () => {
         entities: [MINIMAL_ENTITY],
         relations: [],
       });
-      expect(result.canvas).toEqual({});
+      expect(result.canvas).toEqual({ collapsedContainers: [] });
     });
 
     it("strips positions/dimensions from canvas in v5", () => {
@@ -178,7 +178,7 @@ describe("migrateSnapshot", () => {
       expect(seg.content).toBe("To be");
 
       expect(result.relations[0].sortOrder).toEqual(expect.any(String));
-      expect(result.canvas).toEqual({});
+      expect(result.canvas).toEqual({ collapsedContainers: [] });
     });
 
     it("v5 input only runs kind→type normalization", () => {
