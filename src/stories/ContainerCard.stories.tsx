@@ -80,3 +80,24 @@ export const VariantNone: Story = {
     </ContainerCard>
   ),
 }
+
+export const VariantNoneWithSegments: Story = {
+  render: () => (
+    <ContainerCard width={400} variant="none">
+      <ContentEditor
+        content="Act I"
+        className="font-semibold text-sm px-3 py-2"
+        onChange={fn()}
+        placeholder="Untitled"
+      />
+      <div className="flex flex-col gap-2 flex-1 min-h-[60px] p-3">
+        <SegmentCard width="100%" variant="none">
+          <ContentEditor content="First segment content" onChange={fn()} placeholder="Type here..." />
+        </SegmentCard>
+        <SegmentCard width="100%" variant="none">
+          <ContentEditor content="Second segment content" onChange={fn()} placeholder="Type here..." />
+        </SegmentCard>
+      </div>
+    </ContainerCard>
+  ),
+}
