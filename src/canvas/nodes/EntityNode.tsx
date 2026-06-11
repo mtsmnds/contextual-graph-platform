@@ -93,14 +93,14 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           e.stopPropagation()
         }}
       >
+        <BaseHandle type="source" position={Position.Top} id="top" />
+        <BaseHandle type="source" position={Position.Right} id="right" />
+        <BaseHandle type="source" position={Position.Bottom} id="bottom" />
+        <BaseHandle type="source" position={Position.Left} id="left" />
         <SegmentCard
           width="100%"
           className={autoHeight ? undefined : "flex-1"}
         >
-          <BaseHandle type="source" position={Position.Top} id="top" />
-          <BaseHandle type="source" position={Position.Right} id="right" />
-          <BaseHandle type="source" position={Position.Bottom} id="bottom" />
-          <BaseHandle type="source" position={Position.Left} id="left" />
           <ContentEditor
             content={data.content}
             className={autoHeight ? "" : "flex-1"}
