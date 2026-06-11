@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite"
+import { fn } from "storybook/test"
 import { ContainerCard } from "@/components/ContainerCard"
 import { SegmentCard } from "@/components/SegmentCard"
+import ContentEditor from "@/components/ContentEditor"
 
 const meta = {
   title: "Components/ContainerCard",
@@ -26,7 +28,12 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <ContainerCard width={400}>
-      <div className="font-semibold text-sm px-3 py-2">Container Title</div>
+      <ContentEditor
+        content="Container Title"
+        className="font-semibold text-sm px-3 py-2"
+        onChange={fn()}
+        placeholder="Untitled"
+      />
       <div className="flex-1 min-h-[60px] bg-accent/15 px-3 py-2">
         <p className="text-muted-foreground text-sm">Child area</p>
       </div>
@@ -37,11 +44,22 @@ export const Default: Story = {
 export const WithSegmentChildren: Story = {
   render: () => (
     <ContainerCard width={400}>
-      <div className="font-semibold text-sm px-3 py-2">Act I</div>
+      <ContentEditor
+        content="Act I"
+        className="font-semibold text-sm px-3 py-2"
+        onChange={fn()}
+        placeholder="Untitled"
+      />
       <div className="flex flex-col gap-2 flex-1 min-h-[60px] bg-accent/15 p-3">
-        <SegmentCard width="100%">First segment content</SegmentCard>
-        <SegmentCard width="100%">Second segment content</SegmentCard>
-        <SegmentCard width="100%">Third segment content</SegmentCard>
+        <SegmentCard width="100%">
+          <ContentEditor content="First segment content" onChange={fn()} placeholder="Type here..." />
+        </SegmentCard>
+        <SegmentCard width="100%">
+          <ContentEditor content="Second segment content" onChange={fn()} placeholder="Type here..." />
+        </SegmentCard>
+        <SegmentCard width="100%">
+          <ContentEditor content="Third segment content" onChange={fn()} placeholder="Type here..." />
+        </SegmentCard>
       </div>
     </ContainerCard>
   ),
@@ -50,7 +68,12 @@ export const WithSegmentChildren: Story = {
 export const VariantNone: Story = {
   render: () => (
     <ContainerCard width={400} variant="none">
-      <div className="font-semibold text-sm px-3 py-2">No border, transparent background</div>
+      <ContentEditor
+        content="No border, transparent background"
+        className="font-semibold text-sm px-3 py-2"
+        onChange={fn()}
+        placeholder="Untitled"
+      />
       <div className="flex-1 min-h-[60px] px-3 py-2">
         <p className="text-muted-foreground text-sm">Inline content without card frame</p>
       </div>
