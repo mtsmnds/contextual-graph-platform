@@ -1,10 +1,9 @@
-import { memo, useCallback } from "react"
+import { memo } from "react"
 import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId } from "@xyflow/react"
-import { BaseNodeHeader } from "@/components/base-node"
 import { BaseHandle } from "@/components/base-handle"
+import ContentEditor from "@/components/ContentEditor"
 import { useGraphStore } from "@/store/useGraphStore"
 import { useResizePersistence } from "@/canvas/hooks/useResizePersistence"
-import { useNodeEdit } from "@/canvas/hooks/useNodeEdit"
 import { cn } from "@/lib/utils"
 
 type ContainerGroupNodeData = {
@@ -18,22 +17,6 @@ type ContainerGroupNodeType = Node<ContainerGroupNodeData, "containerGroup">
 function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
   const nodeId = useNodeId()
   const onResizeEnd = useResizePersistence(data.id)
-  const {
-    isEditing,
-    editValue,
-    setEditValue,
-    editRef,
-    enterEdit,
-    handleBlur,
-    handleKeyDown,
-  } = useNodeEdit(data, (value) => {
-    useGraphStore.getState().updateEntity(data.id, { content: value })
-  })
-
-  const handleHeaderDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    enterEdit()
-  }, [enterEdit])
 
   return (
     <>
@@ -80,22 +63,13 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
         <BaseHandle type="source" position={Position.Right} id="right" />
         <BaseHandle type="source" position={Position.Bottom} id="bottom" />
         <BaseHandle type="source" position={Position.Left} id="left" />
-        <BaseNodeHeader onDoubleClick={handleHeaderDoubleClick}>
-          {isEditing ? (
-            <input
-              ref={editRef as React.Ref<HTMLInputElement>}
-              className="nodrag nopan flex-1 border-none bg-transparent p-0 font-semibold text-sm focus:outline-none"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
-            />
-          ) : (
-            <span className="flex-1 font-semibold text-sm truncate">
-              {data.content || <span className="text-muted-foreground">Untitled</span>}
-            </span>
-          )}
-        </BaseNodeHeader>
+        <ContentEditor
+          content={data.content}
+          className="font-semibold text-sm px-3 py-2"
+          onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
+          editTrigger={data.editTrigger}
+          placeholder="Untitled"
+        />
         <div className="container-child-area min-h-[60px]" />
       </div>
     </>
