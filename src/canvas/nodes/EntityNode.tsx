@@ -81,14 +81,13 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
       <div
         ref={measureRef}
         className={cn(
-          "relative entity-card w-full",
+          "relative rounded-md w-full",
           "hover:ring-1",
           "in-[.selected]:border-muted-foreground",
           "in-[.selected]:shadow-lg",
           autoHeight ? "" : "flex flex-col h-full overflow-hidden",
         )}
         tabIndex={0}
-        data-auto-height={autoHeight ? "" : undefined}
         onDoubleClick={(e) => {
           e.stopPropagation()
         }}
