@@ -8,6 +8,15 @@ describe("ContainerCard", () => {
     expect(screen.getByTestId("child")).toBeDefined()
   })
 
+  it("renders header prop", () => {
+    render(
+      <ContainerCard width={400} header={<span data-testid="header">Title</span>}>
+        Content
+      </ContainerCard>,
+    )
+    expect(screen.getByTestId("header")).toBeDefined()
+  })
+
   it("applies width prop", () => {
     render(<ContainerCard width={400} data-testid="card">Hello</ContainerCard>)
     const card = screen.getByTestId("card")

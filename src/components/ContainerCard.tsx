@@ -6,6 +6,7 @@ export type ContainerCardVariant = "bordered" | "none" | "hover"
 export type ContainerCardProps = ComponentProps<"div"> & {
   width?: number | string
   variant?: ContainerCardVariant
+  header?: React.ReactNode
 }
 
 const variantClass: Record<ContainerCardVariant, string> = {
@@ -17,6 +18,7 @@ const variantClass: Record<ContainerCardVariant, string> = {
 export function ContainerCard({
   width,
   variant = "bordered",
+  header,
   className,
   style,
   children,
@@ -28,6 +30,9 @@ export function ContainerCard({
       style={{ ...style, width }}
       {...props}
     >
+      {header && (
+        <div className="px-3 py-2">{header}</div>
+      )}
       {children}
     </div>
   )

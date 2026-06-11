@@ -64,15 +64,20 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
         <BaseHandle type="source" position={Position.Right} id="right" />
         <BaseHandle type="source" position={Position.Bottom} id="bottom" />
         <BaseHandle type="source" position={Position.Left} id="left" />
-        <ContainerCard width="100%" className="h-full">
-          <ContentEditor
-            content={data.content}
-            className="font-semibold text-sm px-3 py-2"
-            onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
-            editTrigger={data.editTrigger}
-            placeholder="Untitled"
-          />
-          <div className="container-child-area min-h-[60px]" />
+        <ContainerCard
+          width="100%"
+          className="h-full"
+          header={
+            <ContentEditor
+              content={data.content}
+              className="font-semibold text-sm"
+              onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
+              editTrigger={data.editTrigger}
+              placeholder="Untitled"
+            />
+          }
+        >
+          <div className="flex-1 min-h-[60px] bg-accent/15" />
         </ContainerCard>
       </div>
     </>
