@@ -9,9 +9,9 @@ export type SegmentCardProps = ComponentProps<"div"> & {
 }
 
 const variantClass: Record<SegmentCardVariant, string> = {
-  bordered: "segment-card-bordered",
-  none: "segment-card-none",
-  hover: "segment-card-hover",
+  bordered: "border rounded-md bg-card text-card-foreground",
+  none: "border-none bg-transparent",
+  hover: "border border-transparent rounded-md bg-transparent transition-colors duration-150 ease-in-out hover:border-border hover:bg-card",
 }
 
 /**

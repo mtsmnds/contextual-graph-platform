@@ -263,29 +263,6 @@ body {
   width: auto;
 }
 
-.segment-card-bordered {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  color: var(--card-foreground);
-}
-
-.segment-card-none {
-  border: none;
-  background: transparent;
-}
-
-.segment-card-hover {
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  background: transparent;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.segment-card-hover:hover {
-  border-color: var(--border);
-  background: var(--card);
-}
-
 .react-flow__node.dragging {
   cursor: grabbing;
 }
