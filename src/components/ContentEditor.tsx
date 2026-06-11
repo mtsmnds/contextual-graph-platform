@@ -59,7 +59,7 @@ function ContentEditor(
 
   return (
     <div className={className} onDoubleClick={enterEdit}>
-      <p className="m-0 cursor-default text-sm text-foreground">
+      <p className="m-0 cursor-default text-sm text-foreground whitespace-pre-wrap">
         {content || <span className="text-muted-foreground">{placeholder}</span>}
       </p>
     </div>

@@ -1,13 +1,11 @@
 import { memo, useCallback } from "react"
 import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId } from "@xyflow/react"
-import {
-  BaseNode,
-  BaseNodeHeader,
-} from "@/components/base-node"
+import { BaseNodeHeader } from "@/components/base-node"
 import { BaseHandle } from "@/components/base-handle"
 import { useGraphStore } from "@/store/useGraphStore"
 import { useResizePersistence } from "@/canvas/hooks/useResizePersistence"
 import { useNodeEdit } from "@/canvas/hooks/useNodeEdit"
+import { cn } from "@/lib/utils"
 
 type ContainerGroupNodeData = {
   content: string
@@ -69,7 +67,19 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
         minHeight={128}
         onResizeEnd={onResizeEnd}
       />
-      <BaseNode className="w-full overflow-hidden container-group-node">
+      <div
+        className={cn(
+          "bg-card text-card-foreground relative rounded-md border w-full overflow-hidden container-group-node",
+          "hover:ring-1",
+          "in-[.selected]:border-muted-foreground",
+          "in-[.selected]:shadow-lg",
+        )}
+        tabIndex={0}
+      >
+        <BaseHandle type="source" position={Position.Top} id="top" />
+        <BaseHandle type="source" position={Position.Right} id="right" />
+        <BaseHandle type="source" position={Position.Bottom} id="bottom" />
+        <BaseHandle type="source" position={Position.Left} id="left" />
         <BaseNodeHeader onDoubleClick={handleHeaderDoubleClick}>
           {isEditing ? (
             <input
@@ -86,13 +96,8 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
             </span>
           )}
         </BaseNodeHeader>
-        <div className="container-child-area min-h-[60px]">
-          <BaseHandle type="source" position={Position.Top} id="top" />
-          <BaseHandle type="source" position={Position.Right} id="right" />
-          <BaseHandle type="source" position={Position.Bottom} id="bottom" />
-          <BaseHandle type="source" position={Position.Left} id="left" />
-        </div>
-      </BaseNode>
+        <div className="container-child-area min-h-[60px]" />
+      </div>
     </>
   )
 }
