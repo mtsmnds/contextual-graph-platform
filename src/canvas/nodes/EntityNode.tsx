@@ -7,7 +7,6 @@ import {
   ResizeControlVariant,
   useNodeId,
 } from "@xyflow/react"
-import { BaseNode } from "@/components/base-node"
 import { BaseHandle } from "@/components/base-handle"
 import { SegmentCard } from "@/components/SegmentCard"
 import ContentEditor from "@/components/ContentEditor"
@@ -79,12 +78,16 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
           />
         </>
       )}
-      <BaseNode
+      <div
         ref={measureRef}
         className={cn(
-          "entity-card w-full",
+          "relative entity-card w-full",
+          "hover:ring-1",
+          "in-[.selected]:border-muted-foreground",
+          "in-[.selected]:shadow-lg",
           autoHeight ? "" : "flex flex-col h-full overflow-hidden",
         )}
+        tabIndex={0}
         data-auto-height={autoHeight ? "" : undefined}
         onDoubleClick={(e) => {
           e.stopPropagation()
@@ -106,7 +109,7 @@ function EntityNode({ data }: NodeProps<EntityNodeType>) {
             placeholder="Type here..."
           />
         </SegmentCard>
-      </BaseNode>
+      </div>
     </>
   )
 }

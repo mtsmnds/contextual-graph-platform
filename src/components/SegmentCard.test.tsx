@@ -23,6 +23,30 @@ describe("SegmentCard", () => {
     expect(card.className).toContain("p-3")
   })
 
+  it("defaults to bordered variant", () => {
+    render(<SegmentCard width={208} data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("segment-card-bordered")
+  })
+
+  it("accepts bordered variant", () => {
+    render(<SegmentCard width={208} variant="bordered" data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("segment-card-bordered")
+  })
+
+  it("accepts none variant", () => {
+    render(<SegmentCard width={208} variant="none" data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("segment-card-none")
+  })
+
+  it("accepts hover variant", () => {
+    render(<SegmentCard width={208} variant="hover" data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("segment-card-hover")
+  })
+
   it("applies className and style", () => {
     render(
       <SegmentCard width="100%" className="custom-card" style={{ background: "red" }} data-testid="card">
@@ -30,7 +54,7 @@ describe("SegmentCard", () => {
       </SegmentCard>,
     )
     const card = screen.getByTestId("card")
-    expect(card.className).toContain("segment-card")
+    expect(card.className).toContain("segment-card-bordered")
     expect(card.className).toContain("custom-card")
     expect(card.style.background).toBe("red")
   })
