@@ -23,7 +23,7 @@ import "@xyflow/react/dist/style.css"
 import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
 import { FSAdapter, FSError } from "@/store/persistence"
-import { getParentId, compareSortOrder } from "../engine/queries"
+import { getParentId, compareSortOrder, getCollapsedDescendants } from "../engine/queries"
 import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS, DEFAULT_NODE_WIDTH, stackChildren } from "../engine/layout"
 import type { LayoutOptions, StackInput } from "../engine/layout"
 import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
@@ -43,6 +43,8 @@ import EdgeLabel from "./edges/EdgeLabel"
 
 const nodeTypes = { entity: EntityNode, metadata: MetadataNode, containerGroup: ContainerGroupNode }
 const edgeTypes = { edgelabel: EdgeLabel }
+
+const COLLAPSED_HEADER_HEIGHT = 48
 
 function nodeStyle(
   cd: { width?: number; height?: number },
@@ -80,6 +82,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
   const relations = useGraphStore((s) => s.relations)
 
   const autoLayout = useGraphStore((s) => s.featureFlags.autoLayout)
+  const collapsedContainers = useGraphStore((s) => s.canvas.collapsedContainers)
 
   const prevAutoLayoutRef = useRef(autoLayout)
   const layoutRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
@@ -88,8 +91,22 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
     layoutRef.current = null
   }
   if (layoutRef.current === null) {
+    const hiddenNodeIds = getCollapsedDescendants(collapsedContainers, relations)
     if (autoLayout) {
       const { nodes, edges } = getLayoutedElements({ entities, relations, options: DEFAULT_LAYOUT_OPTIONS })
+      for (const node of nodes) {
+        if (hiddenNodeIds.has(node.id)) {
+          node.hidden = true
+        }
+        if (collapsedContainers.includes(node.id) && node.type === "containerGroup") {
+          node.style = { ...node.style as Record<string, unknown>, height: COLLAPSED_HEADER_HEIGHT }
+        }
+      }
+      for (const edge of edges) {
+        if (hiddenNodeIds.has(edge.source) || hiddenNodeIds.has(edge.target)) {
+          edge.hidden = true
+        }
+      }
       layoutRef.current = { nodes, edges }
     } else {
       const nodes: Node[] = []
@@ -105,9 +122,14 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         const node: Node = {
           id: entity.id,
           type: isContainer ? "containerGroup" : "entity",
+          hidden: hiddenNodeIds.has(entity.id),
           position,
           data: { content, type: entity.type, id: entity.id },
           style: nodeStyle(saved, isContainer),
+        }
+
+        if (collapsedContainers.includes(entity.id) && isContainer) {
+          node.style = { ...node.style, height: COLLAPSED_HEADER_HEIGHT }
         }
 
         const containsParentId = getParentId({ relations }, entity.id)
@@ -138,6 +160,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         id: rel.id,
         source: rel.source,
         target: rel.target,
+        hidden: hiddenNodeIds.has(rel.source) || hiddenNodeIds.has(rel.target),
         sourceHandle: rel.metadata?.sourceHandle as string | undefined,
         targetHandle: rel.metadata?.targetHandle as string | undefined,
         label: rel.type,
@@ -189,6 +212,8 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
       }
     }
 
+    const hiddenNodeIds = getCollapsedDescendants(collapsedContainers, relations)
+
     if (!autoLayout) {
       const pendingId = pendingNodeRef.current
       pendingNodeRef.current = null
@@ -213,15 +238,20 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             const w = entity.canvasData.width
 
             if (posChanged || contentChanged || parentChanged || typeChanged || w != null) {
+              const isContainer = entity.type === "container"
               merged[idx] = {
                 ...merged[idx],
-                type: entity.type === "container" ? "containerGroup" : "entity",
+                type: isContainer ? "containerGroup" : "entity",
+                hidden: hiddenNodeIds.has(entity.id),
                 position: { x: entity.canvasData.x, y: entity.canvasData.y },
                 data: { ...merged[idx].data, content: newContent, type: entity.type },
                 parentId: derivedParentId ?? undefined,
                 extent: derivedParentId ? "parent" : undefined,
                 expandParent: derivedParentId ? true : undefined,
-                style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, entity.type === "container") },
+                style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, isContainer) },
+              }
+              if (collapsedContainers.includes(entity.id) && isContainer) {
+                merged[idx].style = { ...merged[idx].style as Record<string, unknown>, height: COLLAPSED_HEADER_HEIGHT }
               }
             }
           } else {
@@ -230,9 +260,14 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             const newNode: Node = {
               id: entity.id,
               type: isContainer ? "containerGroup" : "entity",
+              hidden: hiddenNodeIds.has(entity.id),
               position,
               data: { content: newContent, type: entity.type, id: entity.id },
               style: nodeStyle(entity.canvasData, isContainer),
+            }
+
+            if (collapsedContainers.includes(entity.id) && isContainer) {
+              newNode.style = { ...newNode.style, height: COLLAPSED_HEADER_HEIGHT }
             }
 
             if (derivedParentId) {
@@ -336,11 +371,22 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
               id: rel.id,
               source: rel.source,
               target: rel.target,
+              hidden: hiddenNodeIds.has(rel.source) || hiddenNodeIds.has(rel.target),
               sourceHandle: rel.metadata?.sourceHandle as string | undefined,
               targetHandle: rel.metadata?.targetHandle as string | undefined,
               label: rel.type,
               type: "edgelabel",
             })
+          }
+        }
+
+        // Sync hidden state on existing edges from collapse changes
+        for (let i = 0; i < merged.length; i++) {
+          const e = merged[i]
+          if (e.id?.startsWith("meta-edge:")) continue
+          const shouldHide = hiddenNodeIds.has(e.source) || hiddenNodeIds.has(e.target)
+          if (e.hidden !== shouldHide) {
+            merged[i] = { ...e, hidden: shouldHide }
           }
         }
 
@@ -396,16 +442,25 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
           const existing = prevById.get(dagreNode.id)
           const saved = entities.find((e) => e.id === dagreNode.id)?.canvasData
           const position = (saved && saved.x !== undefined) ? { x: saved.x, y: saved.y } : dagreNode.position
+          const isContainer = dagreNode.type === "containerGroup"
+          const dagreHidden = hiddenNodeIds.has(dagreNode.id)
+          const collapsedHeight = collapsedContainers.includes(dagreNode.id) && isContainer ? COLLAPSED_HEADER_HEIGHT : undefined
 
+          let n: Node
           const pending = pendingNodeRef.current
           if (pending && pending === dagreNode.id) {
             pendingNodeRef.current = null
-            merged.push({ ...dagreNode, position, data: { ...dagreNode.data, editTrigger: 1 } })
+            n = { ...dagreNode, position, hidden: dagreHidden, data: { ...dagreNode.data, editTrigger: 1 } }
           } else if (existing) {
-            merged.push({ ...existing, position, data: { ...existing.data, ...dagreNode.data } })
+            n = { ...existing, position, hidden: dagreHidden, data: { ...existing.data, ...dagreNode.data } }
           } else {
-            merged.push({ ...dagreNode, position, data: dagreNode.data })
+            n = { ...dagreNode, position, hidden: dagreHidden, data: dagreNode.data }
           }
+
+          if (collapsedHeight != null) {
+            n.style = { ...(n.style as Record<string, unknown> ?? {}), height: collapsedHeight }
+          }
+          merged.push(n)
         }
 
         return merged
@@ -417,10 +472,11 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 
         for (const dagreEdge of dagreEdges) {
           const existing = prevById.get(dagreEdge.id)
+          const dagreHidden = hiddenNodeIds.has(dagreEdge.source) || hiddenNodeIds.has(dagreEdge.target)
           if (existing) {
-            merged.push({ ...existing, label: dagreEdge.label, data: dagreEdge.data })
+            merged.push({ ...existing, label: dagreEdge.label, data: dagreEdge.data, hidden: dagreHidden })
           } else {
-            merged.push(dagreEdge)
+            merged.push({ ...dagreEdge, hidden: dagreHidden })
           }
         }
 
@@ -439,13 +495,15 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
       if (entity.type !== "container") continue
       const prev = prevDims.get(entity.id)
       if (!prev) continue
-      if (prev.w !== entity.canvasData.width || prev.h !== entity.canvasData.height) {
+      const targetHeight = collapsedContainers.includes(entity.id)
+        ? COLLAPSED_HEADER_HEIGHT
+        : entity.canvasData.height
+      if (prev.w !== entity.canvasData.width || prev.h !== targetHeight) {
         const w = entity.canvasData.width
-        const h = entity.canvasData.height
-        requestAnimationFrame(() => syncNodeDimensions(entity.id, w, h))
+        requestAnimationFrame(() => syncNodeDimensions(entity.id, w, targetHeight))
       }
     }
-  }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds, autoLayout])
+  }, [entities, relations, setNodes, setEdges, visibleMetadataNodeIds, autoLayout, collapsedContainers])
 
   useEffect(() => {
     const dims: Record<string, CanvasData> = {}
@@ -1253,7 +1311,10 @@ function GraphCanvas() {
       const s = useGraphStore.getState()
       for (const entity of s.entities) {
         if (entity.type === "container") {
-          syncNodeDimensions(entity.id, entity.canvasData.width, entity.canvasData.height)
+          const targetHeight = s.canvas.collapsedContainers.includes(entity.id)
+            ? COLLAPSED_HEADER_HEIGHT
+            : entity.canvasData.height
+          syncNodeDimensions(entity.id, entity.canvasData.width, targetHeight)
         }
       }
     })
