@@ -101,6 +101,9 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         if (collapsedContainers.includes(node.id) && node.type === "containerGroup") {
           node.style = { ...node.style as Record<string, unknown>, height: COLLAPSED_HEADER_HEIGHT }
         }
+        if (node.parentId && collapsedContainers.includes(node.parentId)) {
+          node.expandParent = undefined
+        }
       }
       for (const edge of edges) {
         if (hiddenNodeIds.has(edge.source) || hiddenNodeIds.has(edge.target)) {
@@ -136,7 +139,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
         if (containsParentId) {
           node.parentId = containsParentId
           node.extent = "parent"
-          node.expandParent = true
+          node.expandParent = collapsedContainers.includes(containsParentId) ? undefined : true
         }
 
         nodes.push(node)
@@ -247,7 +250,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 data: { ...merged[idx].data, content: newContent, type: entity.type },
                 parentId: derivedParentId ?? undefined,
                 extent: derivedParentId ? "parent" : undefined,
-                expandParent: derivedParentId ? true : undefined,
+                expandParent: derivedParentId && !collapsedContainers.includes(derivedParentId) ? true : undefined,
                 style: { ...merged[idx].style, ...nodeStyle(entity.canvasData, isContainer) },
               }
               if (collapsedContainers.includes(entity.id) && isContainer) {
@@ -273,7 +276,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
             if (derivedParentId) {
               newNode.parentId = derivedParentId
               newNode.extent = "parent"
-              newNode.expandParent = true
+              newNode.expandParent = collapsedContainers.includes(derivedParentId) ? undefined : true
               const parentIdx = merged.findIndex((n) => n.id === derivedParentId)
               if (parentIdx !== -1) {
                 merged.splice(parentIdx + 1, 0, newNode)
@@ -459,6 +462,9 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 
           if (collapsedHeight != null) {
             n.style = { ...(n.style as Record<string, unknown> ?? {}), height: collapsedHeight }
+          }
+          if (dagreNode.parentId && collapsedContainers.includes(dagreNode.parentId)) {
+            n.expandParent = undefined
           }
           merged.push(n)
         }
