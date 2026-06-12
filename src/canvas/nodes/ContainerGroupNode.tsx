@@ -90,7 +90,7 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
             </div>
           }
         >
-          <div className="flex-1 min-h-[60px] bg-accent/15" />
+          {!isCollapsed && <div className="flex-1 min-h-[60px] bg-accent/15" />}
         </ContainerCard>
       </div>
     </>
