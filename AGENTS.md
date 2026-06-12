@@ -68,9 +68,13 @@ Run `npx tsc --noEmit` and `npm run build`, then load the `dev-workflow` skill (
 |------|------|
 | `src/main.tsx` | App entrypoint |
 | `src/App.tsx` | Root component — BrowserRouter shell, routes `/` (WorkspaceRoot) and `/tiptap-editor-test` (LegacyApp) |
-| `src/routes/WorkspaceRoot.tsx` | Graph canvas workspace — IndexedDBAdapter init + beforeunload dirty check |
+| `src/routes/WorkspaceRoot.tsx` | Just renders `<WorkspaceShell />` |
 | `src/routes/LegacyApp.tsx` | Original Tiptap editor app (mounted at `/tiptap-editor-test`) |
-| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, edge inline editing, context menu, Panel buttons, FSAdapter open pipeline |
+| `src/canvas/GraphCanvas.tsx` | Pure React Flow canvas view — nodes, edges, context menu, panel buttons. No SidebarProvider or AppSidebar |
+| `src/components/chrome/WorkspaceShell.tsx` | Shared workspace wrapper — init, beforeunload, SidebarProvider, AppSidebar, FS open orchestration, view switching |
+| `src/components/chrome/ViewSwitcher.tsx` | Canvas/Text view toggle in the sidebar |
+| `src/components/chrome/TextView.tsx` | Placeholder text view showing entity count |
+| `src/store/useChromeStore.ts` | Zustand store for chrome/shell UI state (activeView) |
 | `src/canvas/nodes/EntityNode.tsx` | Custom entity node — canvas chrome div + handles + SegmentCard(ContentEditor) + resize |
 | `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |

@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { FolderOpen, SignOut, FloppyDisk } from "@phosphor-icons/react"
 import type { LayoutOptions } from "@/engine/layout"
+import ViewSwitcher from "@/components/chrome/ViewSwitcher"
 import FeatureFlagsSectionContainer from "./sections/FeatureFlagsSectionContainer"
 import CanvasLayoutSectionContainer from "./sections/CanvasLayoutSectionContainer"
 import BackupsSectionContainer from "./sections/BackupsSectionContainer"
@@ -52,6 +53,7 @@ export default function AppSidebar({
         </div>
       </SidebarHeader>
       <SidebarContent>
+        <ViewSwitcher />
         <SelectionMetadataSectionContainer />
         <BackupsSectionContainer />
         <WorkspaceInfoSectionContainer />
