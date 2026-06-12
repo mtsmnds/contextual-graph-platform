@@ -286,11 +286,11 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the legacy rendere
 - **Navigation**: The app is a single-mode reading workspace. `focusedEntityId === null` shows the HomePage (root container listing). `focusedEntityId !== null` shows the ReadingViewport with TipTap editing. Sidebar (`AppSidebar`) provides persistent page navigation.
 
 ### Graph Canvas
-The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`.
+The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`, mounted inside `WorkspaceShell`.
 
 - Renders a full-height React Flow canvas with `Background` (dots), `Controls`, `MiniMap`.
 - Entities render as custom `"entity"` nodes (EntityNode component registered at module scope). Relations render as custom `"edgelabel"` edges (EdgeLabel component) with always-visible interactive labels — double-click the label to enter inline edit mode (text input + combobox dropdown of existing relation types).
-- **Panel buttons** (top-right): Undo, Redo, Zoom controls, Sidebar trigger. **Sidebar footer** (right): Open Folder, Save (disabled without folder), Close Workspace.
+- **Panel buttons** (top-right): Undo, Redo, Zoom controls, Sidebar trigger. Sidebar and footer chrome (Open Folder, Save, Close Workspace) are owned by `WorkspaceShell`.
 - **Interactions:**
   - Double-click pane → creates new node at click position (native DOM `dblclick` listener with capture phase; React Flow's synthetic `onDoubleClick` never fires)
   - Double-click node body → inline text editing (textarea with `nodrag nowheel nopan`, Enter=newline, Escape/blur=commit)
@@ -363,7 +363,7 @@ The `Entity.metadata` field (`Record<string, unknown>`) carries per-entity-type 
 | `src/types/fs-access.d.ts` | File System Access API type declarations |
 | `src/engine/layout.ts` | Dagre LR layout: entities/relations → React Flow nodes/edges |
 | `src/engine/queries.ts` | Query engine (getEntity, getRelations, getSequentialContext, getLinkedContext, getContainerChildren, resolveContainer, getContainerBreadcrumb) |
-| `src/canvas/GraphCanvas.tsx` | React Flow graph with Background/Controls/MiniMap, CRUD dialogs, context menu, Panel buttons |
+| `src/canvas/GraphCanvas.tsx` | Pure React Flow canvas view — nodes, edges, context menu, panel buttons. No SidebarProvider or AppSidebar (these live in WorkspaceShell) |
 | `src/canvas/nodes/EntityNode.tsx` | Custom entity node — canvas chrome div + 4 handles + SegmentCard(ContentEditor) + NodeResizeControl |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |
 | `src/components/SegmentCard.tsx` | Portable card component for non-container entities — variant system (bordered/none/hover), width prop, built-in padding/layout. Variant styles are Tailwind classes in the component (not index.css). |
@@ -371,7 +371,11 @@ The `Entity.metadata` field (`Record<string, unknown>`) carries per-entity-type 
 | `src/components/ContentEditor.tsx` | Reusable view/edit content editor with auto-sizing textarea (field-sizing: content), double-click to edit, cursor-at-end on entry, no @xyflow/react dependency |
 | `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (not shadcn/Radix — avoids trigger-wrapper conflicts with React Flow) |
-| `src/canvas/panels/AppSidebar.tsx` | Right-side collapsible sidebar (workspace info, feature flags, backups, open folder) |
+| `src/canvas/panels/AppSidebar.tsx` | Right-side collapsible sidebar — ViewSwitcher, workspace info, feature flags, backups, open folder |
+| `src/components/chrome/WorkspaceShell.tsx` | Shared workspace wrapper — owns init, beforeunload, SidebarProvider, AppSidebar, FS open orchestration, view switching |
+| `src/components/chrome/ViewSwitcher.tsx` | Canvas/Text view toggle in the sidebar |
+| `src/components/chrome/TextView.tsx` | Placeholder text view showing entity count |
+| `src/store/useChromeStore.ts` | Zustand store for chrome/shell UI state (activeView) |
 | `src/canvas/panels/sections/FeatureFlagsSection.tsx` | Presenter: feature flag toggles (flags, onToggle) |
 | `src/canvas/panels/sections/FeatureFlagsSectionContainer.tsx` | Container: reads featureFlags + setFeatureFlag from store |
 | `src/canvas/panels/sections/WorkspaceInfoSection.tsx` | Presenter: folder name, entity count, undo/redo buttons, viewport |

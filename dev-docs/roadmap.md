@@ -13,10 +13,7 @@ Completed work goes in `changelog.md`.
 
 ## Now
 
-- **Shared Chrome** — `dev-docs/plans/m6-shared-chrome.md`
-- **Card & Content UI** — `dev-docs/plans/m7-card-content-ui.md` (SegmentCard variants, ContainerCard, accordion, ContentEditor improvements — all done. See changelog.)
-
-_Work on either independently. Both are prerequisites for the semi-structured editing interface._
+- **Text View** — `dev-docs/plans/m10-text-view.md`
 
 ## Next
 

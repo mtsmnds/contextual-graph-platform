@@ -12,6 +12,18 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-12
+
+### m9 — Shared Chrome
+
+- Created `WorkspaceShell` (`src/components/chrome/WorkspaceShell.tsx`) — shared workspace wrapper owning init, beforeunload, SidebarProvider, AppSidebar, and FS open orchestration
+- Extracted workspace chrome from `GraphCanvas.tsx` — canvas is now a pure view (ReactFlowProvider + canvas controls only)
+- Bridged `onRunLayout` via ref callback so the sidebar can trigger canvas-specific layout from the shell
+- Created `useChromeStore` (`src/store/useChromeStore.ts`) — separate Zustand store for chrome UI state, starting with `activeView`
+- Added `ViewSwitcher` (`src/components/chrome/ViewSwitcher.tsx`) — toggle between canvas and text views in the sidebar
+- Added placeholder `TextView` (`src/components/chrome/TextView.tsx`) — proves view switching and store data access work
+- `WorkspaceRoot` is now just `<WorkspaceShell />`
+
 ## 2026-06-11
 
 ### Component architecture overhaul — BaseNode removal, SegmentCard/ContainerCard variants, ContentEditor improvements

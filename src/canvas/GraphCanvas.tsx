@@ -1275,7 +1275,7 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
 function GraphCanvas({
   layoutRef,
 }: {
-  layoutRef: React.MutableRefObject<((opts: LayoutOptions) => void) | null>
+  layoutRef?: React.MutableRefObject<((opts: LayoutOptions) => void) | null>
 }) {
   const fitViewRef = useRef<() => void>(() => {})
 
@@ -1295,8 +1295,8 @@ function GraphCanvas({
   }, [])
 
   useEffect(() => {
-    layoutRef.current = onRunLayout
-  }, [onRunLayout])
+    if (layoutRef) layoutRef.current = onRunLayout
+  }, [layoutRef, onRunLayout])
 
   return (
     <div className="flex-1 min-w-0 min-h-0">
