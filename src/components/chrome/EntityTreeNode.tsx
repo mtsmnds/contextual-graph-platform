@@ -4,23 +4,26 @@ import { compareSortOrder } from "../../engine/queries"
 import { SegmentCard } from "../SegmentCard"
 import { ContainerCard } from "../ContainerCard"
 import ContentEditor from "../ContentEditor"
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible"
+import { CaretDown } from "@phosphor-icons/react"
 
 function EntityTreeNode({ entityId }: { entityId: string }) {
   const entity = useGraphStore((s) => s.entities.find((e) => e.id === entityId))
   const relations = useGraphStore((s) => s.relations)
   const textCollapsed = useChromeStore((s) => s.textCollapsed)
-  const toggleTextCollapsed = useChromeStore((s) => s.toggleTextCollapsed)
+  const toggleCollapsed = useChromeStore((s) => s.toggleTextCollapsed)
 
   if (!entity) return null
 
   if (entity.type !== "container") {
     return (
-      <SegmentCard>
+      <SegmentCard width="100%">
         <ContentEditor
           content={entity.content ?? ""}
           onChange={(value) =>
             useGraphStore.getState().updateEntity(entityId, { content: value })
           }
+          placeholder="Type here..."
         />
       </SegmentCard>
     )
@@ -32,23 +35,31 @@ function EntityTreeNode({ entityId }: { entityId: string }) {
     .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder))
 
   return (
-    <ContainerCard
-      className="overflow-visible"
-      header={
-        <button
-          className="flex items-center gap-1.5 text-sm font-semibold w-full text-left"
-          onClick={() => toggleTextCollapsed(entityId)}
-        >
-          <span className="w-4 shrink-0">{isCollapsed ? "▸" : "▾"}</span>
-          {entity.content || entity.id}
-        </button>
-      }
-    >
-      {!isCollapsed &&
-        childRelations.map((rel) => (
-          <EntityTreeNode key={rel.target} entityId={rel.target} />
-        ))}
-    </ContainerCard>
+    <Collapsible defaultOpen={!isCollapsed} onOpenChange={() => toggleCollapsed(entityId)}>
+      <ContainerCard
+        header={
+          <div className="flex items-center gap-2">
+            <ContentEditor
+              content={entity.content ?? ""}
+              className="font-semibold text-sm flex-1"
+              onChange={(value) =>
+                useGraphStore.getState().updateEntity(entityId, { content: value })
+              }
+              placeholder="Untitled"
+            />
+            <CollapsibleTrigger className="p-1 rounded hover:bg-accent cursor-pointer text-muted-foreground transition-transform data-[open]:rotate-0 -rotate-90">
+              <CaretDown size={14} />
+            </CollapsibleTrigger>
+          </div>
+        }
+      >
+        <CollapsibleContent className="flex flex-col gap-2 flex-1 min-h-[60px] bg-accent/15 p-3">
+          {childRelations.map((rel) => (
+            <EntityTreeNode key={rel.target} entityId={rel.target} />
+          ))}
+        </CollapsibleContent>
+      </ContainerCard>
+    </Collapsible>
   )
 }
 
