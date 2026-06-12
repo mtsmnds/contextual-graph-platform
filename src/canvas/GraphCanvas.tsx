@@ -1024,7 +1024,11 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
                 const containerEntity = s.entities.find((e) => e.id === contextMenu.nodeId)
                 if (!containerEntity) return
 
-                const result = stackChildren(children, 16, { top: 32, right: 16, bottom: 16, left: 16 })
+                const containerEl = document.querySelector(`[data-id="${contextMenu.nodeId}"]`)
+                const headerEl = containerEl?.querySelector<HTMLElement>('[data-container-header]')
+                const headerHeight = headerEl?.offsetHeight ?? 48
+                const gap = 16
+                const result = stackChildren(children, gap, { top: headerHeight + gap, right: 16, bottom: 16, left: 16 })
 
                 s.beginBatch("Stack Children")
                 for (const child of result.children) {

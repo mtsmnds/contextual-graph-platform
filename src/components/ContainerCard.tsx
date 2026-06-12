@@ -31,7 +31,7 @@ export function ContainerCard({
       {...props}
     >
       {header && (
-        <div className="px-3 py-2">{header}</div>
+        <div className="px-3 py-2" data-container-header>{header}</div>
       )}
       {children}
     </div>
