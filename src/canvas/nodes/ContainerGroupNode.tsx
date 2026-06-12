@@ -1,5 +1,6 @@
 import { memo } from "react"
 import { type Node, type NodeProps, Position, NodeResizeControl, ResizeControlVariant, useNodeId } from "@xyflow/react"
+import { CaretDown, CaretRight } from "@phosphor-icons/react"
 import { BaseHandle } from "@/components/base-handle"
 import ContentEditor from "@/components/ContentEditor"
 import { ContainerCard } from "@/components/ContainerCard"
@@ -18,6 +19,7 @@ type ContainerGroupNodeType = Node<ContainerGroupNodeData, "containerGroup">
 function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
   const nodeId = useNodeId()
   const onResizeEnd = useResizePersistence(data.id)
+  const isCollapsed = useGraphStore((s) => s.canvas.collapsedContainers.includes(data.id))
 
   return (
     <>
@@ -68,13 +70,24 @@ function ContainerGroupNode({ data }: NodeProps<ContainerGroupNodeType>) {
           width="100%"
           className="h-full"
           header={
-            <ContentEditor
-              content={data.content}
-              className="font-semibold text-sm"
-              onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
-              editTrigger={data.editTrigger}
-              placeholder="Untitled"
-            />
+            <div className="flex items-center gap-2 group">
+              <ContentEditor
+                content={data.content}
+                className="font-semibold text-sm flex-1"
+                onChange={(value) => useGraphStore.getState().updateEntity(data.id, { content: value })}
+                editTrigger={data.editTrigger}
+                placeholder="Untitled"
+              />
+              <button
+                className="nodrag nopan p-1 rounded cursor-pointer text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  useGraphStore.getState().toggleContainerCollapse(data.id)
+                }}
+              >
+                {isCollapsed ? <CaretRight size={14} /> : <CaretDown size={14} />}
+              </button>
+            </div>
           }
         >
           <div className="flex-1 min-h-[60px] bg-accent/15" />
