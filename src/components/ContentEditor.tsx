@@ -34,9 +34,6 @@ function ContentEditor(
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setEditValue(e.target.value)
-      const ta = e.target
-      ta.style.height = "auto"
-      ta.style.height = `${ta.scrollHeight}px`
     },
     [setEditValue],
   )
@@ -45,6 +42,7 @@ function ContentEditor(
     return (
       <textarea
         ref={editRef as React.Ref<HTMLTextAreaElement>}
+        style={{ fieldSizing: "content" }}
         className={cn(
           "nodrag nowheel nopan resize-none border-none bg-transparent p-0 font-inherit text-sm focus:outline-none",
           "w-full",
@@ -55,14 +53,13 @@ function ContentEditor(
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         placeholder={placeholder}
-        rows={1}
       />
     )
   }
 
   return (
     <div className={className} onDoubleClick={enterEdit}>
-      <p className="m-0 cursor-default text-sm text-foreground">
+      <p className="m-0 cursor-default text-sm text-foreground whitespace-pre-wrap">
         {content || <span className="text-muted-foreground">{placeholder}</span>}
       </p>
     </div>

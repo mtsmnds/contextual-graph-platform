@@ -15,6 +15,11 @@ const meta = {
       description: "Fixed width of the card (number or CSS string)",
       control: "text",
     },
+    variant: {
+      description: "Visual variant of the card",
+      control: "select",
+      options: ["bordered", "none", "hover"],
+    },
   },
 } satisfies Meta<typeof SegmentCard>
 
@@ -49,6 +54,33 @@ export const CustomWidth: Story = {
   render: () => (
     <SegmentCard width={400}>
       <ContentEditor content="This card has a wider fixed width of 400px" onChange={fn()} />
+    </SegmentCard>
+  ),
+}
+
+export const VariantBordered: Story = {
+  name: "VariantBordered",
+  render: () => (
+    <SegmentCard width={300} variant="bordered">
+      <span>Bordered card with background</span>
+    </SegmentCard>
+  ),
+}
+
+export const VariantNone: Story = {
+  name: "VariantNone",
+  render: () => (
+    <SegmentCard width={300} variant="none">
+      <span>No border, transparent background</span>
+    </SegmentCard>
+  ),
+}
+
+export const VariantHover: Story = {
+  name: "VariantHover",
+  render: () => (
+    <SegmentCard width={300} variant="hover">
+      <span>Hover over me to see border and background</span>
     </SegmentCard>
   ),
 }

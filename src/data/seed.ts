@@ -242,5 +242,5 @@ export const SEED_DATA: GraphSnapshot = {
     },
   ],
   relations: [],
-  canvas: {},
+  canvas: { collapsedContainers: [] },
 };

@@ -11,14 +11,14 @@ describe("closeWorkspace", () => {
       relations: [
         { id: "r1", source: "e1", target: "e2", type: "references", sortOrder: "a0", metadata: {} },
       ],
-      canvas: { viewport: { x: 0, y: 0, zoom: 1 } },
+      canvas: { viewport: { x: 0, y: 0, zoom: 1 }, collapsedContainers: [] },
       view: { focusedEntityId: "e1", anchorEntityId: "e1", visibleEntityIds: [], expandedPanels: [] },
       contentLoaded: { e1: true },
       adapterId: "fs-access",
       folderName: "my-workspace",
       hydrated: true,
       selectedNodeId: "e1",
-      undoStack: [{ entities: [], relations: [], canvas: {}, description: "test", timestamp: 1, version: 5 }],
+      undoStack: [{ entities: [], relations: [], canvas: { collapsedContainers: [] }, description: "test", timestamp: 1, version: 5 }],
       redoStack: [],
       batchDepth: 0,
       _pendingSnapshot: null,
@@ -89,5 +89,71 @@ describe("closeWorkspace", () => {
       visibleEntityIds: [],
       expandedPanels: [],
     });
+  });
+});
+
+describe("toggleContainerCollapse", () => {
+  beforeEach(() => {
+    useGraphStore.setState({
+      entities: [],
+      relations: [],
+      canvas: { collapsedContainers: [] },
+      view: { focusedEntityId: null, anchorEntityId: null, visibleEntityIds: [], expandedPanels: [] },
+      contentLoaded: {},
+      adapterId: null,
+      folderName: null,
+      hydrated: false,
+      selectedNodeId: null,
+      undoStack: [],
+      redoStack: [],
+      batchDepth: 0,
+      _pendingSnapshot: null,
+      lastMutationTime: 0,
+    });
+  });
+
+  it("adds a container id when not collapsed", () => {
+    const store = useGraphStore.getState();
+    expect(store.canvas.collapsedContainers).toEqual([]);
+
+    store.toggleContainerCollapse("container-1");
+
+    const after = useGraphStore.getState();
+    expect(after.canvas.collapsedContainers).toEqual(["container-1"]);
+  });
+
+  it("removes a container id when already collapsed (toggle off)", () => {
+    useGraphStore.setState({
+      canvas: { collapsedContainers: ["container-1", "container-2"] },
+    });
+
+    const store = useGraphStore.getState();
+    store.toggleContainerCollapse("container-1");
+
+    const after = useGraphStore.getState();
+    expect(after.canvas.collapsedContainers).toEqual(["container-2"]);
+  });
+
+  it("isContainerCollapsed returns correct state", () => {
+    const store = useGraphStore.getState();
+    expect(store.isContainerCollapsed("container-1")).toBe(false);
+
+    store.toggleContainerCollapse("container-1");
+    expect(useGraphStore.getState().isContainerCollapsed("container-1")).toBe(true);
+
+    useGraphStore.getState().toggleContainerCollapse("container-1");
+    expect(useGraphStore.getState().isContainerCollapsed("container-1")).toBe(false);
+  });
+
+  it("undo restores previous collapsed state", () => {
+    const store = useGraphStore.getState();
+    store.toggleContainerCollapse("container-1");
+
+    const afterToggle = useGraphStore.getState();
+    expect(afterToggle.canvas.collapsedContainers).toEqual(["container-1"]);
+
+    afterToggle.undo();
+    const afterUndo = useGraphStore.getState();
+    expect(afterUndo.canvas.collapsedContainers).toEqual([]);
   });
 });

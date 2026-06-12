@@ -32,7 +32,9 @@ export function useNodeEdit(data: { content: string; editTrigger?: number }, onC
 
   useEffect(() => {
     if (isEditing && editRef.current) {
-      editRef.current.focus()
+      const ta = editRef.current
+      ta.focus()
+      ta.selectionStart = ta.selectionEnd = ta.value.length
     }
   }, [isEditing])
 

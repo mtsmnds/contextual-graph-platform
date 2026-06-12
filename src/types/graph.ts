@@ -40,6 +40,7 @@ type ViewState = {
 
 type CanvasState = {
   viewport?: { x: number; y: number; zoom: number };
+  collapsedContainers: string[];
 };
 
 type GraphSnapshot = {

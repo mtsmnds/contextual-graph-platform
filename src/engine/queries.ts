@@ -163,3 +163,22 @@ export function getContainerBreadcrumb(
 
   return crumbs;
 }
+
+export function getCollapsedDescendants(
+  collapsedIds: string[],
+  relations: Relation[],
+): Set<string> {
+  const hidden = new Set<string>()
+  function collect(containerId: string) {
+    for (const rel of relations) {
+      if (rel.source === containerId && rel.type === "contains") {
+        hidden.add(rel.target)
+        collect(rel.target)
+      }
+    }
+  }
+  for (const id of collapsedIds) {
+    collect(id)
+  }
+  return hidden
+}

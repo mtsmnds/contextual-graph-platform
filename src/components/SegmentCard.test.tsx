@@ -14,6 +14,39 @@ describe("SegmentCard", () => {
     expect(screen.getByTestId("child")).toBeDefined()
   })
 
+  it("has flex column layout with gap and padding", () => {
+    render(<SegmentCard width={208} data-testid="card">Content</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("flex")
+    expect(card.className).toContain("flex-col")
+    expect(card.className).toContain("gap-y-2")
+    expect(card.className).toContain("p-3")
+  })
+
+  it("defaults to bordered variant", () => {
+    render(<SegmentCard width={208} data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("bg-card")
+  })
+
+  it("accepts bordered variant", () => {
+    render(<SegmentCard width={208} variant="bordered" data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("bg-card")
+  })
+
+  it("accepts none variant", () => {
+    render(<SegmentCard width={208} variant="none" data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("bg-transparent")
+  })
+
+  it("accepts hover variant", () => {
+    render(<SegmentCard width={208} variant="hover" data-testid="card">Hello</SegmentCard>)
+    const card = screen.getByTestId("card")
+    expect(card.className).toContain("hover:bg-card")
+  })
+
   it("applies className and style", () => {
     render(
       <SegmentCard width="100%" className="custom-card" style={{ background: "red" }} data-testid="card">
@@ -21,7 +54,7 @@ describe("SegmentCard", () => {
       </SegmentCard>,
     )
     const card = screen.getByTestId("card")
-    expect(card.className).toContain("segment-card")
+    expect(card.className).toContain("bg-card")
     expect(card.className).toContain("custom-card")
     expect(card.style.background).toBe("red")
   })
