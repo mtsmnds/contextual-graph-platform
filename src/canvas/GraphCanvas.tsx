@@ -22,12 +22,12 @@ import {
 import "@xyflow/react/dist/style.css"
 import { generateKeyBetween } from "fractional-indexing-jittered"
 import { useGraphStore } from "../store/useGraphStore"
-import { FSAdapter, FSError } from "@/store/persistence"
+
 import { getParentId, compareSortOrder, getCollapsedDescendants } from "../engine/queries"
 import { getLayoutedElements, runFullLayout, DEFAULT_LAYOUT_OPTIONS, DEFAULT_NODE_WIDTH, stackChildren } from "../engine/layout"
 import type { LayoutOptions, StackInput } from "../engine/layout"
-import type { EntityType, GraphSnapshot, CanvasData } from "../types/graph"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import type { EntityType, CanvasData } from "../types/graph"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { IconButton } from "@/components/ui/icon-button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import ZoomControls from "./panels/ZoomControls"
@@ -35,7 +35,6 @@ import ViewLogger from "./panels/ViewLogger"
 import { ArrowUUpLeft, ArrowUUpRight } from "@phosphor-icons/react"
 import GraphContextMenu from "./GraphContextMenu"
 import { EntityFormDialog } from "@/components/entity-form/EntityFormDialog"
-import AppSidebar from "./panels/AppSidebar"
 import EntityNode from "./nodes/EntityNode"
 import MetadataNode from "./nodes/MetadataNode"
 import ContainerGroupNode from "./nodes/ContainerGroupNode"
@@ -1273,47 +1272,12 @@ function GraphCanvasContent({ onFitViewRef: fitViewRefProp }: { onFitViewRef: Re
   )
 }
 
-function GraphCanvas() {
+function GraphCanvas({
+  layoutRef,
+}: {
+  layoutRef: React.MutableRefObject<((opts: LayoutOptions) => void) | null>
+}) {
   const fitViewRef = useRef<() => void>(() => {})
-
-  const onOpenFolder = useCallback(async () => {
-    const fsAdapter = new FSAdapter()
-    try {
-      const snapshot = await fsAdapter.open()
-      if (snapshot) {
-        const store = useGraphStore.getState()
-        store.setFsAdapter(fsAdapter)
-        store.openFromDisk(snapshot, fsAdapter.getFolderName()!)
-      } else if (fsAdapter.isOpen()) {
-        const name = fsAdapter.getFolderName()!
-        const confirmed = window.confirm(`This folder is empty. Create a new workspace in ${name}?`)
-        if (confirmed) {
-          const store = useGraphStore.getState()
-          const emptySnapshot: GraphSnapshot = {
-            version: 5,
-            entities: store.entities,
-            relations: store.relations,
-            canvas: store.canvas,
-          }
-          await fsAdapter.save(emptySnapshot)
-          store.setFsAdapter(fsAdapter)
-          store.openFromDisk(emptySnapshot, name)
-        } else {
-          fsAdapter.close()
-        }
-      }
-    } catch (err) {
-      if (err instanceof FSError) {
-        if (err.code === "PERMISSION_DENIED") {
-          window.alert(`Cannot access folder — ${err.detail}`)
-        } else {
-          window.alert(`Cannot open — ${err.detail} (code: ${err.code})`)
-        }
-      } else {
-        console.error("Unexpected error opening folder:", err)
-      }
-    }
-  }, [])
 
   const onRunLayout = useCallback((options: LayoutOptions) => {
     runFullLayout(options, () => fitViewRef.current?.())
@@ -1330,15 +1294,16 @@ function GraphCanvas() {
     })
   }, [])
 
+  useEffect(() => {
+    layoutRef.current = onRunLayout
+  }, [onRunLayout])
+
   return (
-    <SidebarProvider>
-      <div className="flex-1 min-w-0 min-h-0">
-        <ReactFlowProvider>
-          <GraphCanvasContent onFitViewRef={fitViewRef} />
-        </ReactFlowProvider>
-      </div>
-      <AppSidebar onOpenFolder={onOpenFolder} onRunLayout={onRunLayout} />
-    </SidebarProvider>
+    <div className="flex-1 min-w-0 min-h-0">
+      <ReactFlowProvider>
+        <GraphCanvasContent onFitViewRef={fitViewRef} />
+      </ReactFlowProvider>
+    </div>
   )
 }
 

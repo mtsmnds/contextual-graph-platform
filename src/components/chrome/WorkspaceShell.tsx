@@ -1,8 +1,13 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import { useGraphStore } from "../../store/useGraphStore"
-import { IndexedDBAdapter } from "@/store/persistence"
+import { IndexedDBAdapter, FSAdapter, FSError } from "@/store/persistence"
+import type { GraphSnapshot } from "../../types/graph"
+import type { LayoutOptions } from "../../engine/layout"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import AppSidebar from "../../canvas/panels/AppSidebar"
+import GraphCanvas from "../../canvas/GraphCanvas"
 
-function WorkspaceShell({ children }: { children: React.ReactNode }) {
+function WorkspaceShell() {
   const init = useGraphStore((s) => s.init)
 
   const hasInitialized = useRef(false)
@@ -25,10 +30,55 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("beforeunload", handler)
   }, [])
 
+  const layoutRef = useRef<((opts: LayoutOptions) => void) | null>(null)
+  const onRunLayout = useCallback((opts: LayoutOptions) => layoutRef.current?.(opts), [])
+
+  const onOpenFolder = useCallback(async () => {
+    const fsAdapter = new FSAdapter()
+    try {
+      const snapshot = await fsAdapter.open()
+      if (snapshot) {
+        const store = useGraphStore.getState()
+        store.setFsAdapter(fsAdapter)
+        store.openFromDisk(snapshot, fsAdapter.getFolderName()!)
+      } else if (fsAdapter.isOpen()) {
+        const name = fsAdapter.getFolderName()!
+        const confirmed = window.confirm(`This folder is empty. Create a new workspace in ${name}?`)
+        if (confirmed) {
+          const store = useGraphStore.getState()
+          const emptySnapshot: GraphSnapshot = {
+            version: 5,
+            entities: store.entities,
+            relations: store.relations,
+            canvas: store.canvas,
+          }
+          await fsAdapter.save(emptySnapshot)
+          store.setFsAdapter(fsAdapter)
+          store.openFromDisk(emptySnapshot, name)
+        } else {
+          fsAdapter.close()
+        }
+      }
+    } catch (err) {
+      if (err instanceof FSError) {
+        if (err.code === "PERMISSION_DENIED") {
+          window.alert(`Cannot access folder — ${err.detail}`)
+        } else {
+          window.alert(`Cannot open — ${err.detail} (code: ${err.code})`)
+        }
+      } else {
+        console.error("Unexpected error opening folder:", err)
+      }
+    }
+  }, [])
+
   return (
-    <div className="w-full h-full">
-      {children}
-    </div>
+    <SidebarProvider>
+      <div className="w-full h-full flex">
+        <GraphCanvas layoutRef={layoutRef} />
+      </div>
+      <AppSidebar onOpenFolder={onOpenFolder} onRunLayout={onRunLayout} />
+    </SidebarProvider>
   )
 }
 
