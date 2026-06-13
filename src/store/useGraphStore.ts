@@ -11,6 +11,7 @@ import { FSError, type FSAdapter } from "./persistence/FSAdapter";
 let _adapter: PersistenceAdapter | null = null;
 let _fsAdapter: FSAdapter | null = null;
 let _hydrated = false;
+const _loadingBooks = new Set<string>();
 
 const contentCache: Record<string, Record<string, unknown>> = {};
 
@@ -152,6 +153,7 @@ interface GraphStore {
   contentLoaded: Record<string, boolean>;
   manifest: Manifest | null;
   loadedCollections: Record<string, LoadedCollection>;
+  dirtySubFiles: Set<string>;
   adapterId: string | null;
   folderName: string | null;
   hydrated: boolean;
@@ -269,6 +271,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   contentLoaded: {},
   manifest: null,
   loadedCollections: {},
+  dirtySubFiles: new Set(),
   adapterId: null,
   folderName: null,
   hydrated: false,
@@ -498,6 +501,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const state = get() as GraphStore
     if (state.loadedCollections[bookId]) return
     if (!state.manifest) return
+    if (_loadingBooks.has(bookId)) return
 
     const collection = state.manifest.collections[bookId]
     if (!collection) return
@@ -511,12 +515,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const dirHandle = _fsAdapter?.getRootHandle()
     if (!dirHandle) return
 
-    const existingEntityIds = new Set(state.entities.map((e: Entity) => e.id))
-    const existingRelationIds = new Set(state.relations.map((r: Relation) => r.id))
+    _loadingBooks.add(bookId)
+
     const newEntities: Entity[] = []
     const newRelations: Relation[] = []
     const addedEntityIds = new Set<string>()
     const addedRelationIds = new Set<string>()
+    const entityFile: Record<string, string> = {}
+    const relationFile: Record<string, string> = {}
 
     for (const path of paths) {
       let snapshot: GraphSnapshot
@@ -524,33 +530,47 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         snapshot = await _fsAdapter!.loadSubFile(dirHandle, path)
       } catch (err) {
         if (err instanceof FSError && err.code === "NOT_FOUND") continue
+        _loadingBooks.delete(bookId)
         throw err
       }
 
       for (const entity of snapshot.entities) {
-        if (!existingEntityIds.has(entity.id) && !addedEntityIds.has(entity.id)) {
+        if (!addedEntityIds.has(entity.id)) {
           addedEntityIds.add(entity.id)
+          entityFile[entity.id] = path
           newEntities.push(entity)
         }
       }
 
       for (const relation of snapshot.relations) {
-        if (!existingRelationIds.has(relation.id) && !addedRelationIds.has(relation.id)) {
+        if (!addedRelationIds.has(relation.id)) {
           addedRelationIds.add(relation.id)
+          relationFile[relation.id] = path
           newRelations.push(relation)
         }
       }
     }
 
-    if (newEntities.length === 0 && newRelations.length === 0) return
-
     const currentState = get() as GraphStore
+    const currentEntityIds = new Set(currentState.entities.map((e: Entity) => e.id))
+    const currentRelationIds = new Set(currentState.relations.map((r: Relation) => r.id))
+
+    const dedupedEntities = newEntities.filter((e) => !currentEntityIds.has(e.id))
+    const dedupedRelations = newRelations.filter((r) => !currentRelationIds.has(r.id))
+
+    const finalAddedEntityIds = new Set(dedupedEntities.map((e) => e.id))
+    const finalAddedRelationIds = new Set(dedupedRelations.map((r) => r.id))
+
+    _loadingBooks.delete(bookId)
+
+    if (dedupedEntities.length === 0 && dedupedRelations.length === 0) return
+
     set({
-      entities: [...currentState.entities, ...newEntities],
-      relations: [...currentState.relations, ...newRelations],
+      entities: [...currentState.entities, ...dedupedEntities],
+      relations: [...currentState.relations, ...dedupedRelations],
       loadedCollections: {
         ...currentState.loadedCollections,
-        [bookId]: { entityIds: addedEntityIds, relationIds: addedRelationIds },
+        [bookId]: { entityIds: finalAddedEntityIds, relationIds: finalAddedRelationIds, entityFile, relationFile },
       },
       lastMutationTime: Date.now(),
     })
@@ -577,8 +597,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   isDirty: () => {
-    const state = get();
-    return state.lastMutationTime > state.lastDiskSaveAt;
+    const state = get() as GraphStore;
+    return state.lastMutationTime > state.lastDiskSaveAt || state.dirtySubFiles.size > 0;
   },
 
   openFromDisk: (snapshot: GraphSnapshot, folderName: string) => {
@@ -600,16 +620,52 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   },
 
   saveToDisk: async () => {
-    const state = get();
+    const state = get() as GraphStore;
     if (!_fsAdapter) return;
-    const snapshot: GraphSnapshot = {
+    const dirHandle = _fsAdapter.getRootHandle()
+    if (!dirHandle) return
+
+    // Collect loaded entity/relation IDs across all collections
+    const loadedEntityIds = new Set<string>()
+    const loadedRelationIds = new Set<string>()
+    for (const coll of Object.values(state.loadedCollections)) {
+      for (const id of coll.entityIds) loadedEntityIds.add(id)
+      for (const id of coll.relationIds) loadedRelationIds.add(id)
+    }
+
+    // Base graph: entities/relations NOT in any loaded collection
+    const baseEntities = state.entities.filter((e) => !loadedEntityIds.has(e.id))
+    let baseRelations = state.relations.filter((r) => !loadedRelationIds.has(r.id))
+
+    // Purge stale derived + recompute for each loaded book
+    baseRelations = baseRelations.filter((r) => !r.metadata?.derived)
+    for (const bookId of Object.keys(state.loadedCollections)) {
+      const derived = _computeDerivedRelations(bookId, state)
+      baseRelations.push(...derived)
+    }
+
+    // Save dirty sub-files
+    const writtenPaths = new Set<string>()
+    for (const filePath of state.dirtySubFiles) {
+      const snapshot = _buildSubFileSnapshot(filePath, state)
+      if (snapshot.entities.length === 0 && snapshot.relations.length === 0) continue
+      await _fsAdapter.saveSubFile(dirHandle, filePath, snapshot)
+      writtenPaths.add(filePath)
+    }
+
+    // Save base graph.json (always — derived relations may have changed)
+    const baseSnapshot: GraphSnapshot = {
       version: 5,
-      entities: state.entities,
-      relations: state.relations,
+      entities: baseEntities,
+      relations: baseRelations,
       canvas: state.canvas,
-    };
-    await _fsAdapter.save(snapshot);
-    set({ lastDiskSaveAt: Date.now() });
+    }
+    await _fsAdapter.save(baseSnapshot)
+
+    // Clear dirty flags for written files only
+    const remainingDirty = new Set(state.dirtySubFiles)
+    for (const p of writtenPaths) remainingDirty.delete(p)
+    set({ lastDiskSaveAt: Date.now(), dirtySubFiles: remainingDirty })
   },
 
   closeDisk: () => {
@@ -621,12 +677,34 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId: string | null = null) => {
     get().beginBatch("Create node");
-    const existingIds: Set<string> = new Set(get().entities.map((e: Entity) => e.id));
-    const siblingCount = parentId
-      ? get().entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
-      : 0;
+    const state = get() as GraphStore
+    const existingIds: Set<string> = new Set(state.entities.map((e: Entity) => e.id))
+
+    // Detect chapter-aware parent: --EN-c1, --c1, --EN-a1s1 → use -NNN suffix
+    const chapterMatch = parentId?.match(/--((?:EN-)?[ap]?\d+[sc]?\d*)$/)
+    let id: string
+    let entityFile: string | undefined
+    if (chapterMatch && type === "segment") {
+      const prefix = `${parentId}-`
+      const siblings = state.entities.filter((e) => e.id.startsWith(prefix) && /-\d{3}$/.test(e.id))
+      const counter = String(siblings.length + 1).padStart(3, "0")
+      id = `${parentId}-${counter}`
+      // Infer file from parent
+      if (parentId) {
+        const parentCol = _findLoadedCollection(parentId)
+        if (parentCol) {
+          entityFile = parentCol.collection.entityFile[parentId]
+        }
+      }
+    } else {
+      const siblingCount = parentId
+        ? state.entities.filter((e: Entity) => e.id.startsWith(`${parentId}_seg-`)).length
+        : 0
+      const content = data?.content ?? ""
+      id = generateUniqueId(parentId, type, content || type, existingIds, siblingCount)
+    }
+
     const content = data?.content ?? ""
-    const id = generateUniqueId(parentId, type, content || type, existingIds, siblingCount);
     const now = Date.now();
     const entity: Entity = {
       id,
@@ -637,7 +715,30 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       updatedAt: now,
       canvasData: data?.canvasData ?? { x: 0, y: 0, width: 368, height: 64 },
     };
-    set((state: GraphStore) => ({ entities: [...state.entities, entity] }));
+    set({ entities: [...state.entities, entity] });
+
+    // Register in loaded collection if parent belongs to one
+    if (parentId && entityFile) {
+      const parentCol = _findLoadedCollection(parentId)
+      if (parentCol) {
+        const coll = state.loadedCollections[parentCol.bookId]
+        if (coll) {
+          const nextEntityIds = new Set(coll.entityIds)
+          nextEntityIds.add(id)
+          const nextEntityFile = { ...coll.entityFile, [id]: entityFile! }
+          const nextDirty = new Set(state.dirtySubFiles)
+          nextDirty.add(entityFile!)
+          set({
+            loadedCollections: {
+              ...state.loadedCollections,
+              [parentCol.bookId]: { ...coll, entityIds: nextEntityIds, entityFile: nextEntityFile },
+            },
+            dirtySubFiles: nextDirty,
+          })
+        }
+      }
+    }
+
     // parentId param creates a contains edge instead of storing on the entity
     if (parentId) {
       get().addRelation(parentId, id, "contains", {}, generateKeyBetween(null, null));
@@ -648,6 +749,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   updateEntity: (id: string, data: Partial<Entity>) => {
     get().beginBatch("Edit node");
+    _markFileDirty(id)
     const current = get().entities.find((e: Entity) => e.id === id);
     if (!current) { get().endBatch(); return; }
 
@@ -682,6 +784,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   deleteEntity: (id: string) => {
     get().beginBatch("Delete node");
+    _markFileDirty(id)
     delete contentCache[id];
     _adapter?.deleteDocument(id).catch(() => {});
 
@@ -723,18 +826,47 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const order = sortOrder ?? generateKeyBetween(null, null);
     const relation: Relation = { id, source, target, type, sortOrder: order, metadata: metadata ?? {} };
     set((state: GraphStore) => ({ relations: [...state.relations, relation] }));
+
+    // Register in loaded collection if source/target belong to one
+    const sourceCol = _findLoadedCollection(source)
+    const targetCol = _findLoadedCollection(target)
+    const parentCol = sourceCol || targetCol
+    if (parentCol) {
+      const state = get() as GraphStore
+      const coll = state.loadedCollections[parentCol.bookId]
+      if (coll) {
+        const filePath = sourceCol ? coll.entityFile[source] : coll.entityFile[target]
+        if (filePath) {
+          const nextRelations = new Set(coll.relationIds)
+          nextRelations.add(id)
+          const nextFile = { ...coll.relationFile, [id]: filePath }
+          const nextDirty = new Set(state.dirtySubFiles)
+          nextDirty.add(filePath)
+          set({
+            loadedCollections: {
+              ...state.loadedCollections,
+              [parentCol.bookId]: { ...coll, relationIds: nextRelations, relationFile: nextFile },
+            },
+            dirtySubFiles: nextDirty,
+          })
+        }
+      }
+    }
+
     get().endBatch();
     return id;
   },
 
   removeRelation: (id: string) => {
     get().beginBatch("Delete edge");
+    _markFileDirty(id)
     set((state: GraphStore) => ({ relations: state.relations.filter((r) => r.id !== id) }));
     get().endBatch();
   },
 
   updateRelation: (id: string, patch: Partial<Relation>) => {
     get().beginBatch("Edit edge");
+    _markFileDirty(id)
     set((state: GraphStore) => ({
       relations: state.relations.map((r) =>
         r.id === id
@@ -999,6 +1131,90 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
 let idCounter = 0;
 export const useGraphStore = create<GraphStore>(storeInitializer);
+
+function _markFileDirty(id: string) {
+  if (!_fsAdapter) return
+  const state = useGraphStore.getState()
+  for (const [, collection] of Object.entries(state.loadedCollections)) {
+    const filePath = collection.entityFile[id] || collection.relationFile[id]
+    if (filePath) {
+      const next = new Set(state.dirtySubFiles)
+      next.add(filePath)
+      useGraphStore.setState({ dirtySubFiles: next })
+      return
+    }
+  }
+}
+
+function _findLoadedCollection(id: string): { bookId: string; collection: LoadedCollection } | null {
+  const state = useGraphStore.getState()
+  for (const [bookId, collection] of Object.entries(state.loadedCollections)) {
+    if (collection.entityFile[id]) return { bookId, collection }
+    if (collection.relationFile[id]) return { bookId, collection }
+  }
+  return null
+}
+
+function _computeDerivedRelations(bookId: string, state: GraphStore): Relation[] {
+  const collection = state.loadedCollections[bookId]
+  if (!collection) return []
+
+  const derived: Relation[] = []
+  const seen = new Set<string>()
+
+  for (const relId of collection.relationIds) {
+    const rel = state.relations.find((r) => r.id === relId)
+    if (!rel) continue
+    if (rel.type === "contains") continue
+    // Skip internal targets (within the book's subtree)
+    if (rel.target === bookId || rel.target.startsWith(bookId + "--")) continue
+
+    const key = `${rel.type}::${rel.target}`
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    const safeBook = bookId.replace(/[^a-zA-Z0-9]+/g, "_")
+    const safeTarget = rel.target.replace(/[^a-zA-Z0-9]+/g, "_")
+    derived.push({
+      id: `r_derived_${safeBook}_${rel.type}_${safeTarget}`,
+      source: bookId,
+      target: rel.target,
+      type: rel.type,
+      sortOrder: "a0",
+      metadata: { derived: true },
+    })
+  }
+
+  return derived
+}
+
+function _buildSubFileSnapshot(filePath: string, state: GraphStore): GraphSnapshot {
+  const entities: Entity[] = []
+  const relations: Relation[] = []
+
+  // Find which collection owns entities/relations for this file
+  for (const [, collection] of Object.entries(state.loadedCollections)) {
+    for (const [eid, fp] of Object.entries(collection.entityFile)) {
+      if (fp === filePath) {
+        const entity = state.entities.find((e) => e.id === eid)
+        if (entity) entities.push(entity)
+      }
+    }
+    for (const [rid, fp] of Object.entries(collection.relationFile)) {
+      if (fp === filePath) {
+        const rel = state.relations.find((r) => r.id === rid)
+        if (rel) relations.push(rel)
+      }
+    }
+  }
+
+  return {
+    version: 5,
+    entities,
+    relations,
+    canvas: { collapsedContainers: [] },
+  }
+}
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 

@@ -78,10 +78,12 @@ type ManifestCollection = {
   notes: string
 }
 
-/** Materialized collection after loading all its files from disk. */
+/** Tracks which entities and relations came from which sub-file path. */
 type LoadedCollection = {
   entityIds: Set<string>
   relationIds: Set<string>
+  entityFile: Record<string, string>
+  relationFile: Record<string, string>
 }
 
 export type {

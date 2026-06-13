@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useGraphStore } from "../../store/useGraphStore"
 import { useChromeStore } from "../../store/useChromeStore"
 import { compareSortOrder } from "../../engine/queries"
@@ -10,8 +11,15 @@ import { CaretDown, Plus } from "@phosphor-icons/react"
 function EntityTreeNode({ entityId }: { entityId: string }) {
   const entity = useGraphStore((s) => s.entities.find((e) => e.id === entityId))
   const relations = useGraphStore((s) => s.relations)
+  const manifest = useGraphStore((s) => s.manifest)
   const textCollapsed = useChromeStore((s) => s.textCollapsed)
   const toggleCollapsed = useChromeStore((s) => s.toggleTextCollapsed)
+
+  useEffect(() => {
+    if (manifest && entity && manifest.collections[entityId]) {
+      useGraphStore.getState().loadBookContent(entityId)
+    }
+  }, [entityId, entity?.id, manifest])
 
   if (!entity) return null
 

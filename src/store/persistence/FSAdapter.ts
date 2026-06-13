@@ -26,7 +26,7 @@ export class FSError extends Error {
 }
 
 export type FSLogEntry = {
-  operation: "open" | "save" | "close" | "validate" | "loadManifest" | "loadSubFile"
+  operation: "open" | "save" | "close" | "validate" | "loadManifest" | "loadSubFile" | "saveSubFile"
   timestamp: number
   success: boolean
   error?: { code: FSErrorCode; detail: string }
@@ -290,6 +290,58 @@ export class FSAdapter {
     }
 
     this._logEntry("save", true, { entityCount: snapshot.entities.length })
+  }
+
+  /**
+   * Write a sub-file at a relative path within the open workspace folder.
+   * Handles nested paths (creates directories as needed).
+   */
+  async saveSubFile(dirHandle: FileSystemDirectoryHandle, relativePath: string, snapshot: GraphSnapshot): Promise<void> {
+    const parts = relativePath.split("/")
+    let currentHandle = dirHandle
+    for (let i = 0; i < parts.length - 1; i++) {
+      currentHandle = await currentHandle.getDirectoryHandle(parts[i], { create: true })
+    }
+    const fileName = parts[parts.length - 1]
+
+    let fileHandle: FileSystemFileHandle
+    try {
+      fileHandle = await currentHandle.getFileHandle(fileName, { create: true })
+    } catch (err) {
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = err instanceof Error ? err.message : String(err)
+      this._logEntry("saveSubFile", false, { path: relativePath }, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    let writable: FileSystemWritableFileStream
+    try {
+      writable = await fileHandle.createWritable()
+    } catch (err) {
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = err instanceof Error ? err.message : String(err)
+      this._logEntry("saveSubFile", false, { path: relativePath }, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    try {
+      await writable.write(JSON.stringify(snapshot, null, 2))
+      await writable.close()
+    } catch (err) {
+      await writable.abort().catch(() => {})
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = err instanceof Error ? err.message : String(err)
+      this._logEntry("saveSubFile", false, { path: relativePath }, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    this._logEntry("saveSubFile", true, { path: relativePath, entityCount: snapshot.entities.length })
   }
 
   /**

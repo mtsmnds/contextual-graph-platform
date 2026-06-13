@@ -101,7 +101,7 @@ describe("useGraphStore - multi-file graph loading", () => {
     it("returns true after a book is loaded", () => {
       useGraphStore.setState({
         loadedCollections: {
-          "book-1": { entityIds: new Set(["e1"]), relationIds: new Set(["r1"]) },
+          "book-1": { entityIds: new Set(["e1"]), relationIds: new Set(["r1"]), entityFile: {}, relationFile: {} },
         },
       })
       expect(useGraphStore.getState().isBookLoaded("book-1")).toBe(true)
@@ -110,7 +110,7 @@ describe("useGraphStore - multi-file graph loading", () => {
     it("returns false after a book is unloaded", () => {
       useGraphStore.setState({
         loadedCollections: {
-          "book-1": { entityIds: new Set(["e1"]), relationIds: new Set(["r1"]) },
+          "book-1": { entityIds: new Set(["e1"]), relationIds: new Set(["r1"]), entityFile: {}, relationFile: {} },
         },
       })
       useGraphStore.getState().unloadBookContent("book-1")
