@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing-jittered";
-import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry } from "../types/graph";
+import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry, Manifest, LoadedCollection } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
 import { compareSortOrder } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
-import type { FSAdapter } from "./persistence/FSAdapter";
+import { FSError, type FSAdapter } from "./persistence/FSAdapter";
 
 let _adapter: PersistenceAdapter | null = null;
 let _fsAdapter: FSAdapter | null = null;
@@ -150,6 +150,8 @@ interface GraphStore {
   canvas: CanvasState;
   view: ViewState;
   contentLoaded: Record<string, boolean>;
+  manifest: Manifest | null;
+  loadedCollections: Record<string, LoadedCollection>;
   adapterId: string | null;
   folderName: string | null;
   hydrated: boolean;
@@ -204,6 +206,10 @@ interface GraphStore {
 
   selectedNodeId: string | null;
   setSelectedNode: (id: string | null) => void;
+
+  loadBookContent: (bookId: string) => Promise<void>;
+  unloadBookContent: (bookId: string) => void;
+  isBookLoaded: (bookId: string) => boolean;
 
   closeWorkspace: () => void;
 
@@ -261,6 +267,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     expandedPanels: [],
   },
   contentLoaded: {},
+  manifest: null,
+  loadedCollections: {},
   adapterId: null,
   folderName: null,
   hydrated: false,
@@ -334,6 +342,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         relations,
         canvas: migrated.canvas,
         contentLoaded: Object.fromEntries(remappedEntities.filter((e) => e.type === "container").map((e) => [e.id, true])),
+        manifest: null,
+        loadedCollections: {},
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
         undoStack: [],
@@ -367,6 +377,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
         relations: seed.relations,
         canvas: seed.canvas,
         contentLoaded: seed.contentLoaded,
+        manifest: null,
+        loadedCollections: {},
         adapterId: adapter.id,
         folderName: adapter.getFolderName(),
         undoStack: [],
@@ -482,6 +494,88 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     _fsAdapter = adapter;
   },
 
+  loadBookContent: async (bookId: string) => {
+    const state = get() as GraphStore
+    if (state.loadedCollections[bookId]) return
+    if (!state.manifest) return
+
+    const collection = state.manifest.collections[bookId]
+    if (!collection) return
+
+    const paths: string[] = [
+      ...Object.values(collection.content),
+      ...Object.values(collection.chapters),
+      collection.notes,
+    ]
+
+    const dirHandle = _fsAdapter?.getRootHandle()
+    if (!dirHandle) return
+
+    const existingEntityIds = new Set(state.entities.map((e: Entity) => e.id))
+    const existingRelationIds = new Set(state.relations.map((r: Relation) => r.id))
+    const newEntities: Entity[] = []
+    const newRelations: Relation[] = []
+    const addedEntityIds = new Set<string>()
+    const addedRelationIds = new Set<string>()
+
+    for (const path of paths) {
+      let snapshot: GraphSnapshot
+      try {
+        snapshot = await _fsAdapter!.loadSubFile(dirHandle, path)
+      } catch (err) {
+        if (err instanceof FSError && err.code === "NOT_FOUND") continue
+        throw err
+      }
+
+      for (const entity of snapshot.entities) {
+        if (!existingEntityIds.has(entity.id) && !addedEntityIds.has(entity.id)) {
+          addedEntityIds.add(entity.id)
+          newEntities.push(entity)
+        }
+      }
+
+      for (const relation of snapshot.relations) {
+        if (!existingRelationIds.has(relation.id) && !addedRelationIds.has(relation.id)) {
+          addedRelationIds.add(relation.id)
+          newRelations.push(relation)
+        }
+      }
+    }
+
+    if (newEntities.length === 0 && newRelations.length === 0) return
+
+    const currentState = get() as GraphStore
+    set({
+      entities: [...currentState.entities, ...newEntities],
+      relations: [...currentState.relations, ...newRelations],
+      loadedCollections: {
+        ...currentState.loadedCollections,
+        [bookId]: { entityIds: addedEntityIds, relationIds: addedRelationIds },
+      },
+      lastMutationTime: Date.now(),
+    })
+  },
+
+  unloadBookContent: (bookId: string) => {
+    const state = get() as GraphStore
+    const loaded = state.loadedCollections[bookId]
+    if (!loaded) return
+
+    const { [bookId]: _remove, ...rest } = state.loadedCollections
+
+    set({
+      entities: state.entities.filter((e: Entity) => !loaded.entityIds.has(e.id)),
+      relations: state.relations.filter((r: Relation) => !loaded.relationIds.has(r.id)),
+      loadedCollections: rest,
+      lastMutationTime: Date.now(),
+    })
+  },
+
+  isBookLoaded: (bookId: string) => {
+    const state = get() as GraphStore
+    return bookId in state.loadedCollections
+  },
+
   isDirty: () => {
     const state = get();
     return state.lastMutationTime > state.lastDiskSaveAt;
@@ -489,11 +583,14 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
 
   openFromDisk: (snapshot: GraphSnapshot, folderName: string) => {
     try { localStorage.setItem(FOLDER_SESSION_KEY, "true") } catch {}
+    const manifest = _fsAdapter?.getManifest() ?? null
     set({
       entities: snapshot.entities,
       relations: snapshot.relations,
       canvas: { ...snapshot.canvas, collapsedContainers: snapshot.canvas.collapsedContainers ?? [] },
       folderName,
+      manifest,
+      loadedCollections: {},
       undoStack: [],
       redoStack: [],
       batchDepth: 0,
@@ -519,7 +616,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     try { localStorage.removeItem(FOLDER_SESSION_KEY) } catch {}
     _fsAdapter?.close();
     _fsAdapter = null;
-    set({ folderName: null, lastDiskSaveAt: 0 });
+    set({ folderName: null, manifest: null, loadedCollections: {}, lastDiskSaveAt: 0 });
   },
 
   addEntity: (type: EntityType, data?: { content?: string; metadata?: Record<string, unknown>; canvasData?: CanvasData }, parentId: string | null = null) => {
@@ -875,6 +972,8 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       relations: seed.relations,
       canvas: seed.canvas,
       contentLoaded: seed.contentLoaded,
+      manifest: null,
+      loadedCollections: {},
       view: { focusedEntityId: null, anchorEntityId: null, visibleEntityIds: [], expandedPanels: [] },
       adapterId: null,
       folderName: null,
