@@ -13,11 +13,11 @@ Completed work goes in `changelog.md`.
 
 ## Now
 
-- **Text View** — `dev-docs/plans/m10-text-view.md`
+_(see `dev-docs/plans/backlog.md` for active considerations.)_
 
 ## Next
 
-- _Empty — see `dev-docs/plans/backlog.md` for deferred items._
+- _See `dev-docs/plans/backlog.md` for deferred items._
 
 ## Later
 
