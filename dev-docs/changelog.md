@@ -12,6 +12,17 @@ Use this to recover context after breaks.
 
 ---
 
+## 2026-06-13
+
+### m10 — Text View
+
+- **EntityTreeNode Storybook alignment** — rewrote container rendering to use `Collapsible`/`CollapsibleTrigger`/`CollapsibleContent` with `CaretDown` icon, matching `CollapsibleOpen`/`CollapsibleClosed` stories. Container titles editable via `ContentEditor` in header (`font-semibold text-sm flex-1`). Child area gets tinted `bg-accent/15` background. Segments use `SegmentCard width="100%"`. Removed manual collapse conditional — delegates to Collapsible's built-in panel.
+- **Horizontal root columns** — replaced single vertical centered column with side-by-side 512px columns, one per open container. Outer container scrolls horizontally when columns exceed viewport. Each column scrolls vertically independently.
+- **ContainerCard `footer` prop** — added optional `footer` rendered after `children`. EntityTreeNode uses it for an "Add segment" `+` button (`Plus` icon from `@phosphor-icons/react`) that calls `useGraphStore.addEntity("segment", ...)`. Always visible even when collapsed, so users can add a first child to an empty container.
+- **`openContainers` in useChromeStore** — explicit ordered list of container column IDs replacing the implicit "show all roots" fallback. `addContainer` (appends, no-op if duplicate), `removeContainer`, `setOpenContainers`. Default empty — text view shows nothing but the workspace tree when no containers are open.
+- **WorkspaceTree component** (`src/components/chrome/WorkspaceTree.tsx`) — monospace ASCII tree (`font-mono text-sm`, `├──`/`└──`/`│` connectors) of root containers and nested container hierarchy. Clicking a container whose immediate children include other containers opens all of them as columns; otherwise opens the clicked container itself. Wrapped in `ContainerCard` with "Workspace" header, same 512px width as content columns. Always the rightmost column.
+- **Empty state** — when no containers are open, text view shows "No containers open — click a container in the tree" with only the workspace tree visible.
+
 ## 2026-06-12
 
 ### m9 — Shared Chrome

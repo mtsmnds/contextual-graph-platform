@@ -7,6 +7,7 @@ export type ContainerCardProps = ComponentProps<"div"> & {
   width?: number | string
   variant?: ContainerCardVariant
   header?: React.ReactNode
+  footer?: React.ReactNode
 }
 
 const variantClass: Record<ContainerCardVariant, string> = {
@@ -19,6 +20,7 @@ export function ContainerCard({
   width,
   variant = "bordered",
   header,
+  footer,
   className,
   style,
   children,
@@ -34,6 +36,9 @@ export function ContainerCard({
         <div className="px-3 py-2" data-container-header>{header}</div>
       )}
       {children}
+      {footer && (
+        <div className="px-3 py-2">{footer}</div>
+      )}
     </div>
   )
 }

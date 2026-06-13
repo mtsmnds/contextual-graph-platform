@@ -29,6 +29,10 @@ From `dev-docs/plans/m5-prd0067-dagre-phase-3-complete.md`. PRD 0064 (Stack Chil
 
 ## Viewer / UI
 
+- **Text view sticky container headers** — apply `position: sticky` to container card headers inside each column. Currently deferred because sticky interacts poorly with the horizontal column layout's overflow containers.
+- **Text view sidebar selection sync** — clicking an entity in the text view should select it in the store so the sidebar shows its metadata (same as canvas node selection).
+- **Text view entity filtering** — filter workspace tree to show only reading-relevant containers (skip concept, annotation, and other non-reading entity types).
+- **Collapse state unification** — canvas `collapsedContainers` and text view `textCollapsed` are currently separate sets in separate stores. Consider whether they should be merged or remain independent.
 - **Unified chrome** — merge VizTest1 node inspector + GraphCanvas sidebar metadata section into one component shell shared across routes. The entity form is the first piece; this extends to sidebar, inspector, JSON view.
 - **Route unification** — WorkspaceRoot becomes a layout shell where canvas, viz, threaded view, etc. open as panels instead of full-page routes. Significant architecture shift — prerequisite is unified chrome.
 - **Contextual Subgraph Loading** — `getContextualSubgraph(entityId, maxDepth)` — BFS outward from focused entity up to N hops. Pure query. Foundation for performance at scale and view toggling.

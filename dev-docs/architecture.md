@@ -17,7 +17,10 @@ The core is a **Relation-Native Content Engine**. Entities carry content directl
 
 IndexedDB is always the runtime store. FS disk operations are invoked only by explicit user action (Open Folder, Save). No auto-save to disk, no background sync, no silent reconnect.
 
-React Flow will be reintroduced as one renderer among many (graph visualization) in Phase 4. It is NOT the core runtime.
+Two active renderers share the same Zustand store, reading and writing the same data:
+
+- **Text view** — the current priority. Pure-React reading-and-navigation interface for the entity graph. Containers render as collapsible cards with inline content editing. A navigable workspace tree shows the container hierarchy. No React Flow dependency — all layout is standard block/scroll.
+- **Graph canvas** — spatial/structural visualization using React Flow. Nodes positioned on an infinite canvas with edges, handles, and context menus. The canvas remains available as a spatial tool for organizing entity relationships.
 
 Guiding principle: *The graph is infrastructure. The viewport is the product. Renderers are interchangeable. Contextual reading is the core interaction.*
 
@@ -286,7 +289,7 @@ The reading viewport (`src/renderers/ReadingViewport.tsx`) is the legacy rendere
 - **Navigation**: The app is a single-mode reading workspace. `focusedEntityId === null` shows the HomePage (root container listing). `focusedEntityId !== null` shows the ReadingViewport with TipTap editing. Sidebar (`AppSidebar`) provides persistent page navigation.
 
 ### Graph Canvas
-The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`, mounted inside `WorkspaceShell`.
+The graph canvas (`src/canvas/GraphCanvas.tsx`) is the spatial/structural renderer at `/`, mounted inside `WorkspaceShell`.
 
 - Renders a full-height React Flow canvas with `Background` (dots), `Controls`, `MiniMap`.
 - Entities render as custom `"entity"` nodes (EntityNode component registered at module scope). Relations render as custom `"edgelabel"` edges (EdgeLabel component) with always-visible interactive labels — double-click the label to enter inline edit mode (text input + combobox dropdown of existing relation types).
@@ -308,6 +311,15 @@ The graph canvas (`src/canvas/GraphCanvas.tsx`) is the primary renderer at `/`, 
 - **Sync:** Diff-based — positions live in React Flow state, never the store. Store changes add/remove nodes/edges by ID and merge data labels, preserving user-dragged positions.
 - **Layout:** Dagre is disabled (`__experimentalNoDagre`). Node positions are store-authoritative only — user-dragged positions are the sole source of truth. `setCanvasPositions` merges new positions under existing ones (never drops unsaved positions); `replaceCanvasPositions` is used only by the re-layout button for deliberate bulk reset. New nodes enter at cursor/viewport-center via `pendingNodeRef`.
 - **Cursor styles:** Pane → `default`, node body → `grab` (dragging → `grabbing`), text → `default`, edge labels → `default`, handles → `grab`. All via CSS with `!important` on pane to override React Flow's inline pointer from `selectionOnDrag`.
+
+### Text View
+The text view (`src/components/chrome/TextView.tsx`) is the reading-and-navigation renderer — currently the project's top priority. It shares the same Zustand store as the canvas with zero data duplication.
+
+- **Layout:** Horizontal columns — each open container renders as a 512px-wide independently-scrolling column. An always-present workspace tree column sits at the right end. The outer container scrolls horizontally when columns exceed viewport width.
+- **EntityTreeNode** (`src/components/chrome/EntityTreeNode.tsx`) — recursive component: containers render as `Collapsible` + `ContainerCard` with inline-editable title header; segments render as `SegmentCard width="100%"` with inline-editable content. All state reads/writes go through `useGraphStore` — every edit is immediately reflected when switching back to the canvas view.
+- **Collapse:** Container collapse is managed by a separate `textCollapsed` set in `useChromeStore`, independent from the canvas's `collapsedContainers`. This keeps the two views' collapse states decoupled.
+- **WorkspaceTree** (`src/components/chrome/WorkspaceTree.tsx`) — monospace ASCII tree column showing the full container hierarchy. Clicking a container opens it as a new content column (via `useChromeStore.openContainers`). Root containers: no `contains` incoming edge. Nested containers shown with `├──`/`└──`/`│` connectors.
+- **Add segment:** Each container card footer has a `+` button that creates a new segment child via `useGraphStore.addEntity("segment", ...)`. Always visible, even when the container is collapsed.
 
 ### Output / State
 - `dist/` — production build.
@@ -367,22 +379,24 @@ The `Entity.metadata` field (`Record<string, unknown>`) carries per-entity-type 
 | `src/canvas/nodes/EntityNode.tsx` | Custom entity node — canvas chrome div + 4 handles + SegmentCard(ContentEditor) + NodeResizeControl |
 | `src/components/base-handle.tsx` | Handle component (14px dot, 2px border, ::before hit-area expansion) |
 | `src/components/SegmentCard.tsx` | Portable card component for non-container entities — variant system (bordered/none/hover), width prop, built-in padding/layout. Variant styles are Tailwind classes in the component (not index.css). |
-| `src/components/ContainerCard.tsx` | Portable card frame for container entities — variant system (bordered/none/hover), header prop, consumer-controlled children slot |
+| `src/components/ContainerCard.tsx` | Portable card frame for container entities — variant system (bordered/none/hover), header prop, footer prop, consumer-controlled children slot |
 | `src/components/ContentEditor.tsx` | Reusable view/edit content editor with auto-sizing textarea (field-sizing: content), double-click to edit, cursor-at-end on entry, no @xyflow/react dependency |
 | `src/canvas/edges/EdgeLabel.tsx` | Custom edge component with inline label editing (double-click → input + combobox) |
 | `src/canvas/GraphContextMenu.tsx` | Manual positioned context menu (not shadcn/Radix — avoids trigger-wrapper conflicts with React Flow) |
 | `src/canvas/panels/AppSidebar.tsx` | Right-side collapsible sidebar — ViewSwitcher, workspace info, feature flags, backups, open folder |
 | `src/components/chrome/WorkspaceShell.tsx` | Shared workspace wrapper — owns init, beforeunload, SidebarProvider, AppSidebar, FS open orchestration, view switching |
 | `src/components/chrome/ViewSwitcher.tsx` | Canvas/Text view toggle in the sidebar |
-| `src/components/chrome/TextView.tsx` | Placeholder text view showing entity count |
-| `src/store/useChromeStore.ts` | Zustand store for chrome/shell UI state (activeView) |
+| `src/components/chrome/EntityTreeNode.tsx` | Recursive tree node — containers render as Collapsible+ContainerCard with editable header, segments as SegmentCard+ContentEditor |
+| `src/components/chrome/WorkspaceTree.tsx` | Monospace ASCII tree of container hierarchy — click containers to open them as columns |
+| `src/components/chrome/TextView.tsx` | Horizontal columns layout — each open container as a 512px independently-scrolling column, workspace tree on the right |
+| `src/store/useChromeStore.ts` | Zustand store for chrome/shell UI state — activeView, textCollapsed (Set), openContainers (string[]), addContainer/removeContainer |
 | `src/canvas/panels/sections/FeatureFlagsSection.tsx` | Presenter: feature flag toggles (flags, onToggle) |
 | `src/canvas/panels/sections/FeatureFlagsSectionContainer.tsx` | Container: reads featureFlags + setFeatureFlag from store |
 | `src/canvas/panels/sections/WorkspaceInfoSection.tsx` | Presenter: folder name, entity count, undo/redo buttons, viewport |
 | `src/canvas/panels/sections/WorkspaceInfoSectionContainer.tsx` | Container: reads store data, renders presenter |
 | `src/canvas/panels/sections/BackupsSection.tsx` | Presenter: backup/snapshot lists, create/restore/delete actions, dialogs |
 | `src/canvas/panels/sections/BackupsSectionContainer.tsx` | Container: owns dialog state + async backup engine calls |
-| `src/renderers/ReadingViewport.tsx` | Continuous-scroll reading viewport with SegmentCard variants |
+| `src/renderers/ReadingViewport.tsx` | **DEPRECATED** — legacy reading viewport (Tiptap-based, mounted at `/tiptap-editor-test`). Superseded by text view. |
 | `src/data/seed.ts` | Seed data (2 containers with Tiptap content, loaded on first visit) |
 | `src/components/ui/` | shadcn/ui components (sidebar, button, etc.) |
 | `src/lib/utils.ts` | cn() utility for Tailwind class merging |
