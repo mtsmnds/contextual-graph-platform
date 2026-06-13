@@ -164,6 +164,22 @@ export function getContainerBreadcrumb(
   return crumbs;
 }
 
+export function getDerivedRelations(
+  state: GraphState,
+  entityId: string,
+): Relation[] {
+  return state.relations.filter(
+    (r) => r.metadata?.derived === true && (r.source === entityId || r.target === entityId),
+  )
+}
+
+export function getAllRelations(
+  state: GraphState,
+  entityId: string,
+): Relation[] {
+  return getRelations(state, entityId).concat(getDerivedRelations(state, entityId))
+}
+
 export function getCollapsedDescendants(
   collapsedIds: string[],
   relations: Relation[],
