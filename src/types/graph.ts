@@ -63,6 +63,27 @@ type AutoBackupEntry = HistoryEntry & {
   documents: Record<string, Record<string, unknown>>;
 };
 
+/** Entry point for a multi-file graph. Maps collection IDs to their sub-file paths. */
+type Manifest = {
+  version: 1
+  main: string
+  collections: Record<string, ManifestCollection>
+}
+
+/** Describes a single book collection's file layout within a multi-file graph folder. */
+type ManifestCollection = {
+  type: "book"
+  content: Record<string, string>
+  chapters: Record<string, string>
+  notes: string
+}
+
+/** Materialized collection after loading all its files from disk. */
+type LoadedCollection = {
+  entityIds: Set<string>
+  relationIds: Set<string>
+}
+
 export type {
   EntityType,
   CanvasData,
@@ -73,4 +94,7 @@ export type {
   CanvasState,
   HistoryEntry,
   AutoBackupEntry,
+  Manifest,
+  ManifestCollection,
+  LoadedCollection,
 };
