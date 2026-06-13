@@ -5,7 +5,7 @@ import { SegmentCard } from "../SegmentCard"
 import { ContainerCard } from "../ContainerCard"
 import ContentEditor from "../ContentEditor"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible"
-import { CaretDown } from "@phosphor-icons/react"
+import { CaretDown, Plus } from "@phosphor-icons/react"
 
 function EntityTreeNode({ entityId }: { entityId: string }) {
   const entity = useGraphStore((s) => s.entities.find((e) => e.id === entityId))
@@ -51,6 +51,19 @@ function EntityTreeNode({ entityId }: { entityId: string }) {
               <CaretDown size={14} />
             </CollapsibleTrigger>
           </div>
+        }
+        footer={
+          <button
+            onClick={() => {
+              useGraphStore.getState().addEntity("segment", {
+                canvasData: { x: 0, y: 0, width: 208, height: 64 },
+              }, entityId)
+            }}
+            className="mx-auto block p-1 rounded hover:bg-accent cursor-pointer text-muted-foreground"
+            aria-label="Add segment"
+          >
+            <Plus size={16} />
+          </button>
         }
       >
         <CollapsibleContent className="flex flex-col gap-2 flex-1 min-h-[60px] bg-accent/15 p-3">
