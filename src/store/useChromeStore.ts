@@ -7,6 +7,10 @@ type ChromeState = {
   setActiveView: (view: ActiveView) => void
   textCollapsed: Set<string>
   toggleTextCollapsed: (id: string) => void
+  openContainers: string[]
+  setOpenContainers: (ids: string[]) => void
+  addContainer: (entityId: string) => void
+  removeContainer: (entityId: string) => void
 }
 
 export const useChromeStore = create<ChromeState>((set, get) => ({
@@ -19,4 +23,12 @@ export const useChromeStore = create<ChromeState>((set, get) => ({
     else next.add(id)
     set({ textCollapsed: next })
   },
+  openContainers: [],
+  setOpenContainers: (ids) => set({ openContainers: ids }),
+  addContainer: (entityId) => set((s) => ({
+    openContainers: s.openContainers.includes(entityId) ? s.openContainers : [...s.openContainers, entityId],
+  })),
+  removeContainer: (entityId) => set((s) => ({
+    openContainers: s.openContainers.filter((id) => id !== entityId),
+  })),
 }))
