@@ -53,8 +53,47 @@ function makeWritable(): MockWritable {
   }
 }
 
+function makeFileHandle(content: string, writable: MockWritable, options?: { readError?: string; fileHandleError?: string }) {
+  return {
+    kind: "file",
+    getFile: vi.fn().mockImplementation(async () => {
+      if (options?.readError) throw new Error(options.readError)
+      return { text: async () => content }
+    }),
+    createWritable: vi.fn().mockImplementation(async () => {
+      if (options?.fileHandleError) throw new Error(options.fileHandleError)
+      return writable
+    }),
+  }
+}
+
+/**
+ * Create a recursive directory handle mock backed by a content map.
+ * The map stores full relative paths (e.g., "manifest.json", "subdir/file.json").
+ */
+function makeDirHandle(name: string, contentMap: Map<string, string>, writable: MockWritable, options?: { readError?: string; fileHandleError?: string }, pathPrefix = "") {
+  return {
+    name,
+    kind: "directory",
+    getFileHandle: vi.fn().mockImplementation(async (fileName: string) => {
+      if (options?.fileHandleError) throw new Error(options.fileHandleError)
+      const fullPath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName
+      const content = contentMap.get(fullPath)
+      if (!content) throw new DOMException("", "NotFoundError")
+      return makeFileHandle(content, writable, options)
+    }),
+    getDirectoryHandle: vi.fn().mockImplementation(async (dirName: string) => {
+      const childPrefix = pathPrefix ? `${pathPrefix}/${dirName}` : dirName
+      return makeDirHandle(dirName, contentMap, writable, options, childPrefix)
+    }),
+    queryPermission: vi.fn(),
+  } as unknown as FileSystemDirectoryHandle
+}
+
 function setupMocks(options?: {
   graphJSON?: string | null
+  manifestJSON?: string | null
+  subFiles?: Record<string, string>
   pickerError?: string
   readError?: string
   writeError?: string
@@ -66,40 +105,29 @@ function setupMocks(options?: {
     writable.write.mockRejectedValue(new Error(options.writableError))
   }
 
-  const fileHandle = {
-    getFile: vi.fn().mockImplementation(async () => {
-      if (options?.readError) {
-        throw new Error(options.readError)
-      }
-      if (options?.graphJSON === undefined) {
-        return { text: async () => JSON.stringify(validSnapshot()) }
-      }
-      if (options.graphJSON === null) {
-        throw new DOMException("", "NotFoundError")
-      }
-      return { text: async () => options.graphJSON }
-    }),
-    createWritable: vi.fn().mockImplementation(async () => {
-      if (options?.fileHandleError) {
-        throw new Error(options.fileHandleError)
-      }
-      return writable
-    }),
+  // Build flat content map: top-level filename → content
+  const contentMap = new Map<string, string>()
+
+  if (options?.graphJSON !== undefined) {
+    if (options.graphJSON !== null) {
+      contentMap.set("graph.json", options.graphJSON)
+    }
+  } else {
+    contentMap.set("graph.json", JSON.stringify(validSnapshot()))
   }
 
-  const dirHandle = {
-    name: "test-workspace",
-    getFileHandle: vi.fn().mockImplementation(async (name: string) => {
-      if (options?.fileHandleError) {
-        throw new Error(options.fileHandleError)
-      }
-      if (name === "graph.json" && options?.graphJSON === null) {
-        throw new DOMException("", "NotFoundError")
-      }
-      return fileHandle
-    }),
-    queryPermission: vi.fn(),
+  if (options?.manifestJSON !== undefined && options.manifestJSON !== null) {
+    contentMap.set("manifest.json", options.manifestJSON)
   }
+
+  if (options?.subFiles) {
+    for (const [path, content] of Object.entries(options.subFiles)) {
+      // Store by full path so recursive handle can look it up
+      contentMap.set(path, content)
+    }
+  }
+
+  const dirHandle = makeDirHandle("test-workspace", contentMap, writable, options)
 
   const showDirectoryPicker = vi.fn().mockImplementation(async () => {
     if (options?.pickerError === "AbortError") {
@@ -113,7 +141,22 @@ function setupMocks(options?: {
 
   ;(window as any).showDirectoryPicker = showDirectoryPicker
 
-  return { dirHandle, fileHandle, writable, showDirectoryPicker }
+  return { dirHandle, writable, showDirectoryPicker }
+}
+
+function validManifest(): string {
+  return JSON.stringify({
+    version: 1,
+    main: "graph.json",
+    collections: {
+      "book-1": {
+        type: "book",
+        content: { "en": "book-1/content-en.json" },
+        chapters: { "en-c1": "book-1/EN-c1.json", "en-c2": "book-1/EN-c2.json" },
+        notes: "book-1/notes.json",
+      },
+    },
+  })
 }
 
 describe("FSError", () => {
@@ -258,6 +301,7 @@ describe("FSAdapter", () => {
       expect(adapter.isOpen()).toBe(false)
       expect(adapter.getFolderName()).toBeNull()
       expect(adapter.getStatus()).toBe("idle")
+      expect(adapter.getManifest()).toBeNull()
       expect(adapter.getLog()).toEqual([])
     })
   })
@@ -476,6 +520,162 @@ describe("FSAdapter", () => {
       const result2 = await adapter.open()
       expect(result2).not.toBeNull()
       expect(adapter.isOpen()).toBe(true)
+    })
+  })
+
+  describe("getManifest()", () => {
+    it("returns null initially", () => {
+      expect(adapter.getManifest()).toBeNull()
+    })
+
+    it("returns null after open when no manifest.json exists", async () => {
+      setupMocks()
+      await adapter.open()
+      expect(adapter.getManifest()).toBeNull()
+    })
+
+    it("returns parsed manifest after open when manifest.json exists", async () => {
+      setupMocks({ manifestJSON: validManifest() })
+      await adapter.open()
+      const manifest = adapter.getManifest()
+      expect(manifest).not.toBeNull()
+      expect(manifest!.version).toBe(1)
+      expect(manifest!.main).toBe("graph.json")
+      expect(manifest!.collections["book-1"].type).toBe("book")
+    })
+
+    it("returns null after close", async () => {
+      setupMocks({ manifestJSON: validManifest() })
+      await adapter.open()
+      adapter.close()
+      expect(adapter.getManifest()).toBeNull()
+    })
+  })
+
+  describe("loadManifest", () => {
+    it("returns parsed manifest when manifest.json exists in the directory", async () => {
+      const { dirHandle } = setupMocks({ manifestJSON: validManifest() })
+      const manifest = await adapter.loadManifest(dirHandle)
+      expect(manifest).not.toBeNull()
+      expect(manifest!.version).toBe(1)
+      expect(manifest!.main).toBe("graph.json")
+      expect(manifest!.collections["book-1"].type).toBe("book")
+    })
+
+    it("returns null when manifest.json does not exist (no error)", async () => {
+      const { dirHandle } = setupMocks()
+      const manifest = await adapter.loadManifest(dirHandle)
+      expect(manifest).toBeNull()
+    })
+
+    it("returns null when manifest.json is missing (not_found handled gracefully)", async () => {
+      const { dirHandle } = setupMocks()
+      const manifest = await adapter.loadManifest(dirHandle)
+      expect(manifest).toBeNull()
+    })
+
+    it("throws FSError with PARSE_FAILED when manifest is invalid JSON", async () => {
+      const { dirHandle } = setupMocks({ manifestJSON: "{invalid" })
+      await expect(adapter.loadManifest(dirHandle)).rejects.toThrow(FSError)
+      await expect(adapter.loadManifest(dirHandle)).rejects.toMatchObject({ code: "PARSE_FAILED" })
+    })
+
+    it("throws FSError with VALIDATION_FAILED when version is wrong", async () => {
+      const { dirHandle } = setupMocks({ manifestJSON: JSON.stringify({ version: 2, main: "g.json", collections: {} }) })
+      await expect(adapter.loadManifest(dirHandle)).rejects.toMatchObject({ code: "VALIDATION_FAILED" })
+    })
+
+    it("throws FSError with VALIDATION_FAILED when main is missing", async () => {
+      const { dirHandle } = setupMocks({ manifestJSON: JSON.stringify({ version: 1, collections: {} }) })
+      await expect(adapter.loadManifest(dirHandle)).rejects.toMatchObject({ code: "VALIDATION_FAILED" })
+    })
+
+    it("throws FSError with VALIDATION_FAILED when collections is missing", async () => {
+      const { dirHandle } = setupMocks({ manifestJSON: JSON.stringify({ version: 1, main: "g.json" }) })
+      await expect(adapter.loadManifest(dirHandle)).rejects.toMatchObject({ code: "VALIDATION_FAILED" })
+    })
+  })
+
+  describe("loadSubFile", () => {
+    it("returns a validated GraphSnapshot for a valid sub-file", async () => {
+      const { dirHandle } = setupMocks({ subFiles: { "book-1/EN-c1.json": JSON.stringify(validSnapshot()) } })
+      const snapshot = await adapter.loadSubFile(dirHandle, "book-1/EN-c1.json")
+      expect(snapshot).not.toBeNull()
+      expect(snapshot.version).toBe(5)
+      expect(snapshot.entities).toHaveLength(2)
+      expect(snapshot.relations).toHaveLength(1)
+    })
+
+    it("handles nested paths (subdirectory traversal)", async () => {
+      const nestedSnapshot = validSnapshot()
+      nestedSnapshot.entities[0].id = "nested-e1"
+      const { dirHandle } = setupMocks({ subFiles: { "a/b/c/data.json": JSON.stringify(nestedSnapshot) } })
+      const snapshot = await adapter.loadSubFile(dirHandle, "a/b/c/data.json")
+      expect(snapshot).not.toBeNull()
+      expect(snapshot.entities[0].id).toBe("nested-e1")
+    })
+
+    it("throws FSError with NOT_FOUND when sub-file doesn't exist", async () => {
+      const { dirHandle } = setupMocks()
+      await expect(
+        adapter.loadSubFile(dirHandle, "nonexistent/file.json"),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" })
+    })
+
+    it("throws FSError with PARSE_FAILED on invalid JSON", async () => {
+      const { dirHandle } = setupMocks({ subFiles: { "bad/data.json": "{bad json" } })
+      await expect(
+        adapter.loadSubFile(dirHandle, "bad/data.json"),
+      ).rejects.toMatchObject({ code: "PARSE_FAILED" })
+    })
+
+    it("throws FSError with VALIDATION_FAILED on invalid shape", async () => {
+      const { dirHandle } = setupMocks({ subFiles: { "bad/shape.json": JSON.stringify({ version: 5, entities: "not-array", relations: [] }) } })
+      await expect(
+        adapter.loadSubFile(dirHandle, "bad/shape.json"),
+      ).rejects.toMatchObject({ code: "VALIDATION_FAILED" })
+    })
+  })
+
+  describe("operation log (multi-file)", () => {
+    it("records loadManifest entry when manifest is found", async () => {
+      setupMocks({ manifestJSON: validManifest() })
+      await adapter.open()
+      const log = adapter.getLog()
+      const entry = log.find((e) => e.operation === "loadManifest")
+      expect(entry).toBeDefined()
+      expect(entry!.success).toBe(true)
+      expect(entry!.meta?.folderName).toBe("test-workspace")
+    })
+
+    it("records loadManifest entry when manifest is not found (success with reason)", async () => {
+      setupMocks()
+      await adapter.open()
+      const log = adapter.getLog()
+      const entry = log.find((e) => e.operation === "loadManifest")
+      expect(entry).toBeDefined()
+      expect(entry!.success).toBe(true)
+      expect(entry!.meta?.reason).toBe("not_found")
+    })
+
+    it("records loadSubFile entry on success", async () => {
+      const { dirHandle } = setupMocks({ subFiles: { "book-1/EN-c1.json": JSON.stringify(validSnapshot()) } })
+      await adapter.loadSubFile(dirHandle, "book-1/EN-c1.json")
+      const log = adapter.getLog()
+      const entry = log.find((e) => e.operation === "loadSubFile")
+      expect(entry).toBeDefined()
+      expect(entry!.success).toBe(true)
+      expect(entry!.meta?.path).toBe("book-1/EN-c1.json")
+    })
+
+    it("records loadSubFile entry on failure", async () => {
+      const { dirHandle } = setupMocks()
+      await expect(adapter.loadSubFile(dirHandle, "missing.json")).rejects.toThrow()
+      const log = adapter.getLog()
+      const entry = log.find((e) => e.operation === "loadSubFile")
+      expect(entry).toBeDefined()
+      expect(entry!.success).toBe(false)
+      expect(entry!.error?.code).toBe("NOT_FOUND")
     })
   })
 })

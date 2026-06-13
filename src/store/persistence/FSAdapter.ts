@@ -1,4 +1,4 @@
-import type { Entity, Relation, CanvasState, GraphSnapshot } from "../../types/graph"
+import type { Entity, Relation, CanvasState, GraphSnapshot, Manifest } from "../../types/graph"
 
 const APP_VERSION = 5
 const MAX_LOG_ENTRIES = 100
@@ -26,7 +26,7 @@ export class FSError extends Error {
 }
 
 export type FSLogEntry = {
-  operation: "open" | "save" | "close" | "validate"
+  operation: "open" | "save" | "close" | "validate" | "loadManifest" | "loadSubFile"
   timestamp: number
   success: boolean
   error?: { code: FSErrorCode; detail: string }
@@ -139,6 +139,7 @@ export class FSAdapter {
   private _dirHandle: FileSystemDirectoryHandle | null = null
   private _dirName: string | null = null
   private _status: FSAdapterStatus = "idle"
+  private _manifest: Manifest | null = null
   private _log: FSLogEntry[] = []
 
   private _logEntry(
@@ -189,6 +190,8 @@ export class FSAdapter {
     this._dirHandle = handle
     this._dirName = handle.name
     this._status = "open"
+
+    this._manifest = await this.loadManifest(handle)
 
     let fileHandle: FileSystemFileHandle
     try {
@@ -297,6 +300,7 @@ export class FSAdapter {
     this._dirHandle = null
     this._dirName = null
     this._status = "idle"
+    this._manifest = null
     this._log = []
   }
 
@@ -323,5 +327,133 @@ export class FSAdapter {
   /** Returns a copy of the operation log. */
   getLog(): FSLogEntry[] {
     return [...this._log]
+  }
+
+  /** Returns the parsed manifest if the workspace is multi-file, or null for single-file workspaces. */
+  getManifest(): Manifest | null {
+    return this._manifest
+  }
+
+  /**
+   * Attempt to load manifest.json from a directory handle.
+   * Returns null if the file does not exist (single-file workspace — not an error).
+   *
+   * @throws {FSError} PARSE_FAILED if JSON is malformed,
+   *   VALIDATION_FAILED if shape is wrong,
+   *   PERMISSION_DENIED if directory access is denied.
+   */
+  async loadManifest(dirHandle: FileSystemDirectoryHandle): Promise<Manifest | null> {
+    let fileHandle: FileSystemFileHandle
+    try {
+      fileHandle = await dirHandle.getFileHandle("manifest.json")
+    } catch {
+      this._logEntry("loadManifest", true, { reason: "not_found", folderName: dirHandle.name })
+      return null
+    }
+
+    let text: string
+    try {
+      const file = await fileHandle.getFile()
+      text = await file.text()
+    } catch (err) {
+      const detail = `failed to read manifest.json: ${err instanceof Error ? err.message : String(err)}`
+      this._logEntry("loadManifest", false, undefined, { code: "WRITE_FAILED", detail })
+      throw new FSError("WRITE_FAILED", detail)
+    }
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch (err) {
+      const detail = `manifest.json is not valid JSON: ${err instanceof Error ? err.message : String(err)}`
+      this._logEntry("loadManifest", false, { folderName: dirHandle.name }, { code: "PARSE_FAILED", detail })
+      throw new FSError("PARSE_FAILED", detail)
+    }
+
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      const detail = "manifest.json must be a JSON object"
+      this._logEntry("loadManifest", false, { folderName: dirHandle.name }, { code: "VALIDATION_FAILED", detail })
+      throw new FSError("VALIDATION_FAILED", detail)
+    }
+
+    const m = parsed as Record<string, unknown>
+    if (m.version !== 1) {
+      const detail = `manifest.json version must be 1, got ${m.version}`
+      this._logEntry("loadManifest", false, { folderName: dirHandle.name }, { code: "VALIDATION_FAILED", detail })
+      throw new FSError("VALIDATION_FAILED", detail)
+    }
+    if (typeof m.main !== "string") {
+      const detail = "manifest.json main is not a string"
+      this._logEntry("loadManifest", false, { folderName: dirHandle.name }, { code: "VALIDATION_FAILED", detail })
+      throw new FSError("VALIDATION_FAILED", detail)
+    }
+    if (!m.collections || typeof m.collections !== "object" || Array.isArray(m.collections)) {
+      const detail = "manifest.json collections is not an object"
+      this._logEntry("loadManifest", false, { folderName: dirHandle.name }, { code: "VALIDATION_FAILED", detail })
+      throw new FSError("VALIDATION_FAILED", detail)
+    }
+
+    this._logEntry("loadManifest", true, { folderName: dirHandle.name })
+    return parsed as Manifest
+  }
+
+  /**
+   * Read and validate a sub-file at a relative path from a directory handle.
+   * Handles nested paths (subdirectory traversal).
+   *
+   * @throws {FSError} NOT_FOUND if the sub-file does not exist,
+   *   PARSE_FAILED if JSON is malformed,
+   *   VALIDATION_FAILED if shape is wrong,
+   *   PERMISSION_DENIED if directory access is denied.
+   */
+  async loadSubFile(dirHandle: FileSystemDirectoryHandle, relativePath: string): Promise<GraphSnapshot> {
+    let text: string
+    try {
+      const parts = relativePath.split("/")
+      let currentHandle = dirHandle
+      for (let i = 0; i < parts.length - 1; i++) {
+        currentHandle = await currentHandle.getDirectoryHandle(parts[i])
+      }
+      const fileHandle = await currentHandle.getFileHandle(parts[parts.length - 1])
+      const file = await fileHandle.getFile()
+      text = await file.text()
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "NotFoundError") {
+        const detail = `sub-file not found: ${relativePath}`
+        this._logEntry("loadSubFile", false, { path: relativePath }, { code: "NOT_FOUND", detail })
+        throw new FSError("NOT_FOUND", detail)
+      }
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = `failed to read sub-file ${relativePath}: ${err instanceof Error ? err.message : String(err)}`
+      this._logEntry("loadSubFile", false, { path: relativePath }, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch (err) {
+      const detail = `sub-file ${relativePath} is not valid JSON: ${err instanceof Error ? err.message : String(err)}`
+      this._logEntry("loadSubFile", false, { path: relativePath }, { code: "PARSE_FAILED", detail })
+      throw new FSError("PARSE_FAILED", detail)
+    }
+
+    this._logEntry("validate", true, { path: relativePath })
+
+    let snapshot: GraphSnapshot
+    try {
+      snapshot = validateSnapshot(parsed)
+    } catch (err) {
+      if (err instanceof FSError) {
+        this._logEntry("loadSubFile", false, { path: relativePath }, { code: err.code, detail: err.detail })
+        throw err
+      }
+      throw err
+    }
+
+    this._logEntry("loadSubFile", true, { path: relativePath, entityCount: snapshot.entities.length })
+    return snapshot
   }
 }
