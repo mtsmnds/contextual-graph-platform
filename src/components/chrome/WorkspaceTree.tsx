@@ -1,6 +1,7 @@
 import { useGraphStore } from "../../store/useGraphStore"
 import { useChromeStore } from "../../store/useChromeStore"
 import { compareSortOrder } from "../../engine/queries"
+import { ContainerCard } from "../ContainerCard"
 
 function TreeItem({
   entityId,
@@ -71,23 +72,23 @@ function WorkspaceTree() {
   const roots = entities
     .filter((e) => e.type === "container" && !childIds.has(e.id))
 
-  if (roots.length === 0) {
-    return (
-      <p className="text-muted-foreground text-sm">No containers found</p>
-    )
-  }
-
   return (
-    <div className="font-mono text-sm space-y-0.5">
-      {roots.map((root, i) => (
-        <TreeItem
-          key={root.id}
-          entityId={root.id}
-          prefix=""
-          isLast={i === roots.length - 1}
-        />
-      ))}
-    </div>
+    <ContainerCard header={<span className="font-semibold text-sm">Workspace</span>}>
+      {roots.length === 0 ? (
+        <p className="p-3 text-muted-foreground text-sm">No containers found</p>
+      ) : (
+        <div className="p-3 font-mono text-sm space-y-0.5">
+          {roots.map((root, i) => (
+            <TreeItem
+              key={root.id}
+              entityId={root.id}
+              prefix=""
+              isLast={i === roots.length - 1}
+            />
+          ))}
+        </div>
+      )}
+    </ContainerCard>
   )
 }
 

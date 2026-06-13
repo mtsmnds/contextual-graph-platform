@@ -18,7 +18,7 @@ function TextView() {
             No containers open — click a container in the tree
           </p>
         )}
-        <div className="w-[300px] min-w-[300px] h-full overflow-y-auto border-l border-border pl-4">
+        <div className="w-[512px] min-w-[512px] h-full overflow-y-auto">
           <WorkspaceTree />
         </div>
       </div>
