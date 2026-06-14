@@ -92,6 +92,7 @@ type WorkspaceData = {
   canvasPositions: Record<string, CanvasData>
   viewport?: { x: number; y: number; zoom: number }
   collapsedContainers: string[]
+  treeCollapsed: string[]
 }
 
 export type {

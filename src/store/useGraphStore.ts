@@ -7,6 +7,7 @@ import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
 import { persistAutoSnapshots } from "../engine/backup";
 import type { PersistenceAdapter } from "./persistence";
 import { FSError, type FSAdapter } from "./persistence/FSAdapter";
+import { useChromeStore } from "./useChromeStore";
 
 let _adapter: PersistenceAdapter | null = null;
 let _fsAdapter: FSAdapter | null = null;
@@ -621,6 +622,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
             collapsedContainers: wsData.collapsedContainers ?? [],
           }
           useGraphStore.setState({ entities: merged, canvas })
+          useChromeStore.setState({ textCollapsed: new Set(wsData.treeCollapsed ?? []) })
         }
       }).catch(() => {})
     }
@@ -656,6 +658,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       canvasPositions,
       viewport: state.canvas.viewport,
       collapsedContainers: state.canvas.collapsedContainers ?? [],
+      treeCollapsed: [...useChromeStore.getState().textCollapsed],
     }
     await _fsAdapter.saveWorkspaceData(dirHandle, wsData)
 

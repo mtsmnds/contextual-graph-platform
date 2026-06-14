@@ -388,6 +388,7 @@ export class FSAdapter {
       canvasPositions: data.canvasPositions as Record<string, { x: number; y: number; width: number; height: number }>,
       viewport: data.viewport as { x: number; y: number; zoom: number } | undefined,
       collapsedContainers: data.collapsedContainers as string[],
+      treeCollapsed: (data.treeCollapsed as string[]) ?? [],
     }
   }
 
