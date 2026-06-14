@@ -43,7 +43,7 @@ function EntityTreeNode({ entityId }: { entityId: string }) {
     .sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder))
 
   return (
-    <Collapsible defaultOpen={!isCollapsed} onOpenChange={() => toggleCollapsed(entityId)}>
+    <Collapsible data-entity-container-id={entityId} defaultOpen={!isCollapsed} onOpenChange={() => toggleCollapsed(entityId)}>
       <ContainerCard
         header={
           <div className="flex items-center gap-2">
