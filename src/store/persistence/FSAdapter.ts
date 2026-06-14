@@ -1,4 +1,4 @@
-import type { Entity, Relation, CanvasState, GraphSnapshot, Manifest } from "../../types/graph"
+import type { Entity, Relation, CanvasState, GraphSnapshot, Manifest, WorkspaceData } from "../../types/graph"
 
 const APP_VERSION = 5
 const MAX_LOG_ENTRIES = 100
@@ -26,7 +26,7 @@ export class FSError extends Error {
 }
 
 export type FSLogEntry = {
-  operation: "open" | "save" | "close" | "validate" | "loadManifest" | "loadSubFile" | "saveSubFile"
+  operation: "open" | "save" | "close" | "validate" | "loadManifest" | "loadSubFile" | "saveSubFile" | "loadWorkspaceData" | "saveWorkspaceData"
   timestamp: number
   success: boolean
   error?: { code: FSErrorCode; detail: string }
@@ -342,6 +342,97 @@ export class FSAdapter {
     }
 
     this._logEntry("saveSubFile", true, { path: relativePath, entityCount: snapshot.entities.length })
+  }
+
+  /**
+   * Read workspace-data.json from a directory handle.
+   * Returns null if the file does not exist (not an error).
+   */
+  async loadWorkspaceData(dirHandle: FileSystemDirectoryHandle): Promise<WorkspaceData | null> {
+    let fileHandle: FileSystemFileHandle
+    try {
+      fileHandle = await dirHandle.getFileHandle("workspace-data.json")
+    } catch {
+      this._logEntry("loadWorkspaceData", true, { reason: "not_found" })
+      return null
+    }
+
+    let text: string
+    try {
+      const file = await fileHandle.getFile()
+      text = await file.text()
+    } catch (err) {
+      const detail = `failed to read workspace-data.json: ${err instanceof Error ? err.message : String(err)}`
+      this._logEntry("loadWorkspaceData", false, undefined, { code: "WRITE_FAILED", detail })
+      throw new FSError("WRITE_FAILED", detail)
+    }
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch (err) {
+      const detail = `workspace-data.json is not valid JSON: ${err instanceof Error ? err.message : String(err)}`
+      this._logEntry("loadWorkspaceData", false, undefined, { code: "PARSE_FAILED", detail })
+      throw new FSError("PARSE_FAILED", detail)
+    }
+
+    const data = parsed as Record<string, unknown>
+    if (typeof data.version !== "number" || typeof data.canvasPositions !== "object" || !Array.isArray(data.collapsedContainers)) {
+      this._logEntry("loadWorkspaceData", false, undefined, { code: "VALIDATION_FAILED", detail: "invalid workspace-data shape" })
+      throw new FSError("VALIDATION_FAILED", "invalid workspace-data shape")
+    }
+
+    this._logEntry("loadWorkspaceData", true, { positionCount: Object.keys(data.canvasPositions as Record<string, unknown>).length })
+    return {
+      version: 1,
+      canvasPositions: data.canvasPositions as Record<string, { x: number; y: number; width: number; height: number }>,
+      viewport: data.viewport as { x: number; y: number; zoom: number } | undefined,
+      collapsedContainers: data.collapsedContainers as string[],
+    }
+  }
+
+  /**
+   * Write workspace-data.json to the open folder.
+   */
+  async saveWorkspaceData(dirHandle: FileSystemDirectoryHandle, data: WorkspaceData): Promise<void> {
+    let fileHandle: FileSystemFileHandle
+    try {
+      fileHandle = await dirHandle.getFileHandle("workspace-data.json", { create: true })
+    } catch (err) {
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = err instanceof Error ? err.message : String(err)
+      this._logEntry("saveWorkspaceData", false, undefined, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    let writable: FileSystemWritableFileStream
+    try {
+      writable = await fileHandle.createWritable()
+    } catch (err) {
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = err instanceof Error ? err.message : String(err)
+      this._logEntry("saveWorkspaceData", false, undefined, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    try {
+      await writable.write(JSON.stringify(data, null, 2))
+      await writable.close()
+    } catch (err) {
+      await writable.abort().catch(() => {})
+      const code: FSErrorCode = err instanceof DOMException && err.name === "SecurityError"
+        ? "PERMISSION_DENIED"
+        : "WRITE_FAILED"
+      const detail = err instanceof Error ? err.message : String(err)
+      this._logEntry("saveWorkspaceData", false, undefined, { code, detail })
+      throw new FSError(code, detail)
+    }
+
+    this._logEntry("saveWorkspaceData", true, { positionCount: Object.keys(data.canvasPositions).length })
   }
 
   /**

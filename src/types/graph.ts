@@ -86,6 +86,14 @@ type LoadedCollection = {
   relationFile: Record<string, string>
 }
 
+/** View/workspace data stored separately from domain data (graph.json). */
+type WorkspaceData = {
+  version: 1
+  canvasPositions: Record<string, CanvasData>
+  viewport?: { x: number; y: number; zoom: number }
+  collapsedContainers: string[]
+}
+
 export type {
   EntityType,
   CanvasData,
@@ -99,4 +107,5 @@ export type {
   Manifest,
   ManifestCollection,
   LoadedCollection,
+  WorkspaceData,
 };

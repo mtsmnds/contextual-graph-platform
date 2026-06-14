@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing-jittered";
-import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry, Manifest, LoadedCollection } from "../types/graph";
+import type { Entity, EntityType, Relation, ViewState, GraphSnapshot, CanvasState, CanvasData, HistoryEntry, AutoBackupEntry, Manifest, LoadedCollection, WorkspaceData } from "../types/graph";
 import { generateUniqueId, slugify } from "../engine/ids";
 import { compareSortOrder } from "../engine/queries";
 import { SEED_DATA, SEED_CONTAINER_CONTENT } from "../data/seed";
@@ -604,6 +604,27 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
   openFromDisk: (snapshot: GraphSnapshot, folderName: string) => {
     try { localStorage.setItem(FOLDER_SESSION_KEY, "true") } catch {}
     const manifest = _fsAdapter?.getManifest() ?? null
+    const dirHandle = _fsAdapter?.getRootHandle()
+
+    // Merge workspace-data canvas positions onto entities
+    if (dirHandle) {
+      _fsAdapter?.loadWorkspaceData(dirHandle).then((wsData) => {
+        if (wsData) {
+          const state = useGraphStore.getState()
+          const merged = state.entities.map((e) => {
+            const pos = wsData.canvasPositions[e.id]
+            return pos ? { ...e, canvasData: pos } : e
+          })
+          const canvas = {
+            ...state.canvas,
+            viewport: wsData.viewport ?? state.canvas.viewport,
+            collapsedContainers: wsData.collapsedContainers ?? [],
+          }
+          useGraphStore.setState({ entities: merged, canvas })
+        }
+      }).catch(() => {})
+    }
+
     set({
       entities: snapshot.entities,
       relations: snapshot.relations,
@@ -625,6 +646,19 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
     const dirHandle = _fsAdapter.getRootHandle()
     if (!dirHandle) return
 
+    // Save workspace-data.json with real canvas positions
+    const canvasPositions: Record<string, CanvasData> = {}
+    for (const e of state.entities) {
+      canvasPositions[e.id] = e.canvasData
+    }
+    const wsData: WorkspaceData = {
+      version: 1,
+      canvasPositions,
+      viewport: state.canvas.viewport,
+      collapsedContainers: state.canvas.collapsedContainers ?? [],
+    }
+    await _fsAdapter.saveWorkspaceData(dirHandle, wsData)
+
     // Collect loaded entity/relation IDs across all collections
     const loadedEntityIds = new Set<string>()
     const loadedRelationIds = new Set<string>()
@@ -633,8 +667,10 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       for (const id of coll.relationIds) loadedRelationIds.add(id)
     }
 
-    // Base graph: entities/relations NOT in any loaded collection
-    const baseEntities = state.entities.filter((e) => !loadedEntityIds.has(e.id))
+    // Base graph: entities/relations NOT in any loaded collection (with placeholder canvasData)
+    const baseEntities = state.entities
+      .filter((e) => !loadedEntityIds.has(e.id))
+      .map(_withPlaceholderCanvas)
     let baseRelations = state.relations.filter((r) => !loadedRelationIds.has(r.id))
 
     // Purge stale derived + recompute for each loaded book
@@ -644,7 +680,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       baseRelations.push(...derived)
     }
 
-    // Save dirty sub-files
+    // Save dirty sub-files (entities with placeholder canvasData)
     const writtenPaths = new Set<string>()
     for (const filePath of state.dirtySubFiles) {
       const snapshot = _buildSubFileSnapshot(filePath, state)
@@ -653,7 +689,7 @@ const storeInitializer = (set: any, get: any): GraphStore => ({
       writtenPaths.add(filePath)
     }
 
-    // Save base graph.json (always — derived relations may have changed)
+    // Save base graph.json
     const baseSnapshot: GraphSnapshot = {
       version: 5,
       entities: baseEntities,
@@ -1188,6 +1224,12 @@ function _computeDerivedRelations(bookId: string, state: GraphStore): Relation[]
   return derived
 }
 
+function _withPlaceholderCanvas(e: Entity): Entity {
+  const w = e.type === "concept" ? 208 : 416
+  const h = 64
+  return { ...e, canvasData: { x: 0, y: 0, width: w, height: h } }
+}
+
 function _buildSubFileSnapshot(filePath: string, state: GraphStore): GraphSnapshot {
   const entities: Entity[] = []
   const relations: Relation[] = []
@@ -1210,7 +1252,7 @@ function _buildSubFileSnapshot(filePath: string, state: GraphStore): GraphSnapsh
 
   return {
     version: 5,
-    entities,
+    entities: entities.map(_withPlaceholderCanvas),
     relations,
     canvas: { collapsedContainers: [] },
   }
